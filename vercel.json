@@ -1,0 +1,15 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npx prisma generate && npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "regions": ["gru1"],
+  "env": {
+    "PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING": "1"
+  },
+  "build": {
+    "env": {
+      "PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING": "1"
+    }
+  }
+}
