@@ -1,0 +1,591 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  passwordHash   String
+  active         Boolean   @default(true)
+  mustChangePass Boolean   @default(false)
+  lastLoginAt    DateTime?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  roles        UserRole[]
+  sessions     Session[]
+  auditLogs    AuditLog[]
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  userRoles   UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id      String @id @default(cuid())
+  module  String
+  action  String
+
+  rolePermissions RolePermission[]
+
+  @@unique([module, action])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRole {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  roleId     String
+  role       Role     @relation(fields: [roleId], references: [id])
+  assignedAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  module     String
+  entityType String?
+  entityId   String?
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([module])
+  @@index([createdAt])
+}
+
+model CompanyConfig {
+  id               String   @id @default(cuid())
+  razaoSocial      String
+  nomeFantasia     String?
+  cnpj             String   @unique
+  porte            String?
+  regimeTributario String   @default("Simples Nacional")
+  cnaePrincipal    String?
+  inscMunicipal    String?
+  logradouro       String?
+  bairro           String?
+  municipio        String?
+  uf               String?
+  cep              String?
+  email            String?
+  telefone         String?
+  aliqISS          Decimal  @db.Decimal(5,2) @default(5.00)
+  aliqINSS         Decimal  @db.Decimal(5,2) @default(7.00)
+  aliqIRRF         Decimal  @db.Decimal(5,2) @default(1.50)
+  aliqFGTS         Decimal  @db.Decimal(5,2) @default(8.00)
+  aliqDAS          Decimal  @db.Decimal(5,2) @default(6.72)
+  nomeContador     String?
+  emailContador    String?
+  updatedAt        DateTime @updatedAt
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  cnpjCpf     String?  @unique
+  type        String   @default("juridica")
+  category    String   @default("Público")
+  email       String?
+  phone       String?
+  contact     String?
+  logradouro  String?
+  municipio   String?
+  uf          String?
+  cep         String?
+  situacao    String?
+  active      Boolean  @default(true)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  proposals Proposal[]
+  nfse      FiscalNfse[]
+  contracts Contract[]
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  cnpj      String?  @unique
+  type      String?
+  email     String?
+  phone     String?
+  municipio String?
+  uf        String?
+  situacao  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  expenses   Expense[]
+  nfes       FiscalNfe[]
+}
+
+model Employee {
+  id            String   @id @default(cuid())
+  name          String
+  role          String
+  cpf           String?  @unique
+  admissionDate DateTime
+  salary        Decimal  @db.Decimal(15,2)
+  bank          String?
+  bankAgency    String?
+  bankAccount   String?
+  status        String   @default("ativo")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  docs           EmployeeDoc[]
+  laborCharges   FiscalLaborCharge[]
+  trainings      Training[]
+}
+
+model EmployeeDoc {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  docType    String
+  expiresAt  DateTime
+  filePath   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Proposal {
+  id           String   @id @default(cuid())
+  number       String   @unique
+  clientId     String?
+  client       Client?  @relation(fields: [clientId], references: [id])
+  serviceType  String?
+  object       String?
+  location     String?
+  area         Decimal? @db.Decimal(15,3)
+  unit         String?
+  days         Int?
+  workers      Int?
+  chargesRate  Decimal  @db.Decimal(5,2) @default(70)
+  adminRate    Decimal  @db.Decimal(5,2) @default(10)
+  riskRate     Decimal  @db.Decimal(5,2) @default(5)
+  taxRate      Decimal  @db.Decimal(5,2) @default(8)
+  marginRate   Decimal  @db.Decimal(5,2) @default(30)
+  totalValue   Decimal  @db.Decimal(15,2) @default(0)
+  validityDays Int      @default(30)
+  paymentTerms String?
+  status       String   @default("Aberta")
+  approvedAt   DateTime?
+  pdfPath      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+}
+
+model ExpenseCategory {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  type     String    @default("operacional")
+  active   Boolean   @default(true)
+  expenses Expense[]
+}
+
+model Expense {
+  id           String          @id @default(cuid())
+  description  String
+  amount       Decimal         @db.Decimal(15,2)
+  dueDate      DateTime
+  paidAt       DateTime?
+  status       String          @default("em_aberto")
+  categoryId   String?
+  category     ExpenseCategory? @relation(fields: [categoryId], references: [id])
+  supplierId   String?
+  supplier     Supplier?        @relation(fields: [supplierId], references: [id])
+  competence   String?
+  receiptPath  String?
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  deletedAt    DateTime?
+}
+
+model FiscalTaxExpense {
+  id                 String   @id @default(cuid())
+  taxType            String
+  description        String
+  competence         String
+  dueDate            DateTime
+  paymentDate        DateTime?
+  principalAmount    Decimal  @db.Decimal(15,2) @default(0)
+  penaltyAmount      Decimal  @db.Decimal(15,2) @default(0)
+  interestAmount     Decimal  @db.Decimal(15,2) @default(0)
+  totalAmount        Decimal  @db.Decimal(15,2) @default(0)
+  status             String   @default("em_aberto")
+  revenueCode        String?
+  generatedAuto      Boolean  @default(false)
+  attachmentPath     String?
+  accountantReviewed Boolean  @default(false)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model FiscalNfe {
+  id            String   @id @default(cuid())
+  accessKey     String   @unique
+  number        String
+  series        String?
+  issueDate     DateTime
+  entryDate     DateTime?
+  supplierId    String?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+  supplierName  String?
+  supplierCnpj  String?
+  totalAmount   Decimal  @db.Decimal(15,2) @default(0)
+  pisAmount     Decimal  @db.Decimal(15,2) @default(0)
+  cofinsAmount  Decimal  @db.Decimal(15,2) @default(0)
+  status        String   @default("importada")
+  xmlPath       String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model FiscalNfse {
+  id              String   @id @default(cuid())
+  number          String
+  municipality    String
+  providerCnpj    String
+  receiverName    String?
+  receiverCnpj    String?
+  clientId        String?
+  client          Client?  @relation(fields: [clientId], references: [id])
+  serviceCode     String?
+  description     String
+  serviceValue    Decimal  @db.Decimal(15,2)
+  calculationBase Decimal  @db.Decimal(15,2)
+  issRate         Decimal  @db.Decimal(5,2)
+  issAmount       Decimal  @db.Decimal(15,2) @default(0)
+  issRetained     Boolean  @default(false)
+  netAmount       Decimal  @db.Decimal(15,2) @default(0)
+  issueDate       DateTime
+  competence      String
+  status          String   @default("lancada")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model FiscalSimplesDas {
+  id                   String   @id @default(cuid())
+  competence           String   @unique
+  grossRevenue         Decimal  @db.Decimal(15,2)
+  accumulatedRevenue12 Decimal  @db.Decimal(15,2)
+  effectiveRate        Decimal  @db.Decimal(5,4)
+  dasAmount            Decimal  @db.Decimal(15,2)
+  dueDate              DateTime
+  paymentDate          DateTime?
+  status               String   @default("em_aberto")
+  accountantReviewed   Boolean  @default(false)
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model FiscalLaborCharge {
+  id            String   @id @default(cuid())
+  competence    String
+  employeeId    String?
+  employee      Employee? @relation(fields: [employeeId], references: [id])
+  employeeName  String?
+  eventType     String
+  amount        Decimal  @db.Decimal(15,2)
+  dueDate       DateTime
+  paymentDate   DateTime?
+  status        String   @default("em_aberto")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model FiscalDocument {
+  id           String   @id @default(cuid())
+  documentType String
+  issuer       String?
+  number       String?
+  dueDate      DateTime
+  status       String   @default("regular")
+  responsible  String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model FiscalObligation {
+  id             String   @id @default(cuid())
+  name           String
+  obligationType String
+  competence     String?
+  dueDate        DateTime
+  responsible    String?
+  status         String   @default("prevista")
+  completedAt    DateTime?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model InventoryCategory {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  icon     String?
+  color    String?
+  active   Boolean @default(true)
+
+  items InventoryItem[]
+}
+
+model InventoryItem {
+  id              String            @id @default(cuid())
+  internalCode    String            @unique
+  description     String
+  categoryId      String
+  category        InventoryCategory @relation(fields: [categoryId], references: [id])
+  itemType        String            @default("consumivel")
+  brand           String?
+  unit            String
+  currentQuantity Decimal           @db.Decimal(15,3) @default(0)
+  minimumStock    Decimal           @db.Decimal(15,3) @default(0)
+  location        String?
+  averageCost     Decimal           @db.Decimal(15,2) @default(0)
+  isEpi           Boolean           @default(false)
+  isTool          Boolean           @default(false)
+  isPatrimony     Boolean           @default(false)
+  patrimonyNumber String?           @unique
+  serialNumber    String?
+  status          String            @default("regular")
+  active          Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  movements InventoryMovement[]
+}
+
+model InventoryMovement {
+  id           String        @id @default(cuid())
+  itemId       String
+  item         InventoryItem @relation(fields: [itemId], references: [id])
+  movementType String
+  quantity     Decimal       @db.Decimal(15,3)
+  unitCost     Decimal       @db.Decimal(15,2) @default(0)
+  movementDate DateTime      @default(now())
+  reason       String
+  notes        String?
+  createdAt    DateTime      @default(now())
+}
+
+model Integration {
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  category            String
+  provider            String
+  environment         String   @default("homologacao")
+  status              String   @default("pendente_config")
+  requiresAuth        Boolean  @default(false)
+  requiresCertificate Boolean  @default(false)
+  requiresPaidApi     Boolean  @default(false)
+  isEnabled           Boolean  @default(false)
+  baseUrl             String?
+  description         String?
+  lastRunAt           DateTime?
+  lastErrorMessage    String?
+  totalCalls          Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  logs  IntegrationLog[]
+}
+
+model IntegrationLog {
+  id             String      @id @default(cuid())
+  integrationId  String
+  integration    Integration @relation(fields: [integrationId], references: [id])
+  operation      String
+  status         String
+  httpStatus     Int?
+  durationMs     Int?
+  responseSummary String?
+  errorMessage   String?
+  createdAt      DateTime    @default(now())
+}
+
+model IntegrationCache {
+  id            String   @id @default(cuid())
+  cacheKey      String   @unique
+  integrationSlug String
+  dataJson      String
+  hitsCount     Int      @default(0)
+  cachedAt      DateTime @default(now())
+  expiresAt     DateTime
+
+  @@index([cacheKey])
+  @@index([expiresAt])
+}
+
+// ═══ CONTRATOS ═══════════════════════════════════════════════════
+model Contract {
+  id            String   @id @default(cuid())
+  number        String   @unique
+  clientId      String?
+  client        Client?  @relation(fields: [clientId], references: [id])
+  object        String
+  value         Decimal  @db.Decimal(15,2)
+  startDate     DateTime
+  endDate       DateTime
+  status        String   @default("Ativo") // Ativo | Encerrado | Suspenso | Renovando
+  renewalAlertDays Int   @default(90)
+  adjustIndex   String   @default("INPC") // INPC | IPCA | IGPM
+  signedPath    String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  measurements  Measurement[]
+  fuelLogs      FuelLog[]
+}
+
+// ═══ COMBUSTÍVEL ═════════════════════════════════════════════════
+model Vehicle {
+  id          String   @id @default(cuid())
+  plate       String   @unique
+  model       String
+  type        String   @default("Pickup") // Pickup | Caminhao | Leve | Moto
+  year        Int?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  fuelLogs    FuelLog[]
+}
+
+model FuelLog {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  contractId  String?
+  contract    Contract? @relation(fields: [contractId], references: [id])
+  employeeId  String?
+  date        DateTime @default(now())
+  odometer    Int
+  liters      Decimal  @db.Decimal(10,2)
+  pricePerLiter Decimal @db.Decimal(10,3)
+  totalCost   Decimal  @db.Decimal(15,2)
+  fuelType    String   @default("Gasolina")
+  station     String?
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+// ═══ TREINAMENTOS / NRs ══════════════════════════════════════════
+model Training {
+  id           String   @id @default(cuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  trainingType String   // NR-06 | NR-12 | NR-35 | ASO | CNH | Outro
+  issuedAt     DateTime
+  expiresAt    DateTime
+  institution  String?
+  certificatePath String?
+  status       String   @default("valido") // valido | a_vencer | vencido
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ═══ MEDIÇÃO MENSAL ══════════════════════════════════════════════
+model Measurement {
+  id           String   @id @default(cuid())
+  contractId   String
+  contract     Contract @relation(fields: [contractId], references: [id])
+  period       String   // "2026-04"
+  startDate    DateTime
+  endDate      DateTime
+  value        Decimal  @db.Decimal(15,2)
+  status       String   @default("em_elaboracao") // em_elaboracao | enviada | aprovada | glosada | faturada
+  approvedBy   String?
+  approvedAt   DateTime?
+  notes        String?
+  pdfPath      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  items        MeasurementItem[]
+}
+
+model MeasurementItem {
+  id            String      @id @default(cuid())
+  measurementId String
+  measurement   Measurement @relation(fields: [measurementId], references: [id])
+  description   String
+  unit          String
+  quantity      Decimal     @db.Decimal(15,3)
+  unitValue     Decimal     @db.Decimal(15,2)
+  totalValue    Decimal     @db.Decimal(15,2)
+  notes         String?
+  createdAt     DateTime    @default(now())
+}
+
+// ═══ DIÁRIO DE OBRAS ═════════════════════════════════════════════
+model WorkDiary {
+  id            String   @id @default(cuid())
+  date          DateTime @default(now())
+  contractId    String?
+  location      String
+  supervisor    String
+  teamSize      Int      @default(1)
+  weather       String   @default("Bom") // Bom | Nublado | Chuva | Suspensão
+  activitiesDone String
+  areasWorked   String?
+  equipmentUsed String?
+  occurrences   String?
+  photosPaths   String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+
+// ═══ CONTRATOS (gestão completa) ════════════════════════════════

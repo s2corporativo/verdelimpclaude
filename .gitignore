@@ -1,0 +1,37 @@
+# deps
+node_modules
+.pnp
+.pnp.js
+
+# testing
+coverage
+
+# next
+.next/
+out/
+build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+
+# env — NUNCA commitar .env com valores reais
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# prisma
+prisma/*.db
+prisma/migrations/**/migration.sql
