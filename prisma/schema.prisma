@@ -181,6 +181,7 @@ model Employee {
   docs           EmployeeDoc[]
   laborCharges   FiscalLaborCharge[]
   trainings      Training[]
+  epiDeliveries  InventoryEpiDelivery[]
 }
 
 model EmployeeDoc {
@@ -214,6 +215,7 @@ model Proposal {
   totalValue   Decimal  @db.Decimal(15,2) @default(0)
   validityDays Int      @default(30)
   paymentTerms String?
+  technicalNotes String?
   status       String   @default("Aberta")
   approvedAt   DateTime?
   pdfPath      String?
@@ -589,3 +591,20 @@ model WorkDiary {
 
 
 // ═══ CONTRATOS (gestão completa) ════════════════════════════════
+
+// ═══ CONTROLE DE ENTREGA DE EPI ══════════════════════════════════
+model InventoryEpiDelivery {
+  id                      String    @id @default(cuid())
+  itemId                  String
+  item                    InventoryItem @relation(fields: [itemId], references: [id])
+  employeeId              String
+  employee                Employee  @relation(fields: [employeeId], references: [id])
+  deliveryDate            DateTime  @default(now())
+  expectedReplacementDate DateTime?
+  quantity                Int       @default(1)
+  caNumber                String?
+  caExpirationDate        DateTime?
+  reason                  String?   @default("Dotação periódica")
+  status                  String    @default("ativo")
+  createdAt               DateTime  @default(now())
+}
