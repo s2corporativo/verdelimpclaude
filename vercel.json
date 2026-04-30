@@ -4,6 +4,7 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "regions": ["gru1"],
+  "nodeVersion": "20.x",
   "env": {
     "PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING": "1"
   },
