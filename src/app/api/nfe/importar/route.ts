@@ -4,8 +4,6 @@ import { parseNFe } from "@/lib/nfe-parser";
 import { prisma } from "@/lib/prisma";
 import { fetchWithCache } from "@/lib/api-cache";
 
-export const config = { api: { bodyParser: false } };
-
 // POST — importar XML de NF-e
 export async function POST(req: NextRequest) {
   try {
