@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 export default function NovoContratoPage() {
-  const [aba, setAba] = useState<"input"|"impacto"|"sucesso">("input");
+  const [aba, setAba] = useState<"input"|"impacto"|"cronograma"|"sucesso">("input");
   const [modoEntrada, setModoEntrada] = useState<"manual"|"colar">("manual");
   const [textoColado, setTextoColado] = useState("");
   const [extraindo, setExtraindo] = useState(false);
@@ -11,6 +11,8 @@ export default function NovoContratoPage() {
   const [salvando, setSalvando] = useState(false);
   const [impacto, setImpacto] = useState<any>(null);
   const [resultado, setResultado] = useState<any>(null);
+  const [cronograma, setCronograma] = useState<any>(null);
+  const [gerandoCronograma, setGerandoCronograma] = useState(false);
   const [erro, setErro] = useState("");
 
   const [c, setC] = useState({
@@ -69,6 +71,30 @@ export default function NovoContratoPage() {
       setModoEntrada("manual"); // mostra os dados extraídos no formulário
     } catch (e: any) { setErro(e.message); }
     setExtraindo(false);
+  };
+
+  const gerarCronograma = async () => {
+    setGerandoCronograma(true); setErro("");
+    try {
+      const r = await fetch("/api/cronograma-contrato", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contrato: {
+            ...c,
+            valorMensal: Number(c.valorMensal),
+            vigenciaMeses: Number(c.vigenciaMeses),
+            areaM2: Number(c.areaM2) || undefined,
+          },
+          impacto,
+          usarIA: true,
+        })
+      });
+      const d = await r.json();
+      if (!d.success) throw new Error(d.error || "Erro");
+      setCronograma(d.cronograma);
+      setAba("cronograma");
+    } catch (e: any) { setErro(e.message); }
+    setGerandoCronograma(false);
   };
 
   const calcularImpacto = async () => {
@@ -135,9 +161,10 @@ export default function NovoContratoPage() {
       {/* Barra de etapas */}
       <div style={{ display: "flex", gap: 6, marginBottom: 16, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 6 }}>
         {[
-          ["input", "1. Dados do contrato"],
-          ["impacto", "2. Impacto nos módulos"],
-          ["sucesso", "3. Confirmação"],
+          ["input", "1. Dados"],
+          ["impacto", "2. Impacto"],
+          ["cronograma", "3. Cronograma"],
+          ["sucesso", "4. Confirmação"],
         ].map(([id, l], i) => (
           <div key={id} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: aba === id ? "#0f5233" : "#f9fafb", color: aba === id ? "#fff" : "#6b7280", fontWeight: 600, fontSize: 12, textAlign: "center" }}>
             {l}
@@ -409,15 +436,147 @@ export default function NovoContratoPage() {
           {/* Botões de ação */}
           <div style={{ display: "flex", gap: 10, justifyContent: "space-between", marginTop: 16 }}>
             <button onClick={() => setAba("input")} style={{ background: "#f3f4f6", color: "#374151", border: "none", padding: "11px 24px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>← Voltar e ajustar</button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={gerarCronograma} disabled={gerandoCronograma}
+                style={{ background: gerandoCronograma ? "#6b7280" : "#7c3aed", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+                {gerandoCronograma ? "⟳ Gerando cronograma com IA..." : "📅 Gerar Cronograma →"}
+              </button>
+              <button onClick={propagarContrato} disabled={salvando}
+                style={{ background: salvando ? "#6b7280" : "#0f5233", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+                {salvando ? "⟳ Salvando..." : "✅ Confirmar e Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* ═══════════ ABA 3: CRONOGRAMA ═══════════════════════════ */}
+      {aba === "cronograma" && cronograma && (
+        <div>
+          {/* Resumo executivo */}
+          <div style={{ background: "linear-gradient(135deg,#7c3aed,#5b21b6)", color: "#fff", borderRadius: 12, padding: 18, marginBottom: 14 }}>
+            <h3 style={{ fontSize: 16, margin: "0 0 8px" }}>📅 Cronograma de Execução — {c.objeto}</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 8 }}>
+              {[
+                ["Total execuções", cronograma.resumo.totalExecucoes + " OS"],
+                ["Total horas", cronograma.resumo.totalHoras + "h"],
+                ["Qualidade média", cronograma.resumo.mediaQualidade + "%"],
+                ["Mês ideal", cronograma.resumo.mesIdeal || "—"],
+                ["Mês crítico", cronograma.resumo.mesCritico || "—"],
+              ].map(([l, v]) => (
+                <div key={l as string} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 9, opacity: 0.75, textTransform: "uppercase" }}>{l}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Alertas */}
+          {cronograma.alertas?.length > 0 && (
+            <div style={{ background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 16px", marginBottom: 14 }}>
+              <h4 style={{ color: "#92400e", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>⚠️ Pontos de atenção</h4>
+              {cronograma.alertas.map((a: string, i: number) => <p key={i} style={{ color: "#92400e", fontSize: 12, margin: "3px 0" }}>{a}</p>)}
+            </div>
+          )}
+
+          {/* Análise IA */}
+          {cronograma.analiseIA && (
+            <div style={{ background: "#fff", border: "1px solid #c4b5fd", borderRadius: 12, padding: 16, marginBottom: 14 }}>
+              <h4 style={{ color: "#7c3aed", fontSize: 13, fontWeight: 700, marginBottom: 8 }}>🤖 Análise estratégica da IA</h4>
+              <div style={{ fontSize: 12, lineHeight: 1.7, color: "#374151", whiteSpace: "pre-wrap" }}>{cronograma.analiseIA}</div>
+            </div>
+          )}
+
+          {/* Linha do tempo mensal */}
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 14 }}>
+            <h4 style={{ color: "#0f5233", fontSize: 13, fontWeight: 700, marginBottom: 10 }}>📊 Visão geral por mês — {cronograma.meses.length} meses</h4>
+            <div style={{ display: "flex", overflowX: "auto", gap: 4, paddingBottom: 8 }}>
+              {cronograma.meses.map((m: any, idx: number) => {
+                const cor = m.qualidadeClimaPct >= 85 ? "#15803d"
+                          : m.qualidadeClimaPct >= 70 ? "#65a30d"
+                          : m.qualidadeClimaPct >= 60 ? "#d97706"
+                          : "#dc2626";
+                return (
+                  <div key={idx} style={{ minWidth: 90, flex: 1, padding: "8px 6px", background: "#f9fafb", borderRadius: 8, borderTop: `3px solid ${cor}`, textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase", fontWeight: 600, marginBottom: 4 }}>{m.nomeMes}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: cor }}>{m.qualidadeClimaPct}%</div>
+                    <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{m.execucoes.length} OS</div>
+                    <div style={{ fontSize: 10, color: "#6b7280" }}>{Math.round(m.horasTotais)}h</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 8, textAlign: "center" }}>
+              🟢 ≥85% ideal · 🟡 70–84% bom · 🟠 60–69% atenção · 🔴 abaixo crítico
+            </div>
+          </div>
+
+          {/* Detalhamento por mês */}
+          <div style={{ marginBottom: 14 }}>
+            <h4 style={{ color: "#0f5233", fontSize: 14, fontWeight: 700, marginBottom: 10 }}>📋 Cronograma detalhado</h4>
+            {cronograma.meses.map((m: any, mi: number) => (
+              <div key={mi} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
+                <div style={{ background: "#e8f5ee", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                  <div>
+                    <span style={{ fontWeight: 700, color: "#0f5233", fontSize: 14 }}>{m.nomeMes}</span>
+                    <span style={{ fontSize: 11, color: "#6b7280", marginLeft: 8 }}>{m.execucoes.length} execuções · {Math.round(m.horasTotais)}h equipe</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <span style={{ fontSize: 11, color: "#6b7280" }}>Qualidade clima:</span>
+                    <span style={{ background: m.qualidadeClimaPct >= 85 ? "#dcfce7" : m.qualidadeClimaPct >= 70 ? "#fef9c3" : "#fee2e2", color: m.qualidadeClimaPct >= 85 ? "#15803d" : m.qualidadeClimaPct >= 70 ? "#92400e" : "#991b1b", padding: "2px 9px", borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
+                      {m.qualidadeClimaPct}%
+                    </span>
+                  </div>
+                </div>
+                <div style={{ background: "#fffbeb", padding: "6px 14px", fontSize: 11, color: "#92400e", borderBottom: "1px solid #f3f4f6" }}>
+                  ☁️ {m.observacaoClima}
+                </div>
+                <div style={{ padding: 12 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                    <thead>
+                      <tr style={{ background: "#f9fafb" }}>
+                        <th style={{ padding: "6px 10px", textAlign: "left", color: "#6b7280" }}>#</th>
+                        <th style={{ padding: "6px 10px", textAlign: "left", color: "#6b7280" }}>Data</th>
+                        <th style={{ padding: "6px 10px", textAlign: "left", color: "#6b7280" }}>Dia</th>
+                        <th style={{ padding: "6px 10px", textAlign: "left", color: "#6b7280" }}>Horário</th>
+                        <th style={{ padding: "6px 10px", textAlign: "right", color: "#6b7280" }}>Equipe</th>
+                        <th style={{ padding: "6px 10px", textAlign: "right", color: "#6b7280" }}>Área (m²)</th>
+                        <th style={{ padding: "6px 10px", textAlign: "right", color: "#6b7280" }}>Horas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {m.execucoes.map((e: any, ei: number) => (
+                        <tr key={ei} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                          <td style={{ padding: "6px 10px", fontWeight: 700, color: "#7c3aed" }}>{e.ordem}</td>
+                          <td style={{ padding: "6px 10px", fontWeight: 600 }}>{new Date(e.data + "T12:00:00").toLocaleDateString("pt-BR")}</td>
+                          <td style={{ padding: "6px 10px", color: "#6b7280" }}>{e.diaSemana}</td>
+                          <td style={{ padding: "6px 10px" }}>{e.horarioInicio}–{e.horarioFim}</td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 600 }}>{e.equipe} pessoas</td>
+                          <td style={{ padding: "6px 10px", textAlign: "right" }}>{e.areaPrevista?.toLocaleString("pt-BR") || "—"}</td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700, color: "#15803d" }}>{e.horasEstimadas}h</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Botões */}
+          <div style={{ display: "flex", gap: 10, justifyContent: "space-between", marginTop: 16 }}>
+            <button onClick={() => setAba("impacto")} style={{ background: "#f3f4f6", color: "#374151", border: "none", padding: "11px 24px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>← Voltar para impacto</button>
             <button onClick={propagarContrato} disabled={salvando}
               style={{ background: salvando ? "#6b7280" : "#0f5233", color: "#fff", border: "none", padding: "12px 32px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
-              {salvando ? "⟳ Salvando e propagando em todos os módulos..." : "✅ Confirmar e Propagar em Todos os Módulos →"}
+              {salvando ? "⟳ Salvando e propagando..." : "✅ Confirmar e Salvar Tudo →"}
             </button>
           </div>
         </div>
       )}
 
-      {/* ═══════════ ABA 3: SUCESSO ════════════════════════════════ */}
+      {/* ═══════════ ABA 4: SUCESSO ════════════════════════════════ */}
       {aba === "sucesso" && resultado && (
         <div style={{ background: "#fff", border: "2px solid #15803d", borderRadius: 14, padding: 32, textAlign: "center" }}>
           <div style={{ fontSize: 56, marginBottom: 14 }}>🎉</div>
@@ -447,6 +606,7 @@ export default function NovoContratoPage() {
           )}
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <a href="/dashboard/contratos" style={{ background: "#0f5233", color: "#fff", padding: "10px 20px", borderRadius: 8, textDecoration: "none", fontWeight: 700, fontSize: 13 }}>📋 Ver Contratos</a>
+            <button onClick={()=>setAba("cronograma")} style={{ background: "#7c3aed", color: "#fff", padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>📅 Ver Cronograma</button>
             <a href="/dashboard/logistica" style={{ background: "#1e40af", color: "#fff", padding: "10px 20px", borderRadius: 8, textDecoration: "none", fontWeight: 700, fontSize: 13 }}>🚛 Ver na Logística</a>
             <a href="/dashboard/fiscal" style={{ background: "#92400e", color: "#fff", padding: "10px 20px", borderRadius: 8, textDecoration: "none", fontWeight: 700, fontSize: 13 }}>💸 Ver Tributos</a>
             <a href="/dashboard/dre" style={{ background: "#6d28d9", color: "#fff", padding: "10px 20px", borderRadius: 8, textDecoration: "none", fontWeight: 700, fontSize: 13 }}>📊 Ver DRE</a>
