@@ -8,6 +8,7 @@ const MENU = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/dashboard/ajuda", label: "Ajuda com IA", icon: "🤖" },
   { s: "OPERACIONAL" },
+  { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato (auto)", icon: "📋" },
   { href: "/dashboard/clientes", label: "Clientes", icon: "🤝" },
   { href: "/dashboard/fornecedores", label: "Fornecedores", icon: "📦" },
   { href: "/dashboard/propostas", label: "Propostas + PDF", icon: "📄" },

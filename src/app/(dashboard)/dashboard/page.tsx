@@ -127,7 +127,7 @@ export default function DashboardPage() {
         </div>
         <div style={{ background: "linear-gradient(135deg, #0f5233 0%, #1a7a4a 100%)", borderRadius: 12, padding: 16, color: "#fff" }}>
           <h3 style={{ fontSize: 13, marginBottom: 12 }}>🚀 Acesso rápido</h3>
-          {[["💼 Apurar tributos", "/dashboard/fiscal", "#dcfce7", "#0f5233"], ["📄 Nova proposta + PDF", "/dashboard/propostas", "#dcfce7", "#0f5233"], ["🔍 Buscar licitações", "/dashboard/radar-licitacoes", "#dcfce7", "#0f5233"], ["📋 Relatório contador", "/dashboard/relatorio-contador", "#dcfce7", "#0f5233"], ["🤖 Ajuda com IA", "/dashboard/ajuda", "#dcfce7", "#0f5233"]].map(([l, h, bg, co]) => (
+          {[["⚡ Novo Contrato (impacto auto)", "/dashboard/novo-contrato", "#fff", "#fbbf24"], ["💼 Apurar tributos", "/dashboard/fiscal", "#dcfce7", "#0f5233"], ["📄 Nova proposta + PDF", "/dashboard/propostas", "#dcfce7", "#0f5233"], ["🔍 Buscar licitações", "/dashboard/radar-licitacoes", "#dcfce7", "#0f5233"], ["🚛 Logística semana", "/dashboard/logistica", "#dcfce7", "#0f5233"], ["🤖 Ajuda com IA", "/dashboard/ajuda", "#dcfce7", "#0f5233"]].map(([l, h, bg, co]) => (
             <a key={h} href={h} style={{ display: "block", background: "rgba(255,255,255,.15)", borderRadius: 8, padding: "8px 12px", marginBottom: 6, textDecoration: "none", color: "#fff", fontSize: 12, fontWeight: 600 }}>{l}</a>
           ))}
         </div>
