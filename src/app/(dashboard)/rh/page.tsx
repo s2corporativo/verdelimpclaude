@@ -8,7 +8,10 @@ export default function RHPage() {
   const folha = data.reduce((s:number,e:any)=>s+Number(e.salary),0);
   const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
   return (<div>
-    <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,marginBottom:14}}>RH & Folha {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+    <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:0}}>RH & Folha {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <div style={{display:"flex",gap:8}}><a href="/dashboard/mobilizacoes" style={{background:"#e8f5ee",color:"#0f5233",padding:"7px 14px",borderRadius:8,textDecoration:"none",fontWeight:600,fontSize:12}}>🦺 Ver Mobilizações</a><a href="/dashboard/treinamentos" style={{background:"#f3e8ff",color:"#6d28d9",padding:"7px 14px",borderRadius:8,textDecoration:"none",fontWeight:600,fontSize:12}}>🎓 Treinamentos/NRs</a><a href="/dashboard/folha-detalhada" style={{background:"#dbeafe",color:"#1d4ed8",padding:"7px 14px",borderRadius:8,textDecoration:"none",fontWeight:600,fontSize:12}}>📊 Folha Detalhada</a></div>
+    </div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
       {[["Colaboradores",data.length+"","👷","#1d4ed8"],["Folha Bruta","R$"+fmt(folha),"💰","#1a7a4a"],["FGTS (8%)","R$"+fmt(folha*0.08),"🏦","#7c3aed"],["INSS Patronal (7%)","R$"+fmt(folha*0.07),"🏛️","#d97706"]].map(([l,v,i,c])=>(
         <div key={l} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:"3px solid "+c}}>

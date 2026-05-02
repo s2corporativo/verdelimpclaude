@@ -5,6 +5,32 @@ export default function RadarPage() {
   const [itens,setItens]=useState<any[]>([]);const [loading,setLoading]=useState(false);
   const [analise,setAnalise]=useState<Record<string,string>>({});const [analisando,setAnalisando]=useState<string|null>(null);
   const [demo,setDemo]=useState(false);const [busca,setBusca]=useState("roçada paisagismo");
+  const [addedToPipeline,setAddedToPipeline]=useState<Record<string,boolean>>({});
+
+  const adicionarPipeline = async (item:any, idx:number) => {
+    const key = String(idx);
+    try {
+      const r = await fetch("/api/bid-pipeline",{ method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          titulo: (item.objetoCompra||item.descricaoObjeto||"").substring(0,120),
+          orgao: item.nomeUnidade||item.nomeEntidade||"",
+          objeto: item.objetoCompra||item.descricaoObjeto||"",
+          valorEstimado: item.valorEstimado||0,
+          dataAbertura: item.dataAberturaOferta||item.dataPublicacao||null,
+          modalidade: item.modalidadeNome||null,
+          stage: "monitorando",
+          prioridade: "media",
+          probabilidade: 30,
+          municipio: item.municipio||null,
+          uf: item.uf||null,
+          url: item.linkSistemaOrigem||null,
+          pncpId: item.numeroPncp||null,
+        })
+      });
+      const d = await r.json();
+      if(d.success || d.bid) setAddedToPipeline(p=>({...p,[key]:true}));
+    } catch(e){ console.error(e); }
+  };
   const fmt=(v:number)=>v.toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0});
   const buscarEditais=async()=>{
     setLoading(true);
@@ -54,6 +80,10 @@ export default function RadarPage() {
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>analisarComIA(item,i)} disabled={analisando===key} style={{background:analisando===key?"#6b7280":"#7c3aed",color:"#fff",border:"none",padding:"6px 14px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>{analisando===key?"⟳ Analisando...":"🤖 Analisar com IA"}</button>
           {item.linkSistemaOrigem&&<a href={item.linkSistemaOrigem} target="_blank" rel="noopener noreferrer" style={{background:"#f3f4f6",color:"#374151",padding:"6px 14px",borderRadius:7,textDecoration:"none",fontSize:11,fontWeight:600}}>🔗 Ver edital</a>}
+          {addedToPipeline[key]
+            ? <span style={{background:"#dcfce7",color:"#15803d",padding:"6px 14px",borderRadius:7,fontSize:11,fontWeight:700}}>✅ No pipeline</span>
+            : <button onClick={()=>adicionarPipeline(item,i)} style={{background:"#0f5233",color:"#fff",border:"none",padding:"6px 14px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>🏆 → Pipeline</button>
+          }
         </div>
       </div>);
     })}

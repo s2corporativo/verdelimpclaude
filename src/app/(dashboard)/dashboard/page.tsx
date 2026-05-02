@@ -2,32 +2,96 @@
 "use client";
 import { useEffect, useState } from "react";
 
-function Grafico({ meses }: { meses: any[] }) {
+function Grafico({ meses, tendencia }: { meses: any[], tendencia?: number }) {
+  const [ativo, setAtivo] = useState<"barras"|"margem">("barras");
   if (!meses?.length) return null;
-  const max = Math.max(...meses.map((m: any) => m.faturamento));
-  const fmt = (v: number) => v >= 1000 ? (v / 1000).toFixed(0) + "k" : String(v);
+  const fmt = (v: number) => v >= 1000000 ? "R$"+(v/1000000).toFixed(1)+"M" : v >= 1000 ? "R$"+(v/1000).toFixed(0)+"k" : "R$"+v;
+  const fmtPct = (v: number) => (v >= 0 ? "+" : "")+v+"%";
+
+  // Gráfico de barras empilhadas
+  const maxFat = Math.max(...meses.map((m:any) => m.faturamento), 1);
+  const maxMarg = Math.max(...meses.map((m:any) => Math.abs(m.margem||0)), 1);
+  const ultMes = meses[meses.length-1];
+  const penMes = meses[meses.length-2];
+  const varFat = penMes?.faturamento > 0 ? Math.round(((ultMes.faturamento - penMes.faturamento)/penMes.faturamento)*100) : 0;
+
   return (
     <div>
-      <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>📈 Faturamento × Tributos × Despesas (6 meses)</h3>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 120, padding: "0 4px" }}>
-        {meses.map((m: any, i: number) => (
-          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 2, justifyContent: "flex-end" }}>
-              <div style={{ height: max > 0 ? `${(m.faturamento / max) * 90}px` : "4px", background: "#1a7a4a", borderRadius: "3px 3px 0 0", minHeight: 4, title: "Faturamento" }} title={`Fat: R$${m.faturamento.toLocaleString("pt-BR")}`} />
-              <div style={{ height: max > 0 ? `${(m.tributos / max) * 90}px` : "2px", background: "#fbbf24", borderRadius: "3px 3px 0 0", minHeight: 2 }} title={`Trib: R$${m.tributos.toLocaleString("pt-BR")}`} />
-              <div style={{ height: max > 0 ? `${(m.despesas / max) * 90}px` : "2px", background: "#f87171", borderRadius: "3px 3px 0 0", minHeight: 2 }} title={`Desp: R$${m.despesas.toLocaleString("pt-BR")}`} />
-            </div>
-            <span style={{ fontSize: 9, color: "#9ca3af", marginTop: 3 }}>{m.mes?.slice(5)}</span>
-          </div>
-        ))}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, flexWrap:"wrap", gap:8 }}>
+        <div>
+          <h3 style={{ color:"#0f5233", fontSize:13, fontWeight:700, margin:0 }}>📈 Desempenho Financeiro — 12 meses</h3>
+          {tendencia !== undefined && (
+            <span style={{ fontSize:11, color: tendencia >= 0 ? "#15803d" : "#dc2626", fontWeight:600 }}>
+              {tendencia >= 0 ? "▲" : "▼"} {Math.abs(tendencia)}% vs trimestre anterior
+            </span>
+          )}
+        </div>
+        <div style={{ display:"flex", gap:6 }}>
+          {(["barras","margem"] as const).map(t => (
+            <button key={t} onClick={()=>setAtivo(t)}
+              style={{ background: ativo===t?"#0f5233":"#f3f4f6", color: ativo===t?"#fff":"#374151", border:"none", padding:"4px 10px", borderRadius:6, cursor:"pointer", fontSize:10, fontWeight:600 }}>
+              {t === "barras" ? "📊 Faturamento" : "📉 Margem %"}
+            </button>
+          ))}
+        </div>
       </div>
-      <div style={{ display: "flex", gap: 14, marginTop: 8, fontSize: 10 }}>
-        {[["#1a7a4a", "Faturamento"], ["#fbbf24", "Tributos"], ["#f87171", "Despesas"]].map(([c, l]) => (
-          <div key={l} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 10, height: 10, background: c, borderRadius: 2 }} /><span style={{ color: "#6b7280" }}>{l}</span>
+
+      {ativo === "barras" && (
+        <div>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:3, height:130, paddingBottom:4 }}>
+            {meses.map((m:any, i:number) => (
+              <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center" }}>
+                <div style={{ width:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-end", height:110, gap:1 }}>
+                  <div style={{ background:"#f87171", height: maxFat > 0 ? `${(m.tributos/maxFat)*105}px` : "1px", minHeight:1, borderRadius:"1px 1px 0 0" }} title={`Tributos: ${fmt(m.tributos)}`}/>
+                  <div style={{ background:"#fb923c", height: maxFat > 0 ? `${(m.despesas/maxFat)*105}px` : "1px", minHeight:1 }} title={`Despesas: ${fmt(m.despesas)}`}/>
+                  <div style={{ background:"#1a7a4a", height: maxFat > 0 ? `${(m.margem>0?m.margem/maxFat:0)*105}px` : "1px", minHeight:1 }} title={`Margem: ${fmt(m.margem)}`}/>
+                </div>
+                <span style={{ fontSize:8, color:"#9ca3af", marginTop:2, textAlign:"center", lineHeight:1 }}>{m.label||m.mes?.slice(5)}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+          <div style={{ display:"flex", gap:12, marginTop:6, fontSize:9, flexWrap:"wrap" }}>
+            {[["#f87171","Tributos"],["#fb923c","Despesas op."],["#1a7a4a","Margem líquida"]].map(([c,l])=>(
+              <div key={l} style={{ display:"flex", alignItems:"center", gap:3 }}>
+                <div style={{ width:8, height:8, background:c, borderRadius:1 }}/><span style={{ color:"#6b7280" }}>{l}</span>
+              </div>
+            ))}
+          </div>
+          {/* Linha de valores no rodapé */}
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:10, padding:"8px 10px", background:"#f9fafb", borderRadius:8, fontSize:11, flexWrap:"wrap", gap:6 }}>
+            <span>Faturado (mês): <strong style={{ color:"#0f5233" }}>{fmt(ultMes.faturamento)}</strong></span>
+            <span>Tributos: <strong style={{ color:"#dc2626" }}>{fmt(ultMes.tributos)}</strong></span>
+            <span>Despesas: <strong style={{ color:"#d97706" }}>{fmt(ultMes.despesas)}</strong></span>
+            <span>Margem: <strong style={{ color: ultMes.margemPct >= 20 ? "#15803d" : ultMes.margemPct >= 10 ? "#d97706" : "#dc2626" }}>{fmt(ultMes.margem)} ({ultMes.margemPct}%)</strong></span>
+            <span style={{ color: varFat >= 0 ? "#15803d" : "#dc2626", fontWeight:600 }}>MoM: {fmtPct(varFat)}</span>
+          </div>
+        </div>
+      )}
+
+      {ativo === "margem" && (
+        <div>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:3, height:130, paddingBottom:4 }}>
+            {meses.map((m:any, i:number) => {
+              const pct = m.margemPct || 0;
+              const cor = pct >= 30 ? "#15803d" : pct >= 20 ? "#65a30d" : pct >= 10 ? "#d97706" : "#dc2626";
+              return (
+                <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center" }}>
+                  <div style={{ fontSize:7, color:cor, fontWeight:700, marginBottom:1 }}>{pct}%</div>
+                  <div style={{ width:"100%", background:cor, height:`${Math.max(pct/50*100, 3)}px`, minHeight:3, borderRadius:"2px 2px 0 0" }} title={`Margem ${pct}%: ${fmt(m.margem)}`}/>
+                  <span style={{ fontSize:8, color:"#9ca3af", marginTop:2, textAlign:"center", lineHeight:1 }}>{m.label||m.mes?.slice(5)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display:"flex", gap:10, marginTop:8, fontSize:9 }}>
+            {[["#15803d","≥30%"],["#65a30d","20-29%"],["#d97706","10-19%"],["#dc2626","<10%"]].map(([c,l])=>(
+              <div key={l} style={{ display:"flex", alignItems:"center", gap:3 }}>
+                <div style={{ width:8, height:8, background:c, borderRadius:2 }}/><span style={{ color:"#6b7280" }}>{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -48,6 +112,7 @@ export default function DashboardPage() {
   const [dados, setDados] = useState<any>({});
   const [fiscal, setFiscal] = useState<any>({});
   const [graficos, setGraficos] = useState<any[]>([]);
+  const [tendencia, setTendencia] = useState<number>(0);
   const [demo, setDemo] = useState(false);
   const fmt = (v: number) => (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -57,7 +122,7 @@ export default function DashboardPage() {
       fetch("/api/fiscal/dashboard").then(r => r.json()).catch(() => ({})),
       fetch("/api/dashboard/graficos").then(r => r.json()).catch(() => ({ meses: [] })),
     ]).then(([d, f, g]) => {
-      setDados(d); setFiscal(f); setGraficos(g.meses || []); setDemo(!!d._demo || !!f._demo);
+      setDados(d); setFiscal(f); setGraficos(g.meses || []); setTendencia(g.tendencia || 0); setDemo(!!d._demo || !!f._demo);
     });
   }, []);
 
@@ -96,7 +161,7 @@ export default function DashboardPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, marginBottom: 14 }}>
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-          <Grafico meses={graficos} />
+          <Grafico meses={graficos} tendencia={tendencia} />
         </div>
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
           <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>📅 Próximos vencimentos</h3>

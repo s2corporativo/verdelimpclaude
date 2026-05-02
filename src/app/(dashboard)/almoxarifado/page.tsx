@@ -10,6 +10,17 @@ export default function AlmoxarifadoPage() {
     fetch("/api/almoxarifado").then(r=>r.json()).then(d=>{setData(d.data||[]);setStats({total:d.total||0,criticos:d.criticos||0,valorEstoque:d.valorEstoque||0});setDemo(!!d._demo);});
   },[]);
   const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
+  const [showMov, setShowMov] = useState(false);
+  const [movItem, setMovItem] = useState<any>(null);
+  const [movForm, setMovForm] = useState({tipo:"entrada",quantidade:"",motivo:""});
+  const registrarMov = async () => {
+    if(!movItem||!movForm.quantidade) return;
+    await fetch("/api/almoxarifado",{ method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"movimentar", itemId:movItem.id, ...movForm, quantidade:Number(movForm.quantidade) })
+    });
+    setShowMov(false); setMovForm({tipo:"entrada",quantidade:"",motivo:""});
+    fetch("/api/almoxarifado").then(r=>r.json()).then(d=>{setData(d.data||[]);setStats({total:d.total||0,criticos:d.criticos||0,valorEstoque:d.valorEstoque||0});setDemo(!!d._demo);});
+  };
   const filtrados = data.filter((i:any)=>!busca||i.description.toLowerCase().includes(busca.toLowerCase())||i.internalCode.toLowerCase().includes(busca.toLowerCase()));
   const STATUS_COLORS:any={regular:["#dcfce7","#15803d"],atencao:["#fef9c3","#92400e"],critico:["#fee2e2","#991b1b"],em_uso:["#dbeafe","#1e40af"],manutencao:["#f3e8ff","#7e22ce"]};
   return (<div>
@@ -39,8 +50,14 @@ export default function AlmoxarifadoPage() {
           <td style={{padding:"8px 12px",fontSize:11,color:"#6b7280"}}>{Number(i.minimumStock).toFixed(0)}</td>
           <td style={{padding:"8px 12px"}}>R${fmt(Number(i.averageCost))}</td>
           <td style={{padding:"8px 12px"}}><span style={{background:(isAbaixo?STATUS_COLORS.critico:sc)[0],color:(isAbaixo?STATUS_COLORS.critico:sc)[1],padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{isAbaixo?"Crítico":i.status}</span></td>
+          <td style={{padding:"8px 12px"}}>
+            <button onClick={()=>{setMovItem(i);setShowMov(true);}} style={{background:"#e8f5ee",color:"#0f5233",border:"none",padding:"4px 10px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700}}>± Mover</button>
+          </td>
         </tr>;
       })}</tbody>
     </table>
   </div>);
+}
+// Nota: esta versão mostra apenas leitura.
+// Para registrar entradas/saídas, use o módulo de Movimentações abaixo.
 }
