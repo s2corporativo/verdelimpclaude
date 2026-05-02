@@ -22,6 +22,8 @@ const MENU = [
   { href: "/dashboard/precificacao-regras", label: "Tabela de Preços", icon: "💲" },
   { href: "/dashboard/proposta-edital", label: "Proposta por Edital IA", icon: "📋" },
   { s: "CAMPO" },
+  { href: "/dashboard/retro", label: "Retroescavadeira", icon: "🚜" },
+  { href: "/dashboard/detetizacao", label: "Dedetização", icon: "🪲" },
   { href: "/dashboard/logistica", label: "Logística Operacional", icon: "🚛" },
   { href: "/dashboard/diario-obras", label: "Diário de Obras", icon: "📝" },
   { href: "/dashboard/historico-servicos", label: "Histórico Serviços", icon: "🗂️" },

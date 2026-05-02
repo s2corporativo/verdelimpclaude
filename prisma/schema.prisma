@@ -729,3 +729,122 @@ model BidPipeline {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
+
+
+// ═══ RETROESCAVADEIRA — SERVIÇOS (Módulo Retro) ══════════════════
+model RetroJob {
+  id              String    @id @default(cuid())
+  numero          String    @unique
+  clienteNome     String
+  clienteId       String?
+  tipoServico     String    // "Terraplanagem" | "Drenagem" | "Valetamento" | etc.
+  endereco        String?
+  municipio       String?
+  uf              String?
+  contratoId      String?
+  areaM2          Decimal?  @db.Decimal(15,2)
+  volumeM3        Decimal?  @db.Decimal(15,2)
+  horasEstimadas  Decimal?  @db.Decimal(8,2)
+  horasRealizadas Decimal?  @db.Decimal(8,2)
+  distanciaKm     Decimal?  @db.Decimal(8,2)   // distância da base
+  dataInicio      DateTime?
+  dataFim         DateTime?
+  status          String    @default("orcamento") // orcamento|agendado|em_execucao|concluido|cancelado
+  // Custos realizados
+  custoTotal      Decimal?  @db.Decimal(15,2)
+  valorCobrado    Decimal?  @db.Decimal(15,2)
+  margemReal      Decimal?  @db.Decimal(5,2)
+  // Viabilidade
+  precoMinimo     Decimal?  @db.Decimal(15,2)
+  precoIdeal      Decimal?  @db.Decimal(15,2)
+  viavel          Boolean   @default(true)
+  observacoes     String?
+  artNumero       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  despesas        RetroJobDespesa[]
+}
+
+model RetroJobDespesa {
+  id          String   @id @default(cuid())
+  retroJobId  String
+  retroJob    RetroJob @relation(fields: [retroJobId], references: [id])
+  tipo        String   // "combustivel" | "operador" | "depreciacao" | "transporte" | "manutencao" | "seguro" | "art" | "outro"
+  descricao   String
+  valor       Decimal  @db.Decimal(15,2)
+  unidade     String   @default("vb") // h|km|vb|un|L
+  quantidade  Decimal  @db.Decimal(10,3) @default(1)
+  createdAt   DateTime @default(now())
+}
+
+model RetroConfig {
+  id                   String  @id @default(cuid())
+  custoHoraCombustivel Decimal @db.Decimal(10,2) @default(45)   // diesel/h
+  custoHoraOperador    Decimal @db.Decimal(10,2) @default(32)   // CLT+encargos/h
+  custoHoraDepreciacao Decimal @db.Decimal(10,2) @default(28)   // valor/vida útil
+  custoHoraManutencao  Decimal @db.Decimal(10,2) @default(15)   // preventiva media
+  custoHoraSeguro      Decimal @db.Decimal(10,2) @default(8)    // seguro/h
+  custoKmTransporte    Decimal @db.Decimal(10,2) @default(8)    // truck+baixa-carga km
+  margemAlvo           Decimal @db.Decimal(5,2)  @default(25)   // % sobre custo
+  updatedAt            DateTime @updatedAt @default(now())
+}
+
+// ═══ DEDETIZAÇÃO — CONTROLE DE PRAGAS (Novo Serviço) ════════════
+model DedetJob {
+  id             String    @id @default(cuid())
+  numero         String    @unique
+  clienteNome    String
+  clienteId      String?
+  tipoServico    String    // "Desinsetizacao"|"Desratizacao"|"Descupinizacao"|"Geral"|"Controle Formigas"
+  endereco       String
+  municipio      String?
+  uf             String?
+  areaM2         Decimal?  @db.Decimal(15,2)
+  ambientes      String?   // "cozinha,banheiro,deposito..."
+  infestacaoNivel String   @default("leve") // leve|moderado|grave
+  dataAplicacao  DateTime?
+  dataRetorno    DateTime?  // retorno obrigatório
+  status         String    @default("orcamento")
+  valorCobrado   Decimal?  @db.Decimal(15,2)
+  custoTotal     Decimal?  @db.Decimal(15,2)
+  // Técnico responsável
+  tecnicoId      String?
+  tecnicoNome    String?
+  artNumero      String?
+  // Certificado emitido
+  certificadoEmitido  Boolean @default(false)
+  certificadoDataVal  DateTime?
+  observacoes    String?
+  garantiaDias   Int       @default(90)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  produtos       DedetProduto[]
+}
+
+model DedetProduto {
+  id            String   @id @default(cuid())
+  dedetJobId    String
+  dedetJob      DedetJob @relation(fields: [dedetJobId], references: [id])
+  nomeComercial String
+  principioAtivo String
+  registroAnvisa String?
+  concentracao  String?
+  dosagemUsada  String?
+  quantidadeL   Decimal  @db.Decimal(8,3)
+  custoUnitario Decimal  @db.Decimal(10,2)
+  createdAt     DateTime @default(now())
+}
+
+model DedetProdutoCatalogo {
+  id             String  @id @default(cuid())
+  nomeComercial  String
+  principioAtivo String
+  registroAnvisa String  @unique
+  fabricante     String?
+  tipo           String  // "inseticida"|"rodenticida"|"termicida"|"gel"|"fumigante"
+  alvosPrincipais String  // "baratas,formigas,mosquitos"
+  concentracao   String?
+  custoLitro     Decimal @db.Decimal(10,2) @default(0)
+  ativo          Boolean @default(true)
+  createdAt      DateTime @default(now())
+}
