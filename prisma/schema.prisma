@@ -405,6 +405,7 @@ model InventoryItem {
   serialNumber    String?
   status          String            @default("regular")
   active          Boolean           @default(true)
+  deletedAt       DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -419,6 +420,7 @@ model InventoryMovement {
   quantity     Decimal       @db.Decimal(15,3)
   unitCost     Decimal       @db.Decimal(15,2) @default(0)
   movementDate DateTime      @default(now())
+  employeeId   String?
   reason       String
   notes        String?
   createdAt    DateTime      @default(now())
@@ -481,6 +483,7 @@ model Contract {
   client        Client?  @relation(fields: [clientId], references: [id])
   object        String
   value         Decimal  @db.Decimal(15,2)
+  monthlyValue  Decimal  @db.Decimal(15,2) @default(0)
   startDate     DateTime
   endDate       DateTime
   status        String   @default("Ativo") // Ativo | Encerrado | Suspenso | Renovando

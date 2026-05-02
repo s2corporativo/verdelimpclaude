@@ -37,6 +37,7 @@ const MENU = [
   { href: "/dashboard/radar-licitacoes", label: "Radar Licitações", icon: "🏛️" },
   { href: "/dashboard/regularidade", label: "Regularidade Fiscal", icon: "🔎" },
   { s: "SISTEMA" },
+  { href: "/dashboard/alterar-senha", label: "Alterar Senha", icon: "🔐" },
   { href: "/dashboard/integracoes", label: "Integrações", icon: "🔌" },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: "⚙️" },
 ];

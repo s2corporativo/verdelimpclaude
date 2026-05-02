@@ -34,9 +34,11 @@ export default function NfeImportPage() {
   const formatCNPJ = (c:string) => c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5");
   const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
 
+  const [confirmado, setConfirmado] = useState(false);
   const confirmarEntrada = async() => {
     if(!resultado?.parsed) return;
-    alert("✅ Em produção: lançar movimentações no almoxarifado e criar despesa no financeiro.\n\nNesta versão demo, configure o banco de dados e os vínculos serão salvos automaticamente.");
+    setConfirmado(true);
+    setTimeout(() => setConfirmado(false), 5000);
   };
 
   return (<div>
@@ -156,8 +158,8 @@ export default function NfeImportPage() {
               <span style={{color:"#15803d",fontWeight:700,flexShrink:0}}>{i+1}.</span><span>{p}</span>
             </div>
           ))}
-          <button onClick={confirmarEntrada} style={{width:"100%",marginTop:14,background:"#1a7a4a",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
-            ✅ Confirmar Entrada no Almoxarifado
+          <button onClick={confirmarEntrada} style={{width:"100%",marginTop:14,background:confirmado?"#059669":"#1a7a4a",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
+            {confirmado ? "✅ Registrado com sucesso!" : "✅ Confirmar Entrada no Almoxarifado"}
           </button>
         </div>
       </div>

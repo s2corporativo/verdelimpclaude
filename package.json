@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "prisma:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
-    "prisma:reset": "npx prisma db push --force-reset && npm run prisma:seed",
-    "postinstall": "prisma generate"
+    "prisma:reset": "npx prisma db push --force-reset && npm run prisma:seed"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
