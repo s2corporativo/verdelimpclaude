@@ -32,6 +32,7 @@ const MENU = [
   { href: "/dashboard/relatorio-contador", label: "Relatório Contador", icon: "📊" },
   { s: "RH & SEGURANÇA" },
   { href: "/dashboard/rh", label: "RH & Folha", icon: "👷" },
+  { href: "/dashboard/mobilizacoes", label: "Mobilizações", icon: "🦺" },
   { href: "/dashboard/treinamentos", label: "NRs e Treinamentos", icon: "🦺" },
   { href: "/dashboard/folha-detalhada", label: "Folha INSS/IRRF", icon: "📑" },
   { href: "/dashboard/whatsapp", label: "WhatsApp Alertas", icon: "📱" },
