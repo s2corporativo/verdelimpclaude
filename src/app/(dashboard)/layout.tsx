@@ -11,6 +11,10 @@ const MENU = [
   { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato (auto)", icon: "📋" },
   { href: "/dashboard/clientes", label: "Clientes", icon: "🤝" },
   { href: "/dashboard/fornecedores", label: "Fornecedores", icon: "📦" },
+
+  { s: "COMERCIAL" },
+  { href: "/dashboard/pipeline", label: "Pipeline Licitações", icon: "🏆" },
+  { href: "/dashboard/precificacao-bdi", label: "Precificação BDI", icon: "🧮" },
   { href: "/dashboard/propostas", label: "Propostas + PDF", icon: "📄" },
   { href: "/dashboard/contratos", label: "Contratos", icon: "📋" },
   { href: "/dashboard/medicao", label: "Medição Mensal", icon: "📏" },
@@ -21,6 +25,7 @@ const MENU = [
   { href: "/dashboard/logistica", label: "Logística Operacional", icon: "🚛" },
   { href: "/dashboard/diario-obras", label: "Diário de Obras", icon: "📝" },
   { href: "/dashboard/historico-servicos", label: "Histórico Serviços", icon: "🗂️" },
+  { href: "/dashboard/equipamentos", label: "Equipamentos", icon: "🔧" },
   { href: "/dashboard/combustivel", label: "Combustível", icon: "⛽" },
   { href: "/dashboard/almoxarifado", label: "Almoxarifado", icon: "🏭" },
   { href: "/dashboard/epi", label: "Controle de EPI", icon: "🦺" },

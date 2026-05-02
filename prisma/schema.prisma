@@ -496,6 +496,7 @@ model Contract {
   updatedAt     DateTime @updatedAt
   measurements  Measurement[]
   fuelLogs      FuelLog[]
+  photos        ServicePhoto[]
 }
 
 // ═══ COMBUSTÍVEL ═════════════════════════════════════════════════
@@ -631,4 +632,100 @@ model Mobilization {
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+
+// ═══ FOTOS DE OS — ANTES/DEPOIS (Item 2) ════════════════════════
+model ServicePhoto {
+  id           String    @id @default(cuid())
+  workDiaryId  String?
+  workDiary    WorkDiary? @relation(fields: [workDiaryId], references: [id])
+  contractId   String?
+  contract     Contract? @relation(fields: [contractId], references: [id])
+  tipo         String    // "antes" | "depois" | "ocorrencia" | "equipe"
+  url          String    // URL ou base64
+  descricao    String?
+  latitude     Float?
+  longitude    Float?
+  tamanhoKb    Int?
+  createdBy    String?
+  createdAt    DateTime  @default(now())
+}
+
+// ═══ PORTAL DO CLIENTE — TOKEN DE ACESSO (Item 5) ═══════════════
+model ClientPortalToken {
+  id         String   @id @default(cuid())
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id])
+  token      String   @unique @default(cuid())
+  expiresAt  DateTime
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+
+// ═══ GESTÃO DE EQUIPAMENTOS (Item 6) ════════════════════════════
+model Equipment {
+  id             String    @id @default(cuid())
+  codigo         String    @unique
+  descricao      String
+  tipo           String    // "Roçadeira" | "Motosserra" | "Veiculo" | "Bomba" | "Outro"
+  marca          String?
+  modelo         String?
+  anoFabricacao  Int?
+  numeroProprio  String?   // patrimônio ou placa
+  status         String    @default("operacional") // operacional | manutencao | inativo
+  localAtual     String?
+  contratoId     String?
+  valorAquisicao Decimal?  @db.Decimal(15,2)
+  dataAquisicao  DateTime?
+  vidaUtilMeses  Int?
+  horasUso       Int       @default(0)
+  proximaRevisao DateTime?
+  ativo          Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  manutencoes    EquipmentMaintenance[]
+}
+
+model EquipmentMaintenance {
+  id             String    @id @default(cuid())
+  equipmentId    String
+  equipment      Equipment @relation(fields: [equipmentId], references: [id])
+  tipo           String    // "preventiva" | "corretiva" | "revisao"
+  descricao      String
+  dataRealizada  DateTime?
+  dataAgendada   DateTime
+  custo          Decimal?  @db.Decimal(15,2)
+  fornecedor     String?
+  status         String    @default("agendada") // agendada | realizada | cancelada
+  observacoes    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// ═══ PIPELINE DE LICITAÇÕES CRM (Item 12) ═══════════════════════
+model BidPipeline {
+  id             String    @id @default(cuid())
+  titulo         String
+  orgao          String
+  editalNumero   String?
+  objeto         String
+  valorEstimado  Decimal?  @db.Decimal(15,2)
+  dataAbertura   DateTime?
+  dataLimite     DateTime?
+  modalidade     String?
+  stage          String    @default("monitorando")
+  prioridade     String    @default("media")
+  probabilidade  Int       @default(50) // 0-100%
+  municipio      String?
+  uf             String?
+  url            String?
+  pncpId         String?
+  proposalId     String?
+  contratoId     String?
+  responsavel    String?
+  notas          String?
+  perdaMotivo    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }

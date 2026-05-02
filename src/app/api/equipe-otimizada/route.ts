@@ -1,208 +1,138 @@
 // src/app/api/equipe-otimizada/route.ts
-// Calcula 3 cenários de equipe para o contrato
-// Identifica qualificações requeridas e funcionários compatíveis
-// Otimização para reduzir custo mantendo viabilidade
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// Salário médio por função (mercado MG, 2026)
-const SALARIO_FUNCAO: Record<string, number> = {
-  "Supervisor de Obras": 3500,
-  "Supervisora de Obras": 3500,
-  "Supervisor": 3500,
-  "Operador de Roçadeira": 2500,
-  "Operador de Retroescavadeira": 3200,
-  "Motorista": 2800,
-  "Auxiliar de Jardinagem": 2200,
-  "Jardineiro": 2400,
-  "Assistente Administrativa": 2600,
-  "Assistente Administrativo": 2600,
+const PRODUTIVIDADE_M2_DIA: Record<string, number> = {
+  "Roçada Manual": 800, "Roçada Mecanizada": 2500, "Jardinagem Mensal": 1200,
+  "PRADA/PTRF": 600, "Limpeza": 1500, "Podação": 200,
+  "Hidrossemeadura": 5000, "Controle de Formigas": 3000, "Outro": 1000,
 };
-
-// Qualificações requeridas por tipo de serviço
-const QUALIFICACOES: Record<string, { obrigatorias: string[]; recomendadas: string[]; }> = {
-  "Roçada Manual": { obrigatorias: ["NR-06"], recomendadas: ["NR-12"] },
-  "Roçada Mecanizada": { obrigatorias: ["NR-06","NR-12"], recomendadas: ["NR-35"] },
-  "Jardinagem Mensal": { obrigatorias: ["NR-06"], recomendadas: [] },
-  "PRADA/PTRF": { obrigatorias: ["NR-06","NR-35"], recomendadas: ["NR-12"] },
-  "Limpeza": { obrigatorias: ["NR-06"], recomendadas: [] },
-  "Podação": { obrigatorias: ["NR-06","NR-35"], recomendadas: ["NR-12"] },
-  "Hidrossemeadura": { obrigatorias: ["NR-06"], recomendadas: [] },
-  "Controle de Formigas": { obrigatorias: ["NR-06","NR-31"], recomendadas: [] },
-  "Outro": { obrigatorias: ["NR-06"], recomendadas: [] },
+const SALARIO_POR_FUNCAO: Record<string, number> = {
+  "Supervisor": 3500, "Supervisora de Obras": 3500, "Operador de Roçadeira": 2500,
+  "Operador de Retroescavadeira": 3200, "Jardineiro": 2400, "Auxiliar de Jardinagem": 2200,
+  "Motorista": 2800, "Pedreiro": 2700, "Líder": 2900, "Ajudante": 2100,
 };
-
-// Produtividade m²/dia/pessoa
-const PRODUTIVIDADE: Record<string, number> = {
-  "Roçada Manual": 800,
-  "Roçada Mecanizada": 2500,
-  "Jardinagem Mensal": 1200,
-  "PRADA/PTRF": 600,
-  "Limpeza": 1500,
-  "Podação": 200,
-  "Hidrossemeadura": 5000,
-  "Controle de Formigas": 3000,
-  "Outro": 1000,
+const FUNCAO_PARA_SERVICO: Record<string, string[]> = {
+  "Roçada Manual": ["Operador de Roçadeira", "Auxiliar de Jardinagem", "Jardineiro", "Ajudante"],
+  "Roçada Mecanizada": ["Operador de Roçadeira", "Operador de Retroescavadeira", "Motorista"],
+  "Jardinagem Mensal": ["Jardineiro", "Auxiliar de Jardinagem", "Ajudante"],
+  "PRADA/PTRF": ["Operador de Roçadeira", "Auxiliar de Jardinagem"],
+  "Limpeza": ["Auxiliar de Jardinagem", "Ajudante"],
+  "Podação": ["Jardineiro", "Auxiliar de Jardinagem"],
+  "Hidrossemeadura": ["Operador de Roçadeira", "Auxiliar de Jardinagem"],
+  "Controle de Formigas": ["Auxiliar de Jardinagem", "Jardineiro"],
+  "Outro": ["Auxiliar de Jardinagem", "Jardineiro", "Operador de Roçadeira"],
 };
+const ENCARGOS = 0.7;
 
-const ENCARGOS_PCT = 0.70; // 70% encargos sobre salário (CLT + INSS patronal + FGTS + 13º + férias)
+function round(n: number, d = 0): number { const m = Math.pow(10, d); return Math.round(n * m) / m; }
+
+const DEMO_FUNCS = [
+  { id: "e2", nome: "Ana Luiza Ribeiro", funcao: "Supervisora de Obras", salario: 3500, treinamentos: ["NR-06","NR-35"], contratosAtivos: 0, contratosNomes: [], compativel: true, ehSupervisor: true },
+  { id: "e1", nome: "Abrão Felipe", funcao: "Operador de Roçadeira", salario: 2500, treinamentos: ["NR-06","NR-12"], contratosAtivos: 0, contratosNomes: [], compativel: true, ehSupervisor: false },
+  { id: "e3", nome: "Gilberto Ferreira", funcao: "Operador de Roçadeira", salario: 2400, treinamentos: ["NR-06","NR-12"], contratosAtivos: 0, contratosNomes: [], compativel: true, ehSupervisor: false },
+  { id: "e4", nome: "José Antonio Mariano", funcao: "Operador de Roçadeira", salario: 2500, treinamentos: ["NR-06","NR-12"], contratosAtivos: 1, contratosNomes: ["CONT-2025-001"], compativel: true, ehSupervisor: false },
+  { id: "e5", nome: "Leomar Souza", funcao: "Operador de Retroescavadeira", salario: 3200, treinamentos: ["NR-06","NR-12","NR-35"], contratosAtivos: 0, contratosNomes: [], compativel: true, ehSupervisor: false },
+  { id: "e6", nome: "Uanderson Nunes", funcao: "Auxiliar de Jardinagem", salario: 2200, treinamentos: ["NR-06"], contratosAtivos: 0, contratosNomes: [], compativel: true, ehSupervisor: false },
+  { id: "e7", nome: "Leonardo Souza", funcao: "Motorista", salario: 2800, treinamentos: ["NR-06","CNH categoria D"], contratosAtivos: 1, contratosNomes: ["CONT-2025-002"], compativel: false, ehSupervisor: false },
+];
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const c = body.contrato;
-    if (!c?.tipoServico || !c?.vigenciaMeses) {
-      return NextResponse.json({ error: "Tipo de serviço e vigência obrigatórios" }, { status: 400 });
+    const { contrato } = await req.json();
+    if (!contrato) return NextResponse.json({ error: "Contrato obrigatório" }, { status: 400 });
+
+    const tipoServico = contrato.tipoServico || "Outro";
+    const areaM2 = Number(contrato.areaM2) || 0;
+    const diasMes = Number(contrato.diasExecucao) || 4;
+    const vigenciaMeses = Number(contrato.vigenciaMeses) || 12;
+    const valorMensal = Number(contrato.valorMensal) || 0;
+    const prodDia = PRODUTIVIDADE_M2_DIA[tipoServico] || 1000;
+
+    const pessoasIdeais = areaM2 ? Math.ceil(areaM2 / (prodDia * diasMes)) : 3;
+    const minPessoas = Math.max(2, Math.ceil(pessoasIdeais * 0.7));
+    const recPessoas = Math.max(2, pessoasIdeais);
+    const confPessoas = Math.min(8, pessoasIdeais + 2);
+    const funcoesRecomendadas = FUNCAO_PARA_SERVICO[tipoServico] || ["Auxiliar de Jardinagem"];
+
+    function calcCenario(qtd: number, nome: string, descricao: string) {
+      const supervisor = 1, operacionais = qtd - 1;
+      const salSup = SALARIO_POR_FUNCAO["Supervisor"] || 3500;
+      const salOp = funcoesRecomendadas.reduce((s, f) => s + (SALARIO_POR_FUNCAO[f] || 2500), 0) / funcoesRecomendadas.length;
+      const folhaBruta = supervisor * salSup + operacionais * salOp;
+      const encargos = folhaBruta * ENCARGOS;
+      const custoMensalEquipe = folhaBruta + encargos;
+      const tempoNec = areaM2 ? Math.ceil(areaM2 / (qtd * prodDia)) : 0;
+      const margem = valorMensal - custoMensalEquipe;
+      const margemPct = valorMensal ? (margem / valorMensal) * 100 : 0;
+      return {
+        nome, descricao, qtdPessoas: qtd, supervisor, operacionais, funcoesRecomendadas,
+        folhaBruta: round(folhaBruta), encargos: round(encargos),
+        custoMensalEquipe: round(custoMensalEquipe),
+        custoTotalContrato: round(custoMensalEquipe * vigenciaMeses),
+        tempoNecessarioDias: tempoNec, dentroPrazo: !diasMes || tempoNec <= diasMes,
+        margem: round(margem), margemPct: round(margemPct, 1),
+        viabilidade: margemPct >= 25 ? "ótima" : margemPct >= 15 ? "boa" : margemPct >= 0 ? "apertada" : "prejuízo",
+      };
     }
 
-    const tipoServico = c.tipoServico;
-    const areaM2 = Number(c.areaM2) || 0;
-    const diasMes = Number(c.diasExecucao) || 4;
-    const vigencia = Number(c.vigenciaMeses);
-    const valorMensal = Number(c.valorMensal) || 0;
-    const prodDiaria = PRODUTIVIDADE[tipoServico] || 1000;
-    const qualReq = QUALIFICACOES[tipoServico] || QUALIFICACOES["Outro"];
+    const cenarios = [
+      calcCenario(minPessoas, "Mínima", "Equipe enxuta — máxima economia, prazo justo"),
+      calcCenario(recPessoas, "Recomendada", "Equilíbrio entre custo e produtividade"),
+      calcCenario(confPessoas, "Confortável", "Equipe robusta — folga para imprevistos"),
+    ];
+    const recomendado = cenarios.filter(c => c.dentroPrazo).sort((a, b) => b.margemPct - a.margemPct)[0] || cenarios[1];
 
-    // ── 1. Calcular equipe mínima necessária ──────────────────────
-    let pessoasMinimas = 2; // mínimo absoluto
-    if (areaM2 > 0 && diasMes > 0) {
-      pessoasMinimas = Math.ceil(areaM2 / (prodDiaria * diasMes));
-      if (pessoasMinimas < 2) pessoasMinimas = 2;
-    }
-
-    // ── 2. Buscar funcionários disponíveis ────────────────────────
-    let funcsAtivos: any[] = [];
+    let funcionariosSugeridos: any[] = [];
     try {
-      const list = await prisma.employee.findMany({
-        where: { active: true },
+      const allFuncs = await prisma.employee.findMany({
+        where: { active: true, status: "ativo" },
         include: {
-          trainings: { where: { status: { not: "vencido" } } },
-          mobilizations: { where: { status: "ativa" } },
+          trainings: { where: { status: "valido" } },
+          mobilizations: { where: { status: "ativa" }, include: { contract: { select: { number: true, object: true } } } },
         },
+        take: 30,
       });
-      funcsAtivos = list.map(f => ({
-        id: f.id,
-        name: f.name,
-        role: f.role,
-        salary: Number(f.salary),
-        cpf: f.cpf,
-        admissionDate: f.admissionDate,
-        treinamentos: f.trainings.map(t => t.trainingType),
-        mobilizacoesAtivas: f.mobilizations.length,
-        disponivel: f.mobilizations.length === 0,
-      }));
+      funcionariosSugeridos = allFuncs.map(f => {
+        const treinamentos = f.trainings.map((t: any) => t.trainingType);
+        const contratosAtivos = f.mobilizations.length;
+        const ehSup = f.role.toLowerCase().includes("supervisor") || f.role.toLowerCase().includes("líder");
+        const compativel = funcoesRecomendadas.some(fc => f.role.includes(fc.split(" ")[0]));
+        const score = (compativel ? 50 : 0) + (treinamentos.includes("NR-06") ? 15 : 0)
+          + (treinamentos.includes("NR-12") && tipoServico.includes("Roçada") ? 15 : 0)
+          + (contratosAtivos === 0 ? 30 : contratosAtivos === 1 ? 15 : -10)
+          + (ehSup && tipoServico !== "Limpeza" ? 10 : 0);
+        return {
+          id: f.id, nome: f.name, funcao: f.role, salario: Number(f.salary),
+          treinamentos, contratosAtivos, contratosNomes: f.mobilizations.map((m: any) => m.contract.number),
+          compativel, ehSupervisor: ehSup, score, recomendado: score >= 50,
+          motivoRecomendacao: compativel ? `Função compatível${contratosAtivos === 0 ? ", disponível" : ""}` : `Função adaptável${contratosAtivos === 0 ? ", disponível" : ""}`,
+        };
+      }).sort((a, b) => b.score - a.score);
     } catch {
-      funcsAtivos = DEMO_FUNCS;
+      funcionariosSugeridos = DEMO_FUNCS.map((f, i) => ({
+        ...f, score: 80 - i * 5, recomendado: i < recomendado.qtdPessoas,
+        motivoRecomendacao: i === 0 ? "Supervisora — sempre alocar 1" : `Função compatível com ${tipoServico}`,
+      }));
     }
 
-    // ── 3. Score de compatibilidade ────────────────────────────────
-    const funcsComScore = funcsAtivos.map(f => {
-      let score = 0;
-      let qualif: { ok: string[]; falta: string[]; } = { ok: [], falta: [] };
-      
-      qualReq.obrigatorias.forEach(q => {
-        if (f.treinamentos?.includes(q)) {
-          score += 30;
-          qualif.ok.push(q);
-        } else {
-          score -= 50; // penalidade alta por falta de obrigatório
-          qualif.falta.push(q);
-        }
-      });
-      qualReq.recomendadas.forEach(q => {
-        if (f.treinamentos?.includes(q)) {
-          score += 10;
-          qualif.ok.push(q);
-        }
-      });
-
-      // Bonificação por função adequada
-      if (tipoServico.includes("Roçada") && f.role.includes("Roçadeira")) score += 20;
-      if (tipoServico === "Jardinagem Mensal" && f.role.includes("Jardin")) score += 20;
-      if (tipoServico.includes("Podação") && f.role.includes("Roçadeira")) score += 10;
-      if (f.role.includes("Supervisor")) score += 15;
-
-      // Penalidade por não disponibilidade
-      if (!f.disponivel) score -= 20;
-
-      const salario = f.salary || SALARIO_FUNCAO[f.role] || 2500;
-      const custoTotal = salario * (1 + ENCARGOS_PCT);
-
-      return {
-        ...f,
-        score,
-        qualif,
-        custoMensal: custoTotal,
-        recomendado: score >= 30 && f.disponivel,
-      };
-    }).sort((a, b) => b.score - a.score);
-
-    // ── 4. Gerar 3 cenários ────────────────────────────────────────
-    function montarCenario(qtdPessoas: number, label: string) {
-      const escolhidos = funcsComScore.slice(0, qtdPessoas);
-      const folhaBruta = escolhidos.reduce((s, f) => s + (f.salary || 2500), 0);
-      const encargos = folhaBruta * ENCARGOS_PCT;
-      const custoMensal = folhaBruta + encargos;
-      const custoTotal = custoMensal * vigencia;
-      const margemMensal = valorMensal - custoMensal;
-      const margemPct = valorMensal > 0 ? (margemMensal / valorMensal) * 100 : 0;
-      
-      const produtividadeTotal = qtdPessoas * prodDiaria;
-      const cobreArea = areaM2 === 0 || (produtividadeTotal * diasMes) >= areaM2;
-      
-      const todosTreinados = escolhidos.every((f: any) => f.qualif.falta.length === 0);
-      
-      return {
-        label,
-        qtdPessoas,
-        funcionarios: escolhidos,
-        folhaBruta,
-        encargos,
-        custoMensal,
-        custoTotal,
-        margemMensal,
-        margemPct: Math.round(margemPct * 10) / 10,
-        cobreArea,
-        todosTreinados,
-        viavel: cobreArea && qtdPessoas >= 2 && qtdPessoas <= funcsComScore.filter((f:any)=>f.disponivel).length,
-        produtividadeM2Mes: produtividadeTotal * diasMes,
-      };
-    }
-
-    const cenarios = {
-      minima: montarCenario(Math.max(pessoasMinimas, 2), "🟢 Equipe Mínima — menor custo"),
-      recomendada: montarCenario(pessoasMinimas + 1, "🔵 Recomendada — equilibrada"),
-      confortavel: montarCenario(pessoasMinimas + 2, "🟣 Confortável — folga operacional"),
-    };
-
-    // Economia entre cenários
-    const economia = {
-      minimaVsRecomendada: cenarios.recomendada.custoTotal - cenarios.minima.custoTotal,
-      recomendadaVsConfortavel: cenarios.confortavel.custoTotal - cenarios.recomendada.custoTotal,
-    };
-
+    const economiaVsConfortavel = cenarios[2].custoMensalEquipe - recomendado.custoMensalEquipe;
     return NextResponse.json({
-      success: true,
-      cenarios,
-      economia,
-      pessoasMinimas,
-      qualificacoesRequeridas: qualReq,
-      funcionariosCompativeis: funcsComScore.filter(f => f.score >= 0),
-      funcionariosTodos: funcsComScore,
-      totalDisponiveis: funcsComScore.filter(f => f.disponivel).length,
+      success: true, cenarios, recomendado, funcionariosSugeridos,
+      analise: {
+        tipoServico, produtividadeM2Dia: prodDia, areaTotal: areaM2,
+        diasExecucaoMes: diasMes, funcoesRecomendadas,
+        economiaVsConfortavel: round(economiaVsConfortavel),
+        economiaContrato: round(economiaVsConfortavel * vigenciaMeses),
+        observacoes: [
+          `Produtividade ${tipoServico}: ${prodDia.toLocaleString("pt-BR")} m²/dia/pessoa`,
+          areaM2 ? `Para ${areaM2.toLocaleString("pt-BR")} m² em ${diasMes} dias/mês: ${pessoasIdeais} pessoas é o ideal` : "",
+          `Funções recomendadas: ${funcoesRecomendadas.join(", ")}`,
+          `Encargos sociais aplicados: ${(ENCARGOS * 100).toFixed(0)}% sobre folha bruta`,
+        ].filter(Boolean),
+      },
     });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
-
-const DEMO_FUNCS = [
-  { id:"e1", name:"Abrão Felipe", role:"Operador de Roçadeira", salary:2500, treinamentos:["NR-12","NR-06"], disponivel:true, mobilizacoesAtivas:0 },
-  { id:"e2", name:"Ana Luiza Ribeiro", role:"Supervisora de Obras", salary:3500, treinamentos:["NR-35","NR-06","NR-12"], disponivel:true, mobilizacoesAtivas:0 },
-  { id:"e3", name:"Gilberto Ferreira", role:"Operador de Roçadeira", salary:2400, treinamentos:["NR-06"], disponivel:true, mobilizacoesAtivas:0 },
-  { id:"e4", name:"José Antonio", role:"Operador de Roçadeira", salary:2500, treinamentos:["NR-12","NR-06"], disponivel:true, mobilizacoesAtivas:0 },
-  { id:"e5", name:"Leomar Souza", role:"Operador de Retroescavadeira", salary:3200, treinamentos:[], disponivel:true, mobilizacoesAtivas:0 },
-  { id:"e6", name:"Uanderson Nunes", role:"Auxiliar de Jardinagem", salary:2200, treinamentos:["NR-06"], disponivel:true, mobilizacoesAtivas:0 },
-  { id:"e7", name:"Leonardo Souza", role:"Motorista", salary:2800, treinamentos:["NR-06"], disponivel:true, mobilizacoesAtivas:0 },
-  { id:"e8", name:"Giovanna Cunha", role:"Assistente Administrativa", salary:2600, treinamentos:[], disponivel:true, mobilizacoesAtivas:0 },
-];
