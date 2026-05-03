@@ -5,52 +5,57 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 const MENU = [
+  { s: "VISÃO GERAL" },
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/dashboard/ajuda", label: "Ajuda com IA", icon: "🤖" },
-  { s: "OPERACIONAL" },
-  { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato (auto)", icon: "📋" },
-  { href: "/dashboard/clientes", label: "Clientes", icon: "🤝" },
-  { href: "/dashboard/fornecedores", label: "Fornecedores", icon: "📦" },
 
   { s: "COMERCIAL" },
   { href: "/dashboard/pipeline", label: "Pipeline Licitações", icon: "🏆" },
-  { href: "/dashboard/precificacao-bdi", label: "Precificação BDI", icon: "🧮" },
+  { href: "/dashboard/radar-licitacoes", label: "Radar PNCP", icon: "🏛️" },
   { href: "/dashboard/propostas", label: "Propostas + PDF", icon: "📄" },
+  { href: "/dashboard/proposta-edital", label: "Proposta por Edital IA", icon: "📋" },
+  { href: "/dashboard/precificacao-central", label: "Precificação", icon: "🧮" },
+
+  { s: "CONTRATOS" },
+  { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato", icon: "📋" },
   { href: "/dashboard/contratos", label: "Contratos", icon: "📋" },
   { href: "/dashboard/medicao", label: "Medição Mensal", icon: "📏" },
-  { href: "/dashboard/precificacao", label: "Precificação IA", icon: "🧮" },
-  { href: "/dashboard/precificacao-regras", label: "Tabela de Preços", icon: "💲" },
-  { href: "/dashboard/proposta-edital", label: "Proposta por Edital IA", icon: "📋" },
+  { href: "/dashboard/clientes", label: "Clientes", icon: "🤝" },
+  { href: "/dashboard/fornecedores", label: "Fornecedores", icon: "📦" },
+
   { s: "CAMPO" },
-  { href: "/dashboard/retro", label: "Retroescavadeira", icon: "🚜" },
-  { href: "/dashboard/detetizacao", label: "Dedetização", icon: "🪲" },
   { href: "/dashboard/logistica", label: "Logística Operacional", icon: "🚛" },
   { href: "/dashboard/diario-obras", label: "Diário de Obras", icon: "📝" },
-  { href: "/dashboard/historico-servicos", label: "Histórico Serviços", icon: "🗂️" },
+  { href: "/dashboard/retro", label: "Retroescavadeira", icon: "🚜" },
+  { href: "/dashboard/detetizacao", label: "Dedetização", icon: "🪲" },
   { href: "/dashboard/equipamentos", label: "Equipamentos", icon: "🔧" },
   { href: "/dashboard/combustivel", label: "Combustível", icon: "⛽" },
+
+  { s: "ESTOQUE & SEGURANÇA" },
   { href: "/dashboard/almoxarifado", label: "Almoxarifado", icon: "🏭" },
   { href: "/dashboard/epi", label: "Controle de EPI", icon: "🦺" },
-  { href: "/dashboard/nfe-import", label: "Importar NF-e XML", icon: "📥" },
+
   { s: "FINANCEIRO & FISCAL" },
+  { href: "/dashboard/financeiro", label: "Financeiro + Aging", icon: "💰" },
   { href: "/dashboard/fiscal", label: "Central Fiscal", icon: "💼" },
-  { href: "/dashboard/financeiro", label: "Financeiro", icon: "💰" },
   { href: "/dashboard/dre", label: "DRE — Resultado", icon: "📊" },
-  { href: "/dashboard/relatorio-contador", label: "Relatório Contador", icon: "📊" },
-  { s: "RH & SEGURANÇA" },
-  { href: "/dashboard/rh", label: "RH & Folha", icon: "👷" },
-  { href: "/dashboard/mobilizacoes", label: "Mobilizações", icon: "🦺" },
-  { href: "/dashboard/treinamentos", label: "NRs e Treinamentos", icon: "🦺" },
-  { href: "/dashboard/folha-detalhada", label: "Folha INSS/IRRF", icon: "📑" },
-  { href: "/dashboard/whatsapp", label: "WhatsApp Alertas", icon: "📱" },
-  { s: "LICITAÇÕES" },
-  { href: "/dashboard/radar-licitacoes", label: "Radar Licitações", icon: "🏛️" },
+  { href: "/dashboard/nfe-import", label: "Importar NF-e", icon: "📥" },
   { href: "/dashboard/regularidade", label: "Regularidade Fiscal", icon: "🔎" },
+  { href: "/dashboard/relatorio-contador", label: "Relatório Contador", icon: "📊" },
+
+  { s: "RH" },
+  { href: "/dashboard/rh", label: "RH & Folha", icon: "👷" },
+  { href: "/dashboard/mobilizacoes", label: "Mobilizações", icon: "📋" },
+  { href: "/dashboard/treinamentos", label: "NRs e Treinamentos", icon: "🎓" },
+  { href: "/dashboard/folha-detalhada", label: "Folha INSS/IRRF", icon: "📑" },
+
   { s: "SISTEMA" },
-  { href: "/dashboard/alterar-senha", label: "Alterar Senha", icon: "🔐" },
   { href: "/dashboard/integracoes", label: "Integrações", icon: "🔌" },
+  { href: "/dashboard/whatsapp", label: "WhatsApp Alertas", icon: "📱" },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: "⚙️" },
+  { href: "/dashboard/alterar-senha", label: "Alterar Senha", icon: "🔐" },
 ];
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
