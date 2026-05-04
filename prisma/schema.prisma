@@ -848,3 +848,37 @@ model DedetProdutoCatalogo {
   ativo          Boolean @default(true)
   createdAt      DateTime @default(now())
 }
+
+// ═══ GED — GERENCIADOR DE DOCUMENTOS ════════════════════════════
+model Document {
+  id            String    @id @default(cuid())
+  nome          String
+  descricao     String?
+  categoria     String    // "contrato" | "fiscal" | "rh" | "juridico" | "licitacao" | "tecnico" | "outro"
+  subcategoria  String?   // ex: "certidoes" | "nfs-e" | "proposta" | "ata"
+  tags          String?   // CSV: "pncp,2026,cemig"
+  // Vínculo com entidades
+  clienteId     String?
+  contratoId    String?
+  funcionarioId String?
+  // Arquivo
+  estrategia    String    @default("url") // "url" | "base64" | "gdrive"
+  urlArquivo    String?   // link externo ou Google Drive
+  base64Data    String?   // para arquivos pequenos (<500kb) — @db.Text
+  mimeType      String?   // "application/pdf" | "image/jpeg" etc
+  tamanhoKb     Int?
+  // Controle
+  validade      DateTime? // para certidões e documentos com prazo
+  status        String    @default("ativo") // "ativo" | "vencido" | "substituido" | "arquivado"
+  versao        Int       @default(1)
+  documentoPaiId String?  // para versionamento
+  uploadBy      String?
+  confidencial  Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([categoria])
+  @@index([contratoId])
+  @@index([clienteId])
+  @@index([validade])
+}

@@ -19,6 +19,7 @@ const MENU = [
   { s: "CONTRATOS" },
   { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato", icon: "📋" },
   { href: "/dashboard/contratos", label: "Contratos", icon: "📋" },
+  { href: "/dashboard/documentos", label: "Documentos (GED)", icon: "📁" },
   { href: "/dashboard/medicao", label: "Medição Mensal", icon: "📏" },
   { href: "/dashboard/clientes", label: "Clientes", icon: "🤝" },
   { href: "/dashboard/fornecedores", label: "Fornecedores", icon: "📦" },
