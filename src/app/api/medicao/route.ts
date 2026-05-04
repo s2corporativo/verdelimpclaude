@@ -10,6 +10,68 @@ export async function GET() {
   } catch { return NextResponse.json({ data: DEMO, _demo: true }); }
 }
 
+export async function PATCH(req: NextRequest) {
+  // Aprovar / atualizar status de uma medição → se aprovada, salva no GED
+  try {
+    const b = await req.json();
+    const { id, status, approvedBy, notes } = b;
+    if (!id || !status) return NextResponse.json({ error: "id e status obrigatórios" }, { status: 400 });
+
+    const m = await prisma.measurement.update({
+      where: { id },
+      data: {
+        status,
+        approvedBy: approvedBy || null,
+        approvedAt: status === "aprovada" ? new Date() : null,
+        notes: notes || null,
+      },
+      include: { contract: { select: { number: true, object: true, clientId: true } } },
+    });
+
+    // Ao aprovar → salvar no GED automaticamente
+    if (status === "aprovada") {
+      try {
+        const periodo = m.period || new Date(m.startDate).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+        const nomeDoc = `Medição Aprovada — ${m.contract?.number || ""} ${periodo} — R$ ${Number(m.value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
+        // Verificar se já existe (evitar duplicata)
+        const existente = await prisma.document.findFirst({
+          where: {
+            nome: { contains: m.contract?.number || "" },
+            subcategoria: "Medição",
+            createdAt: { gte: new Date(Date.now() - 7 * 86400000) },
+          },
+        });
+
+        if (!existente) {
+          await prisma.document.create({
+            data: {
+              nome: nomeDoc,
+              descricao: `Medição aprovada por ${approvedBy || "—"} em ${new Date().toLocaleDateString("pt-BR")}. Contrato: ${m.contract?.object || ""}`,
+              categoria: "contrato",
+              subcategoria: "Medição",
+              tags: `medicao,${m.contract?.number?.toLowerCase() || ""},${new Date().getFullYear()},aprovada`,
+              contratoId: b.contratoId || null,
+              clienteId: m.contract?.clientId || null,
+              estrategia: "url",
+              urlArquivo: null, // sem arquivo físico — é um registro de controle
+              validade: null,
+              status: "ativo",
+              versao: 1,
+              confidencial: false,
+              uploadBy: "Medição (automático)",
+            },
+          });
+        }
+      } catch { /* erro no GED não bloqueia a aprovação */ }
+    }
+
+    return NextResponse.json({ success: true, medicao: m });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const b = await req.json();
