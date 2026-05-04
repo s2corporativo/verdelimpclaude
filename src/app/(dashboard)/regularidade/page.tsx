@@ -50,6 +50,8 @@ export default function RegularidadePage() {
   const [loading, setLoading] = useState(false);
   const [loadingLote, setLoadingLote] = useState(false);
   const [historico, setHistorico] = useState<any[]>([]);
+  const [salvandoGed, setSalvandoGed] = useState(false);
+  const [gedStatus, setGedStatus] = useState<{ ok: boolean; msg: string; salvos?: string[] } | null>(null);
 
   const consultar = async () => {
     const clean = cnpj.replace(/\D/g, "");
@@ -73,6 +75,33 @@ export default function RegularidadePage() {
     const d = await r.json();
     setLote(d);
     setLoadingLote(false);
+  };
+
+  const salvarNoGed = async () => {
+    if (!resultado?.fontes?.length) return;
+    setSalvandoGed(true);
+    setGedStatus(null);
+    try {
+      const cnpjClean = resultado.cnpj?.replace(/\D/g, "") || cnpj.replace(/\D/g, "");
+      const r = await fetch(`/api/regularidade/cnpj/${cnpjClean}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fontes: resultado.fontes,
+          razaoSocial: resultado.razaoSocial,
+          regularidade: resultado.regularidadeRF,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setGedStatus({ ok: true, msg: d.mensagem, salvos: d.salvos });
+      } else {
+        setGedStatus({ ok: false, msg: d.error || "Erro ao salvar no GED" });
+      }
+    } catch (e: any) {
+      setGedStatus({ ok: false, msg: e.message });
+    }
+    setSalvandoGed(false);
   };
 
   const IS: any = { width: "100%", padding: "8px 11px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 };
@@ -163,7 +192,40 @@ export default function RegularidadePage() {
 
           {/* Fontes para consulta oficial */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px 16px" }}>
-            <h4 style={{ color: "#0f5233", fontSize: 13, marginBottom: 10 }}>📋 Consultar certidões originais (fontes oficiais)</h4>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+              <h4 style={{ color: "#0f5233", fontSize: 13, margin: 0 }}>📋 Certidões oficiais — links de emissão</h4>
+              <button
+                onClick={salvarNoGed}
+                disabled={salvandoGed}
+                style={{
+                  background: salvandoGed ? "#6b7280" : "#0f5233",
+                  color: "#fff", border: "none", padding: "8px 16px",
+                  borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12,
+                  display: "flex", alignItems: "center", gap: 6,
+                }}>
+                {salvandoGed ? "⟳ Salvando..." : "📁 Salvar certidões no GED"}
+              </button>
+            </div>
+            {gedStatus && (
+              <div style={{
+                background: gedStatus.ok ? "#dcfce7" : "#fee2e2",
+                border: `1px solid ${gedStatus.ok ? "#86efac" : "#fca5a5"}`,
+                borderRadius: 8, padding: "9px 13px", marginBottom: 10, fontSize: 12,
+                color: gedStatus.ok ? "#15803d" : "#991b1b",
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: gedStatus.salvos?.length ? 4 : 0 }}>{gedStatus.msg}</div>
+                {gedStatus.salvos?.length ? (
+                  <div style={{ fontSize: 11, opacity: 0.85 }}>
+                    Salvas: {gedStatus.salvos.join(", ")} •{" "}
+                    <a href="/dashboard/documentos" style={{ color: "inherit", fontWeight: 700 }}>Ver no GED →</a>
+                  </div>
+                ) : null}
+              </div>
+            )}
+            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 7, padding: "7px 11px", marginBottom: 10, fontSize: 10, color: "#92400e" }}>
+              💡 <strong>Salvar no GED</strong> cria automaticamente um registro para cada certidão com a URL de emissão, data de vencimento calculada e link para renovação. Vencimentos: CRF/FGTS = 30 dias · demais = 180 dias.
+            </div>
+            <h4 style={{ color: "#0f5233", fontSize: 13, marginBottom: 10, display: "none" }}>📋 Consultar certidões originais (fontes oficiais)</h4>
             <div style={{ background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 7, padding: "7px 11px", marginBottom: 10, fontSize: 11, color: "#92400e" }}>
               ⚠️ Os dados acima são informativos. Para contratos, licitações e fins legais, sempre consultar as certidões originais diretamente nos órgãos oficiais abaixo.
             </div>

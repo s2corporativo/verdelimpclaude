@@ -189,3 +189,115 @@ function DEMO_RESULT(cnpj: string) {
     cached: false,
   };
 }
+
+// ══════════════════════════════════════════════════════════════════
+// INTEGRAÇÃO GED — salvar certidões verificadas no GED automaticamente
+// POST /api/regularidade/cnpj/[cnpj] — corpo: { fontes, razaoSocial, salvarGed: true }
+// ══════════════════════════════════════════════════════════════════
+
+export async function POST(req: NextRequest, { params }: { params: { cnpj: string } }) {
+  // Salva as certidões consultadas no GED automaticamente
+  try {
+    const body = await req.json();
+    const { fontes, razaoSocial, regularidade } = body;
+
+    if (!fontes?.length) {
+      return NextResponse.json({ error: "Fontes obrigatórias" }, { status: 400 });
+    }
+
+    // Mapeamento certidão → metadados GED
+    const CERT_MAP: Record<string, { subcategoria: string; validadeDias: number }> = {
+      "CND Federal":           { subcategoria: "Certidão CND",        validadeDias: 180 },
+      "CRF/FGTS":              { subcategoria: "Certidão FGTS",       validadeDias: 30  },
+      "Certidão Trabalhista":  { subcategoria: "Certidão Trabalhista", validadeDias: 180 },
+      "SINTEGRA":              { subcategoria: "Certidão Municipal",   validadeDias: 180 },
+      "CND Municipal":         { subcategoria: "Certidão Municipal",   validadeDias: 180 },
+      "CADIN":                 { subcategoria: "Certidão CND",        validadeDias: 180 },
+    };
+
+    const { prisma } = await import("@/lib/prisma");
+    const hoje = new Date();
+    const cnpjFormatado = params.cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+
+    // Buscar se é o próprio CNPJ da empresa ou de cliente
+    let clienteId: string | null = null;
+    try {
+      const cliente = await prisma.client.findFirst({ where: { cnpjCpf: cnpjFormatado } });
+      clienteId = cliente?.id || null;
+    } catch { /* sem cliente, ok */ }
+
+    const salvos: string[] = [];
+    const ignorados: string[] = [];
+
+    for (const fonte of fontes) {
+      // Identificar qual certidão é esta fonte
+      let chave: string | null = null;
+      for (const k of Object.keys(CERT_MAP)) {
+        if (fonte.nome?.includes(k)) { chave = k; break; }
+      }
+
+      // Pular fontes que não são certidões (ex: BrasilAPI, Receita Federal cadastral)
+      if (!chave || fonte.nome?.includes("BrasilAPI") || fonte.nome?.includes("Situação Cadastral")) {
+        ignorados.push(fonte.nome);
+        continue;
+      }
+
+      const meta = CERT_MAP[chave];
+      const validade = new Date(hoje);
+      validade.setDate(validade.getDate() + meta.validadeDias);
+
+      // Nome do documento
+      const nomeCNPJ = razaoSocial ? ` — ${razaoSocial}` : cnpjFormatado ? ` — ${cnpjFormatado}` : "";
+      const nomeDoc = `${chave}${nomeCNPJ} (${hoje.toLocaleDateString("pt-BR")})`;
+
+      // Verificar se já existe documento recente (últimos 7 dias) para não duplicar
+      try {
+        const existente = await prisma.document.findFirst({
+          where: {
+            subcategoria: meta.subcategoria,
+            nome: { contains: chave },
+            createdAt: { gte: new Date(hoje.getTime() - 7 * 86400000) },
+          },
+        });
+
+        if (existente) {
+          ignorados.push(`${chave} (já existe — ${existente.createdAt.toLocaleDateString("pt-BR")})`);
+          continue;
+        }
+
+        // Criar no GED
+        await prisma.document.create({
+          data: {
+            nome: nomeDoc,
+            descricao: fonte.obs || `Certidão consultada automaticamente via módulo de Regularidade Fiscal`,
+            categoria: "fiscal",
+            subcategoria: meta.subcategoria,
+            tags: `certidao,regularidade,${chave.toLowerCase().replace(/\//g,"-").replace(/ /g,"-")},${hoje.getFullYear()}`,
+            clienteId: clienteId || null,
+            estrategia: "url",
+            urlArquivo: fonte.url || null,
+            mimeType: "application/pdf",
+            validade,
+            status: "ativo",
+            versao: 1,
+            confidencial: false,
+            uploadBy: "Regularidade Fiscal (automático)",
+          },
+        });
+
+        salvos.push(chave);
+      } catch (e: any) {
+        ignorados.push(`${chave} (erro: ${e.message})`);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      salvos,
+      ignorados,
+      mensagem: `✅ ${salvos.length} certidão(ões) salvas no GED com vencimento calculado automaticamente`,
+    });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
