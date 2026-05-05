@@ -1,229 +1,80 @@
-/**
- * VERDELIMP ERP — Seed Profissional v2.2
- * Idempotente — usa upsert — não duplica ao rodar novamente
- */
+// prisma/seed.ts — dados iniciais da Verdelimp
 import { PrismaClient } from "@prisma/client";
-import * as bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("\n🌱 Seed Verdelimp ERP v2.2\n");
+  console.log("🌱 Iniciando seed...");
 
-  // ── 1. PERFIS ────────────────────────────────────────
-  const roles = ["ADMIN","FINANCEIRO","FISCAL","RH","OPERACIONAL","ALMOXARIFADO","COMERCIAL","LEITURA"];
-  for (const name of roles) {
-    await prisma.role.upsert({ where: { name }, update: {}, create: { name } });
-  }
-  console.log("✓ Perfis:", roles.join(", "));
+  // Roles
+  await prisma.role.upsert({ where: { name: "ADMIN" }, update: {}, create: { id: "role-admin", name: "ADMIN", description: "Administrador completo" } });
+  await prisma.role.upsert({ where: { name: "GESTOR" }, update: {}, create: { id: "role-gestor", name: "GESTOR", description: "Gestor operacional" } });
 
-  // ── 2. USUÁRIO ADMIN ─────────────────────────────────
-  const pwHash = await bcrypt.hash("Verdelimp@2026", 12);
+  // Usuários
+  const hash = await bcrypt.hash("Verdelimp@2026", 12);
   const admin = await prisma.user.upsert({
     where: { email: "admin@verdelimp.com.br" },
     update: {},
-    create: { name: "Administrador", email: "admin@verdelimp.com.br", passwordHash: pwHash, mustChangePass: true },
+    create: { id: "usr-admin", name: "Administrador", email: "admin@verdelimp.com.br", passwordHash: hash, active: true, mustChangePass: true, failedAttempts: 0 },
   });
-  const adminRole = await prisma.role.findUnique({ where: { name: "ADMIN" } });
-  if (adminRole) {
-    await prisma.userRole.upsert({
-      where: { userId_roleId: { userId: admin.id, roleId: adminRole.id } },
-      update: {}, create: { userId: admin.id, roleId: adminRole.id },
-    });
-  }
-
-  // Usuário Giovanna (Financeiro)
   const giovanna = await prisma.user.upsert({
     where: { email: "giovanna@verdelimp.com.br" },
     update: {},
-    create: { name: "Giovanna Luiza Cunha", email: "giovanna@verdelimp.com.br", passwordHash: pwHash },
+    create: { id: "usr-giovanna", name: "Giovanna Cunha", email: "giovanna@verdelimp.com.br", passwordHash: hash, active: true, mustChangePass: true, failedAttempts: 0 },
   });
-  console.log("✓ Usuários: admin@verdelimp.com.br | giovanna@verdelimp.com.br");
+  await prisma.userRole.upsert({ where: { userId_roleId: { userId: "usr-admin", roleId: "role-admin" } }, update: {}, create: { userId: "usr-admin", roleId: "role-admin" } });
+  await prisma.userRole.upsert({ where: { userId_roleId: { userId: "usr-giovanna", roleId: "role-gestor" } }, update: {}, create: { userId: "usr-giovanna", roleId: "role-gestor" } });
 
-  // ── 3. EMPRESA ───────────────────────────────────────
-  await prisma.companyConfig.upsert({
-    where: { cnpj: "30.198.776/0001-29" },
-    update: {},
-    create: {
-      razaoSocial: "VERDELIMP SERVICOS E TERCEIRIZACAO LTDA",
-      nomeFantasia: "VERDELIMP SERVIÇOS",
-      cnpj: "30.198.776/0001-29",
-      porte: "EPP",
-      regimeTributario: "Simples Nacional",
-      cnaePrincipal: "81.30-3-00",
-      inscMunicipal: "ISS-BETIM-2026",
-      logradouro: "R. Primeiro de Janeiro, 415",
-      bairro: "Amazonas",
-      municipio: "Betim",
-      uf: "MG",
-      cep: "32.685-066",
-      email: "ADM@VERDELIMP.COM.BR",
-      telefone: "(31) 3591-4546",
-      aliqDAS: 6.72,
-      aliqFGTS: 8.0,
-      aliqINSS: 7.0,
-      aliqISS: 5.0,
-      aliqIRRF: 1.5,
-      nomeContador: "Escritório Contábil Demo",
-      emailContador: "contador@demo.com.br",
-    },
-  });
-  console.log("✓ Empresa configurada");
+  // Empresa
+  const cfgExistente = await prisma.companyConfig.findFirst({ where: { cnpj: "30.198.776/0001-29" } });
+  if (!cfgExistente) {
+    await prisma.companyConfig.create({ data: { razaoSocial: "VERDELIMP SERVICOS E TERCEIRIZACAO LTDA", nomeFantasia: "VERDELIMP", cnpj: "30.198.776/0001-29", porte: "EPP", regimeTributario: "Simples Nacional", cnaePrincipal: "81.30-3-00", municipio: "Betim", uf: "MG", cep: "32685-066", email: "ADM@VERDELIMP.COM.BR", telefone: "(31) 3591-4546", aliqIss: 5, aliqInss: 7, aliqIrrf: 0, aliqFgts: 8, aliqDas: 6.72 } });
+  }
 
-  // ── 4. CATEGORIAS DE ESTOQUE ─────────────────────────
-  const catEstoque = [
-    { name: "Material de Limpeza", icon: "🧴", color: "#0891b2" },
-    { name: "EPI", icon: "🦺", color: "#d97706" },
-    { name: "Ferramentas", icon: "🔧", color: "#7c3aed" },
-    { name: "Máquinas e Equipamentos", icon: "⚙️", color: "#1d4ed8" },
-    { name: "Peças e Manutenção", icon: "🔩", color: "#92400e" },
-    { name: "Combustíveis e Lubrificantes", icon: "⛽", color: "#dc2626" },
-    { name: "Patrimônio", icon: "🏛️", color: "#1a7a4a" },
+  // Funcionários
+  const funcs = [
+    { id:"emp-1", name:"Abrão Felipe", role:"Operador de Roçadeira", cpf:"111.111.111-11", salary:2500 },
+    { id:"emp-2", name:"Ana Luiza Ribeiro", role:"Supervisora de Obras", cpf:"222.222.222-22", salary:3500 },
+    { id:"emp-3", name:"Gilberto Ferreira", role:"Operador de Roçadeira", cpf:"333.333.333-33", salary:2400 },
+    { id:"emp-4", name:"José Antonio Mariano", role:"Operador de Roçadeira", cpf:"444.444.444-44", salary:2500 },
+    { id:"emp-5", name:"Leomar Souza", role:"Operador de Retroescavadeira", cpf:"555.555.555-55", salary:3200 },
+    { id:"emp-6", name:"Uanderson Nunes", role:"Auxiliar de Jardinagem", cpf:"666.666.666-66", salary:2200 },
+    { id:"emp-7", name:"Leonardo Souza", role:"Motorista", cpf:"777.777.777-77", salary:2800 },
+    { id:"emp-8", name:"Giovanna Cunha", role:"Assistente Administrativa", cpf:"888.888.888-88", salary:2600 },
   ];
-  for (const c of catEstoque) {
-    await prisma.inventoryCategory.upsert({ where: { name: c.name }, update: {}, create: c });
+  for (const f of funcs) {
+    await prisma.employee.upsert({ where: { cpf: f.cpf }, update: {}, create: { ...f, admissionDate: new Date("2023-01-01"), active: true, status: "ativo" } });
   }
-  console.log("✓ Categorias de estoque");
 
-  // ── 5. CATEGORIAS FINANCEIRAS ────────────────────────
-  const catFin = [
-    { name: "Combustível", type: "operacional" },
-    { name: "Materiais de Limpeza", type: "operacional" },
-    { name: "EPI e Segurança", type: "operacional" },
-    { name: "Ferramentas e Equipamentos", type: "operacional" },
-    { name: "Salários e Encargos", type: "rh" },
-    { name: "Impostos e Tributos", type: "tributario" },
-    { name: "Honorários Contábeis", type: "administrativo" },
-    { name: "Aluguel e Infraestrutura", type: "administrativo" },
+  // Veículos
+  const veiculos = [
+    { id:"veh-1", plate:"QWE-1234", model:"Toyota Hilux Cabine Dupla", type:"Pickup", year:2025 },
+    { id:"veh-2", plate:"ASD-5678", model:"Iveco Daily Carroceria", type:"Caminhao", year:2025 },
+    { id:"veh-3", plate:"ZXC-9012", model:"Volkswagen Gol 1.0", type:"Leve", year:2024 },
   ];
-  for (const c of catFin) {
-    await prisma.expenseCategory.upsert({ where: { name: c.name }, update: {}, create: c });
-  }
-  console.log("✓ Categorias financeiras");
-
-  // ── 6. CLIENTES ──────────────────────────────────────
-  const clientes = [
-    { cnpjCpf: "17.317.344/0001-19", name: "Prefeitura de Belo Horizonte", category: "Público", municipio: "Belo Horizonte", uf: "MG", situacao: "ATIVA", phone: "(31) 3277-8000", email: "licitacoes@pbh.gov.br" },
-    { cnpjCpf: "17.038.582/0001-53", name: "CEMIG", category: "Público", municipio: "Belo Horizonte", uf: "MG", situacao: "ATIVA", phone: "(31) 3506-5000", email: "contatos@cemig.com.br" },
-    { cnpjCpf: "28.193.570/0001-69", name: "Sanesul", category: "Público", municipio: "Campo Grande", uf: "MS", situacao: "ATIVA" },
-    { cnpjCpf: "17.054.027/0001-78", name: "Copasa", category: "Público", municipio: "Belo Horizonte", uf: "MG", situacao: "ATIVA" },
-    { cnpjCpf: "25.848.716/0001-65", name: "Naturais Serviços Ambientais", category: "Privado", municipio: "São Paulo", uf: "SP", situacao: "ATIVA" },
-  ];
-  for (const c of clientes) {
-    await prisma.client.upsert({ where: { cnpjCpf: c.cnpjCpf }, update: {}, create: c });
-  }
-  console.log("✓ Clientes (5)");
-
-  // ── 7. FORNECEDORES ──────────────────────────────────
-  const fornecedores = [
-    { cnpj: "00.000.000/0001-00", name: "Fornecedor Demonstração Ltda", type: "Material" },
-    { cnpj: "00.000.000/0001-01", name: "Loja de EPI Exemplo ME", type: "EPI" },
-    { cnpj: "00.000.000/0001-02", name: "Ferramentas Alfa Comércio", type: "Ferramentas" },
-    { cnpj: "00.000.000/0001-03", name: "Posto de Combustível Demo", type: "Combustível" },
-  ];
-  for (const f of fornecedores) {
-    await prisma.supplier.upsert({ where: { cnpj: f.cnpj }, update: {}, create: f });
-  }
-  console.log("✓ Fornecedores (4)");
-
-  // ── 8. FUNCIONÁRIOS ──────────────────────────────────
-  const funcionarios = [
-    { cpf: "112.824.616-30", name: "Abrão Felipe Boa Ventura Carvalho", role: "Operador de Roçadeira", salary: 2500, admissionDate: new Date("2023-07-22") },
-    { cpf: "106.192.446-74", name: "Ana Luiza Gonçalves Ribeiro", role: "Supervisora de Obras", salary: 3500, admissionDate: new Date("2025-04-03") },
-    { cpf: "099.149.826-07", name: "Gilberto Ferreira", role: "Operador de Roçadeira", salary: 2400, admissionDate: new Date("2022-06-07") },
-    { cpf: "049.995.006-20", name: "José Antonio Mariano", role: "Operador de Roçadeira", salary: 2500, admissionDate: new Date("2023-05-04") },
-    { cpf: "083.478.616-84", name: "Leomar Nascimento de Souza", role: "Op. Retroescavadeira", salary: 3200, admissionDate: new Date("2022-06-01") },
-    { cpf: "862.297.015-96", name: "Uanderson Nunes de Jesus", role: "Auxiliar de Jardinagem", salary: 2200, admissionDate: new Date("2025-10-01") },
-    { cpf: "033.540.116-37", name: "Leonardo Nascimento de Souza", role: "Motorista", salary: 2800, admissionDate: new Date("2026-04-27") },
-    { cpf: "703.678.726-09", name: "Giovanna Luiza Cunha", role: "Assistente Administrativa", salary: 2600, admissionDate: new Date("2026-01-13") },
-  ];
-  for (const e of funcionarios) {
-    await prisma.employee.upsert({ where: { cpf: e.cpf }, update: {}, create: e });
-  }
-  console.log("✓ Funcionários (8)");
-
-  // ── 9. ITENS DE ALMOXARIFADO ─────────────────────────
-  const catLimpeza = await prisma.inventoryCategory.findUnique({ where: { name: "Material de Limpeza" } });
-  const catEpi = await prisma.inventoryCategory.findUnique({ where: { name: "EPI" } });
-  const catFerr = await prisma.inventoryCategory.findUnique({ where: { name: "Ferramentas" } });
-  if (catLimpeza && catEpi && catFerr) {
-    const itens = [
-      { internalCode: "LIM-001", description: "Detergente Profissional 5L", categoryId: catLimpeza.id, unit: "UN", currentQuantity: 48, minimumStock: 20, averageCost: 22.50 },
-      { internalCode: "EPI-001", description: "Luva Nitrílica Resistente (Par)", categoryId: catEpi.id, unit: "PAR", currentQuantity: 40, minimumStock: 20, averageCost: 8.90, isEpi: true },
-      { internalCode: "EPI-002", description: "Capacete de Segurança Classe A", categoryId: catEpi.id, unit: "UN", currentQuantity: 8, minimumStock: 10, averageCost: 28.00, isEpi: true, status: "atencao" },
-      { internalCode: "FER-001", description: "Roçadeira a Gasolina 52cc Stihl FS220", categoryId: catFerr.id, unit: "UN", currentQuantity: 3, minimumStock: 2, averageCost: 1850.00, isTool: true, isPatrimony: true, patrimonyNumber: "PAT-2025-010", serialNumber: "SN2025010" },
-      { internalCode: "FER-002", description: "Motosserra 40cm Husqvarna 450e", categoryId: catFerr.id, unit: "UN", currentQuantity: 2, minimumStock: 1, averageCost: 2450.00, isTool: true, isPatrimony: true, patrimonyNumber: "PAT-2025-011", status: "manutencao" },
-    ];
-    for (const item of itens) {
-      await prisma.inventoryItem.upsert({ where: { internalCode: item.internalCode }, update: {}, create: item });
-    }
-    console.log("✓ Itens de almoxarifado (5)");
+  for (const v of veiculos) {
+    await prisma.vehicle.upsert({ where: { plate: v.plate }, update: {}, create: { ...v, active: true } });
   }
 
-  // ── 10. DESPESAS TRIBUTÁRIAS ─────────────────────────
-  const despTrib = [
-    { taxType: "FGTS", description: "FGTS Abril/2026", competence: "2026-04", dueDate: new Date("2026-05-07"), paymentDate: new Date("2026-05-07"), principalAmount: 1648, totalAmount: 1648, status: "pago" },
-    { taxType: "DAS", description: "Simples Nacional Março/2026", competence: "2026-03", dueDate: new Date("2026-04-22"), paymentDate: new Date("2026-04-22"), principalAmount: 3642, totalAmount: 3642, status: "pago" },
-    { taxType: "Alvará", description: "Alvará de Funcionamento 2026", competence: "2026-01", dueDate: new Date("2026-02-28"), paymentDate: new Date("2026-02-25"), principalAmount: 480, totalAmount: 480, status: "pago" },
-  ];
-  for (const d of despTrib) {
-    const exists = await prisma.fiscalTaxExpense.findFirst({ where: { taxType: d.taxType, competence: d.competence } });
-    if (!exists) await prisma.fiscalTaxExpense.create({ data: d });
+  // Categorias de estoque
+  const cats = [{ id:"cat-epi",name:"EPI",icon:"🦺"},{id:"cat-fer",name:"Ferramentas",icon:"🔧"},{id:"cat-com",name:"Combustível",icon:"⛽"},{id:"cat-mat",name:"Materiais",icon:"📦"}];
+  for (const c of cats) {
+    await prisma.inventoryCategory.upsert({ where: { name: c.name }, update: {}, create: { ...c, active: true } });
   }
-  console.log("✓ Despesas tributárias (3 históricas)");
 
-  // ── 11. DOCUMENTOS FISCAIS ───────────────────────────
-  const docsFiscais = [
-    { documentType: "CND Federal", issuer: "Receita Federal", dueDate: new Date("2026-07-15"), status: "regular", responsible: "Giovanna Cunha" },
-    { documentType: "CRF/FGTS", issuer: "Caixa Econômica Federal", dueDate: new Date("2026-07-31"), status: "regular", responsible: "Giovanna Cunha" },
-    { documentType: "Certidão Municipal", issuer: "Pref. Betim", dueDate: new Date("2026-06-01"), status: "a_vencer", responsible: "Giovanna Cunha" },
-    { documentType: "Licença Ambiental", issuer: "SEMAD/MG", dueDate: new Date("2026-03-31"), status: "vencido", responsible: "Ana Luiza Ribeiro" },
-    { documentType: "Alvará de Funcionamento", issuer: "Pref. Betim", dueDate: new Date("2026-12-31"), status: "regular", responsible: "Giovanna Cunha" },
-  ];
-  for (const d of docsFiscais) {
-    const exists = await prisma.fiscalDocument.findFirst({ where: { documentType: d.documentType, issuer: d.issuer } });
-    if (!exists) await prisma.fiscalDocument.create({ data: d });
-  }
-  console.log("✓ Documentos fiscais (5)");
-
-  // ── 12. NFS-e DEMONSTRATIVAS ─────────────────────────
-  const cliPBH = await prisma.client.findFirst({ where: { name: { contains: "Belo Horizonte" } } });
-  const nfses = [
-    { number: "2026/0042", municipality: "Belo Horizonte", providerCnpj: "30.198.776/0001-29", receiverName: "Prefeitura de BH", receiverCnpj: "17.317.344/0001-19", clientId: cliPBH?.id, serviceCode: "7.10", description: "Serviços de roçada e limpeza de vias públicas", serviceValue: 18500, calculationBase: 18500, issRate: 5, issAmount: 925, issRetained: true, netAmount: 17575, issueDate: new Date("2026-04-30"), competence: "2026-04", status: "lancada" },
-    { number: "2026/0041", municipality: "Belo Horizonte", providerCnpj: "30.198.776/0001-29", receiverName: "CEMIG", receiverCnpj: "17.038.582/0001-53", serviceCode: "7.11", description: "PRADA — Recuperação de áreas degradadas", serviceValue: 20000, calculationBase: 20000, issRate: 5, issAmount: 1000, issRetained: false, netAmount: 19000, issueDate: new Date("2026-04-25"), competence: "2026-04", status: "lancada" },
-    { number: "2026/0040", municipality: "Belo Horizonte", providerCnpj: "30.198.776/0001-29", receiverName: "Sanesul", receiverCnpj: "28.193.570/0001-69", serviceCode: "7.11", description: "Jardinagem mensal HQ Betim", serviceValue: 8500, calculationBase: 8500, issRate: 5, issAmount: 425, issRetained: false, netAmount: 8075, issueDate: new Date("2026-04-20"), competence: "2026-04", status: "lancada" },
-  ];
-  for (const n of nfses) {
-    const exists = await prisma.fiscalNfse.findFirst({ where: { number: n.number } });
-    if (!exists) await prisma.fiscalNfse.create({ data: n });
-  }
-  console.log("✓ NFS-e demonstrativas (3)");
-
-  // ── 13. INTEGRAÇÕES ──────────────────────────────────
+  // Integrações
   const integracoes = [
-    { slug: "viacep", name: "ViaCEP — Consulta de CEP", category: "publica", provider: "ViaCEP", environment: "producao", status: "ativa", requiresAuth: false, baseUrl: "https://viacep.com.br/ws", isEnabled: true },
-    { slug: "cnpj-brasilapi", name: "CNPJ — BrasilAPI", category: "publica", provider: "BrasilAPI", environment: "producao", status: "ativa", requiresAuth: false, baseUrl: "https://brasilapi.com.br/api/cnpj/v1", isEnabled: true },
-    { slug: "ibge", name: "IBGE — Municípios e UFs", category: "publica", provider: "IBGE", environment: "producao", status: "ativa", requiresAuth: false, baseUrl: "https://servicodados.ibge.gov.br/api/v1", isEnabled: true },
-    { slug: "pncp", name: "PNCP — Radar de Licitações", category: "publica", provider: "Governo Federal", environment: "producao", status: "ativa", requiresAuth: false, baseUrl: "https://pncp.gov.br/api/pncp/v1", isEnabled: true },
-    { slug: "feriados", name: "Feriados Nacionais", category: "publica", provider: "BrasilAPI", environment: "producao", status: "ativa", requiresAuth: false, isEnabled: true },
-    { slug: "iss-betim", name: "ISS Betim LC 33/2003", category: "fiscal", provider: "Tabela Local", environment: "producao", status: "ativa", requiresAuth: false, isEnabled: true },
-    { slug: "nfe-sefaz", name: "NF-e / SEFAZ", category: "fiscal", provider: "SEFAZ Nacional", environment: "homologacao", status: "pendente_certificado", requiresAuth: true, requiresCertificate: true, isEnabled: false },
-    { slug: "esocial", name: "eSocial — Preparação", category: "trabalhista", provider: "Governo Federal", environment: "producao_restrita", status: "pendente_certificado", requiresAuth: true, requiresCertificate: true, isEnabled: false },
-    { slug: "claude-ia", name: "Anthropic Claude — IA", category: "ia", provider: "Anthropic", environment: "producao", status: process.env.ANTHROPIC_API_KEY ? "ativa" : "pendente_config", requiresAuth: true, requiresPaidApi: true, baseUrl: "https://api.anthropic.com/v1", isEnabled: !!process.env.ANTHROPIC_API_KEY },
+    { name:"ViaCEP", slug:"viacep", category:"Endereços", provider:"ViaCEP", status:"ativa", isEnabled:true, baseUrl:"https://viacep.com.br/ws", description:"CEP automático" },
+    { name:"BrasilAPI CNPJ", slug:"brasilapi-cnpj", category:"Fiscal", provider:"BrasilAPI", status:"ativa", isEnabled:true, baseUrl:"https://brasilapi.com.br/api/cnpj/v1", description:"Dados CNPJ" },
+    { name:"PNCP", slug:"pncp", category:"Licitações", provider:"Governo Federal", status:"ativa", isEnabled:true, baseUrl:"https://pncp.gov.br/api/pncp/v1", description:"Portal Contratações" },
+    { name:"Anthropic Claude IA", slug:"anthropic-claude", category:"IA", provider:"Anthropic", status:"ativa", requiresAuth:true, requiresPaidApi:true, isEnabled:true, baseUrl:"https://api.anthropic.com/v1", description:"IA do sistema" },
   ];
   for (const i of integracoes) {
-    await prisma.integration.upsert({ where: { slug: i.slug }, update: {}, create: i });
+    await prisma.integration.upsert({ where: { slug: i.slug }, update: {}, create: { ...i, requiresAuth: i.requiresAuth||false, requiresCertificate: false, requiresPaidApi: i.requiresPaidApi||false, totalCalls: 0 } });
   }
-  console.log("✓ Integrações (9)");
 
-  console.log("\n✅ Seed concluído!\n");
-  console.log("═══════════════════════════════════════");
-  console.log("  Credenciais de acesso:");
-  console.log("  admin@verdelimp.com.br / Verdelimp@2026");
-  console.log("  ⚠️  Alterar senha no primeiro login");
-  console.log("═══════════════════════════════════════\n");
+  console.log("✅ Seed concluído!");
 }
 
-main()
-  .catch((e) => { console.error("❌ Erro no seed:", e); process.exit(1); })
-  .finally(() => prisma.$disconnect());
+main().catch(console.error).finally(() => prisma.$disconnect());
