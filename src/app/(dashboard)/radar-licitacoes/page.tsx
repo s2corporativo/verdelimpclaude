@@ -41,13 +41,11 @@ export default function RadarPage() {
   const analisarComIA=async(item:any,idx:number)=>{
     const key=String(idx);setAnalisando(key);
     try{
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:600,
-        system:`Você é consultor de licitações para a VERDELIMP SERVICOS E TERCEIRIZACAO LTDA, CNPJ 30.198.776/0001-29, EPP, Simples Nacional, CNAE 81.30-3-00 (Paisagismo), Betim/MG, 8 funcionários. Analise se vale participar do edital. Responda: VALE PARTICIPAR? SIM/NÃO/TALVEZ — e em 3 linhas: motivo, risco principal e sugestão de preço estimado por m² ou unidade. Seja direto e prático.`,
-        messages:[{role:"user",content:`Edital: ${item.objetoCompra||item.descricaoObjeto}\nÓrgão: ${item.nomeUnidade||item.nomeEntidade||"Não informado"}\nValor estimado: R$${fmt(item.valorEstimado||0)}\nModalidade: ${item.modalidadeNome||"—"}\nSituação: ${item.situacaoCompra||"—"}`}]
-      })});
+    try{
+      const editalText=`Edital: ${item.objetoCompra||item.descricaoObjeto}\nÓrgão: ${item.nomeUnidade||item.nomeEntidade||"Não informado"}\nValor estimado: R$${fmt(item.valorEstimado||0)}\nModalidade: ${item.modalidadeNome||"—"}\nSituação: ${item.situacaoCompra||"—"}`;
+      const r=await fetch("/api/analise-licitacao",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({edital:editalText})});
       const d=await r.json();
-      setAnalise(a=>({...a,[key]:d.content?.[0]?.text||"Erro"}));
+      setAnalise(a=>({...a,[key]:d.text||d.error||"Erro"}));
     }catch{ setAnalise(a=>({...a,[key]:"Erro de conexão com IA"})); }
     setAnalisando(null);
   };

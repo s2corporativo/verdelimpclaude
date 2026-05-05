@@ -39,18 +39,15 @@ export default function AjudaPage() {
     setMsgs(newMsgs);
     setLoading(true);
     try {
-      const r = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-20250514", max_tokens:600,
-          system:`Assistente do Verdelimp ERP para VERDELIMP SERVICOS E TERCEIRIZACAO LTDA, CNPJ 30.198.776/0001-29, Betim/MG, Simples Nacional, CNAE 81.30-3-00 (Paisagismo), 8 funcionários. Sistema com 37 módulos: contratos, fiscal (DAS 6,72%, ISS 5% Betim), logística, retroescavadeira, dedetização, pipeline licitações, precificação BDI (TCU 2369/2011), mobilizações, equipamentos, aging financeiro, backup JSON/CSV. Responda direto e prático em português, máx 3 parágrafos.`,
-          messages: newMsgs.map(m=>({role:m.role==="assistant"?"assistant":"user",content:m.text}))
-        })
+      const r = await fetch("/api/chat-ajuda", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMsgs }),
       });
       const d = await r.json();
-      setMsgs([...newMsgs, {role:"assistant",text:d.content?.[0]?.text||"Erro ao processar"}]);
+      setMsgs([...newMsgs, {role:"assistant",text:d.text||d.error||"Erro ao processar"}]);
     } catch {
-      setMsgs([...newMsgs, {role:"assistant",text:"Erro de conexão. Verifique a chave ANTHROPIC_API_KEY nas configurações."}]);
+      setMsgs([...newMsgs, {role:"assistant",text:"Erro de conexão com o servidor. Tente novamente."}]);
     }
     setLoading(false);
     setTimeout(()=>chatRef.current?.scrollTo({top:9999,behavior:"smooth"}),100);

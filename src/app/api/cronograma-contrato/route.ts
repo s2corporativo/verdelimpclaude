@@ -5,6 +5,7 @@
 // - Evita finais de semana e feriados
 // - Otimiza por janelas climáticas favoráveis
 import { NextRequest, NextResponse } from "next/server";
+import { groqChat } from "@/lib/groq";
 
 // Feriados nacionais 2026 (inclui movimentos)
 const FERIADOS_2026 = [
@@ -135,16 +136,9 @@ export async function POST(req: NextRequest) {
     let analiseIA = "";
     if (usarIA) {
       try {
-        const r = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 1500,
-            system: "Especialista em planejamento operacional para empresas de paisagismo e manutenção ambiental em MG.",
-            messages: [{
-              role: "user",
-              content: `Analise este cronograma e dê recomendações ESTRATÉGICAS práticas em português:
+        analiseIA = await groqChat([
+          { role: "system", content: "Especialista em planejamento operacional para empresas de paisagismo e manutenção ambiental em MG." },
+          { role: "user", content: `Analise este cronograma e dê recomendações ESTRATÉGICAS práticas em português:
 
 CONTRATO: ${c.objeto || "N/A"}
 - Cliente: ${c.clienteNome}
@@ -165,14 +159,8 @@ ANÁLISE NECESSÁRIA (em formato de bullet points concisos, máx 8 itens):
 6. Sugestão de ordem de prioridade entre os meses
 7. Eventos previsíveis que afetam (chuvas, secas, festividades)
 
-Responda em texto corrido com bullets, sem markdown. Seja prático e direto.`
-            }],
-          }),
-        });
-        if (r.ok) {
-          const d = await r.json();
-          analiseIA = d.content?.[0]?.text || "";
-        }
+Responda em texto corrido com bullets, sem markdown. Seja prático e direto.` },
+        ], 1500).catch(() => "");
       } catch { /* sem IA, continuar */ }
     }
 

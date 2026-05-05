@@ -19,7 +19,7 @@ export default function IntegracoesPage() {
     {nome:"Apuração Tributária",url:"api/fiscal/apuracao",status:"ativa",uso:"DAS/FGTS/INSS/ISS auto",modulos:"Central Fiscal",auth:"Sessão"},
     {nome:"NF-e SEFAZ",url:"nfe.fazenda.gov.br",status:"pendente",uso:"Consulta e manifestação",modulos:"Fiscal",auth:"Cert. A1"},
     {nome:"eSocial",url:"esocial.gov.br",status:"pendente",uso:"Obrigações trabalhistas",modulos:"RH",auth:"Cert. A1"},
-    {nome:"Anthropic Claude IA",url:"api.anthropic.com",status:"ativa",uso:"Assistente especializado",modulos:"Precificação",auth:"Server-side"},
+    {nome:"GROQ llama-3.3-70b",url:"api.groq.com",status:"ativa",uso:"IA: chat, análise de editais, precificação, cronogramas",modulos:"Ajuda · Licitações · Precificação · Logística",auth:"Server-side"},
   ];
   return (<div>
     <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,marginBottom:14}}>Central de Integrações</h1>

@@ -17,8 +17,9 @@ function AbaCalculadora() {
   const analisar=async()=>{
     setLoadingIA("...");
     try{
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:700,system:"Especialista em precificação de serviços ambientais e paisagismo para licitações públicas em MG. Analise o preço e dê feedback objetivo. Seja prático e direto.",messages:[{role:"user",content:`Serviço: ${form.servico} em ${form.area} ${form.unit}\nCusto unit.: MO R$${fmt(c.mo)} + Mat R$${fmt(c.mat)} + Equip R$${fmt(c.eq)} = R$${fmt(custo)}/${form.unit}\nPreço calculado: R$${fmt(unit)}/${form.unit} (BDI ${bdi}%)\nTotal: R$${fmt(total)}\nParâmetros: Encargos ${form.encargos}% | Admin ${form.admin}% | Risco ${form.risco}% | Impostos ${form.impostos}% | Margem ${form.margem}%\nAnalise: competitividade em MG, adequação do BDI, risco de perder para preço, sugestão de ajuste.`}]})});
-      const d=await r.json();setAnaliseIA(d.content?.[0]?.text||"Erro");
+      const promptPreco=`Serviço: ${form.servico} em ${form.area} ${form.unit}\nCusto unit.: MO R$${fmt(c.mo)} + Mat R$${fmt(c.mat)} + Equip R$${fmt(c.eq)} = R$${fmt(custo)}/${form.unit}\nPreço calculado: R$${fmt(unit)}/${form.unit} (BDI ${bdi}%)\nTotal: R$${fmt(total)}\nParâmetros: Encargos ${form.encargos}% | Admin ${form.admin}% | Risco ${form.risco}% | Impostos ${form.impostos}% | Margem ${form.margem}%\nAnalise: competitividade em MG, adequação do BDI, risco de perder para preço, sugestão de ajuste.`;
+      const r=await fetch("/api/analise-preco",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:promptPreco})});
+      const d=await r.json();setAnaliseIA(d.text||d.error||"Erro");
     }catch{setAnaliseIA("Erro de conexão com IA");}
     setLoadingIA("");
   };

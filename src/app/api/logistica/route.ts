@@ -3,6 +3,7 @@
 // Gera plano de atendimento com equipes, datas, ordem e tempo estimado
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { groqChat } from "@/lib/groq";
 
 // ── Tipos ─────────────────────────────────────────────────────────
 export interface OsLogistica {
@@ -163,20 +164,10 @@ GERE UM PLANO SEMANAL DETALHADO em JSON com esta estrutura exata:
 
 Responda SOMENTE com JSON válido, sem markdown ou explicações.`;
 
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 3000,
-        system: "Especialista em logística operacional para serviços ambientais e paisagismo em MG. Responda sempre em JSON válido.",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (!r.ok) throw new Error(`Claude API: ${r.status}`);
-    const d = await r.json();
-    const raw = d.content?.[0]?.text || "{}";
+    const raw = await groqChat([
+      { role: "system", content: "Especialista em logística operacional para serviços ambientais e paisagismo em MG. Responda sempre em JSON válido." },
+      { role: "user", content: prompt },
+    ], 3000);
 
     let plano;
     try {
