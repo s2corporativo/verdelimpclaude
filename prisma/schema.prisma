@@ -411,6 +411,7 @@ model InventoryItem {
   updatedAt       DateTime          @updatedAt
 
   movements InventoryMovement[]
+  epiDeliveries InventoryEpiDelivery[]
 }
 
 model InventoryMovement {
@@ -497,6 +498,7 @@ model Contract {
   measurements  Measurement[]
   fuelLogs      FuelLog[]
   photos        ServicePhoto[]
+  mobilizations  Mobilization[]
 }
 
 // ═══ COMBUSTÍVEL ═════════════════════════════════════════════════
@@ -592,6 +594,7 @@ model WorkDiary {
   photosPaths   String[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  photos        ServicePhoto[]
 }
 
 
