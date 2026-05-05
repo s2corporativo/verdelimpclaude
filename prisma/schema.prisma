@@ -142,6 +142,7 @@ model Client {
   proposals Proposal[]
   nfse      FiscalNfse[]
   contracts Contract[]
+  clientPortalTokens ClientPortalToken[]
 }
 
 model Supplier {
