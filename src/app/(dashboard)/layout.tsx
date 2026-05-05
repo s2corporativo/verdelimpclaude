@@ -1,6 +1,6 @@
 "use client";
 import { NotificacoesWidget } from "@/components/NotificacoesWidget";
-mport { useSession, signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 

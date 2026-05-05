@@ -41,7 +41,6 @@ export default function RadarPage() {
   const analisarComIA=async(item:any,idx:number)=>{
     const key=String(idx);setAnalisando(key);
     try{
-    try{
       const editalText=`Edital: ${item.objetoCompra||item.descricaoObjeto}\nÓrgão: ${item.nomeUnidade||item.nomeEntidade||"Não informado"}\nValor estimado: R$${fmt(item.valorEstimado||0)}\nModalidade: ${item.modalidadeNome||"—"}\nSituação: ${item.situacaoCompra||"—"}`;
       const r=await fetch("/api/analise-licitacao",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({edital:editalText})});
       const d=await r.json();

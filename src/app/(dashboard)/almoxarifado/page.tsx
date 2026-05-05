@@ -60,4 +60,3 @@ export default function AlmoxarifadoPage() {
 }
 // Nota: esta versão mostra apenas leitura.
 // Para registrar entradas/saídas, use o módulo de Movimentações abaixo.
-}

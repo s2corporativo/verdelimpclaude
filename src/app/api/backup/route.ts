@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       });
       const headers = "Descrição;Valor;Vencimento;Status;Categoria;Tipo;Competência\n";
       const rows = despesas.map(e =>
-        `"${e.description||""}";"${Number(e.amount).toFixed(2).replace(".",",")"}";"${e.dueDate ? new Date(e.dueDate).toLocaleDateString("pt-BR") : ""}";"${e.status||""}";"${e.category?.name||""}";"${e.category?.type||""}";"${e.competence||""}"`
+        `"${e.description||""}";"${Number(e.amount).toFixed(2).replace(".",",")}";"${e.dueDate ? new Date(e.dueDate).toLocaleDateString("pt-BR") : ""}";"${e.status||""}";"${e.category?.name||""}";"${e.category?.type||""}";"${e.competence||""}"`
       ).join("\n");
       return new NextResponse(headers + rows, {
         headers: {
