@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: verdelimp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-verdelimp_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-verdelimp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env.production}
+    volumes:
+      - verdelimp_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-verdelimp} -d ${POSTGRES_DB:-verdelimp_erp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: verdelimp-erp
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-verdelimp}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-verdelimp_erp}?schema=public
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - verdelimp_uploads:/app/uploads
+
+volumes:
+  verdelimp_postgres_data:
+  verdelimp_uploads:
