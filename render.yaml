@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: verdelimp-erp
+    env: node
+    plan: starter
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        sync: false
+      - key: NEXT_PUBLIC_APP_NAME
+        value: Verdelimp ERP
+      - key: NEXT_PUBLIC_APP_VERSION
+        value: 2.2.0
+      - key: FISCAL_ENVIRONMENT
+        value: homologacao
+      - key: SEFAZ_CERTIFICATE_ENABLED
+        value: "false"
+      - key: SEFAZ_CERTIFICATE_STORAGE_MODE
+        value: disabled
+      - key: ESOCIAL_ENABLED
+        value: "false"
+      - key: REINF_ENABLED
+        value: "false"
+      - key: PNCP_ENABLED
+        value: "true"
+      - key: CEP_PROVIDER
+        value: viacep
+      - key: IBGE_ENABLED
+        value: "true"
+      - key: CNPJ_PROVIDER
+        value: brasilapi
+      - key: AI_ENABLED
+        value: "false"
+      - key: WHATSAPP_PROVIDER
+        value: disabled
