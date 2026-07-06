@@ -45,7 +45,9 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 - Prisma 6
 - PostgreSQL
 - NextAuth
-- Render
+- Docker
+- Nginx
+- VPS Contabo
 
 ## Deploy recomendado
 
@@ -54,12 +56,27 @@ A arquitetura recomendada é:
 ```text
 GitHub privado
   ↓
-Render Web Service
+VPS Contabo Ubuntu
   ↓
-Render PostgreSQL
+Docker Compose
+  ↓
+Next.js + PostgreSQL
+  ↓
+Nginx + SSL
+  ↓
+erp.verdelimp.com.br
 ```
 
-## Comandos principais
+## Arquivos de deploy para VPS
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `.env.vps.example`
+- `DEPLOY_CONTABO.md`
+- `deploy/contabo/nginx-verdelimp.conf`
+- `deploy/contabo/deploy.sh`
+
+## Comandos principais locais
 
 ```bash
 npm install
@@ -70,46 +87,61 @@ npm run build
 npm run start
 ```
 
+## Comandos principais na VPS
+
+```bash
+cd /opt/verdelimp-erp
+cp .env.vps.example .env.production
+nano .env.production
+docker compose up -d --build
+docker compose exec app npx prisma db push
+docker compose exec app npm run prisma:seed
+```
+
+Para atualização posterior:
+
+```bash
+cd /opt/verdelimp-erp
+chmod +x deploy/contabo/deploy.sh
+./deploy/contabo/deploy.sh
+```
+
 ## Variáveis de ambiente
 
-Use o arquivo `.env.example` como referência. Nunca envie `.env` real para o GitHub.
+Use o arquivo `.env.vps.example` como referência. Nunca envie `.env.production` real para o GitHub.
 
 Variáveis essenciais:
 
 ```env
-DATABASE_URL=
+POSTGRES_PASSWORD=
 NEXTAUTH_SECRET=
-NEXTAUTH_URL=
+NEXTAUTH_URL=https://erp.verdelimp.com.br
 ANTHROPIC_API_KEY=
 FISCAL_ENVIRONMENT=homologacao
 ```
 
-## Render
+## Nginx e SSL
 
-Build Command:
+O ERP roda internamente em:
 
-```bash
-npm install && npx prisma generate && npm run build
+```text
+http://127.0.0.1:3000
 ```
 
-Start Command:
+O Nginx deve publicar o domínio externo com SSL:
 
-```bash
-npm run start
+```text
+https://erp.verdelimp.com.br
 ```
 
-Após configurar o banco PostgreSQL no Render, execute no Shell:
-
-```bash
-npx prisma db push
-npm run prisma:seed
-```
+Guia completo: `DEPLOY_CONTABO.md`.
 
 ## Segurança
 
 Não enviar ao GitHub:
 
 - `.env` real
+- `.env.production`
 - certificado digital A1
 - senha de certificado
 - DATABASE_URL real
