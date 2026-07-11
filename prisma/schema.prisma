@@ -221,9 +221,47 @@ model Proposal {
   status       String   @default("Aberta")
   approvedAt   DateTime?
   pdfPath      String?
+  // Proposta completa (modelo Vallourec): planilha de preços + equipes + BDI
+  modelo       String   @default("simples") // simples | completa
+  vigenciaMeses Int?
+  premissas    Json?    // string[] — premissas técnicas adotadas
+  condicoesComerciais Json? // [{condicao, especificacao}]
+  bdiEquipes   Json?    // {total, componentes:[{nome, pct, obs}]}
+  bdiSpot      Json?    // {total, componentes:[{nome, pct, obs}]}
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   deletedAt    DateTime?
+  items        ProposalItem[]
+  teams        ProposalTeam[]
+}
+
+// Itens da planilha de preços da proposta completa (grupos 1.0, 2.0, 3.0…)
+model ProposalItem {
+  id            String   @id @default(cuid())
+  proposalId    String
+  proposal      Proposal @relation(fields: [proposalId], references: [id])
+  grupo         String   // "1.0 CANTEIRO DE OBRAS" | "2.0 EQUIPES DE MANUTENÇÃO" | "3.0 SERVIÇOS SPOT"
+  codigo        String   // "1.1", "2.3", "3.10"…
+  descricao     String
+  unidade       String   @default("vb") // vb | vb/mês | m² | m | un | ht | he
+  quantidade    Decimal  @db.Decimal(15,3) @default(1)
+  valorUnitario Decimal  @db.Decimal(15,2) @default(0)
+  ordem         Int      @default(0)
+  createdAt     DateTime @default(now())
+}
+
+// Detalhamento de custo das equipes fixas (seção 6 da proposta completa)
+model ProposalTeam {
+  id            String   @id @default(cuid())
+  proposalId    String
+  proposal      Proposal @relation(fields: [proposalId], references: [id])
+  nome          String   // "Equipe Pilhas e Barragens"
+  colaboradores Int      @default(1)
+  meses         Int      @default(12)
+  bdiRate       Decimal  @db.Decimal(5,2) @default(28)
+  componentes   Json     // [{nome, valorMensal}] — custo direto mensal
+  ordem         Int      @default(0)
+  createdAt     DateTime @default(now())
 }
 
 model ExpenseCategory {

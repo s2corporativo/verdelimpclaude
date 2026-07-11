@@ -22,6 +22,11 @@ export async function POST(req: NextRequest) {
     const count = await prisma.proposal.count();
     const number = `PROP-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
 
+    // Modelo completo (estilo Vallourec): itens em grupos, equipes, BDI e condições
+    const itens = Array.isArray(body.itens) ? body.itens : [];
+    const equipes = Array.isArray(body.equipes) ? body.equipes : [];
+    const totalItens = itens.reduce((s: number, i: any) => s + Number(i.quantidade || 1) * Number(i.valorUnitario || 0), 0);
+
     const prop = await prisma.proposal.create({
       data: {
         number,
@@ -38,10 +43,37 @@ export async function POST(req: NextRequest) {
         riskRate: Number(body.riskRate || 5),
         taxRate: Number(body.taxRate || 8),
         marginRate: Number(body.marginRate || 30),
-        totalValue: Number(body.totalValue || 0),
+        totalValue: itens.length > 0 ? totalItens : Number(body.totalValue || 0),
         validityDays: Number(body.validityDays || 30),
         paymentTerms: body.paymentTerms,
         status: "Aberta",
+        modelo: itens.length > 0 ? "completa" : "simples",
+        vigenciaMeses: body.vigenciaMeses ? Number(body.vigenciaMeses) : null,
+        premissas: body.premissas ?? undefined,
+        condicoesComerciais: body.condicoesComerciais ?? undefined,
+        bdiEquipes: body.bdiEquipes ?? undefined,
+        bdiSpot: body.bdiSpot ?? undefined,
+        items: {
+          create: itens.map((i: any, idx: number) => ({
+            grupo: i.grupo || "1.0 SERVIÇOS",
+            codigo: i.codigo || `1.${idx + 1}`,
+            descricao: i.descricao,
+            unidade: i.unidade || "vb",
+            quantidade: Number(i.quantidade || 1),
+            valorUnitario: Number(i.valorUnitario || 0),
+            ordem: idx,
+          })),
+        },
+        teams: {
+          create: equipes.map((e: any, idx: number) => ({
+            nome: e.nome,
+            colaboradores: Number(e.colaboradores || 1),
+            meses: Number(e.meses || 12),
+            bdiRate: Number(e.bdiRate || 28),
+            componentes: e.componentes || [],
+            ordem: idx,
+          })),
+        },
       },
     });
     return NextResponse.json(prop, { status: 201 });

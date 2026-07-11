@@ -35,6 +35,7 @@ const MENU = [
   { s: "ESTOQUE & SEGURANÇA" },
   { href: "/dashboard/almoxarifado", label: "Almoxarifado", icon: "🏭" },
   { href: "/dashboard/epi", label: "Controle de EPI", icon: "🦺" },
+  { href: "/dashboard/sso", label: "Documentação SSO", icon: "🛟" },
 
   { s: "FINANCEIRO & FISCAL" },
   { href: "/dashboard/financeiro", label: "Financeiro + Aging", icon: "💰" },

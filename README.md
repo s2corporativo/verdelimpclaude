@@ -24,6 +24,7 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 - Combustível
 - Almoxarifado
 - Controle de EPI
+- Documentação SSO (dossiê mensal por funcionário — checklist de 19 requisitos)
 - Financeiro
 - Central Fiscal
 - DRE
