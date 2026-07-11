@@ -5,7 +5,7 @@ import { custoHoraHomem, calcularServico, PARAMETROS_PADRAO, type ParametrosHH }
 const IS: any = { width: "100%", padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 };
 const LS: any = { fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 3 };
 const CARD: any = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 14 };
-const TH: any = { padding: "8px 10px", textAlign: "left", fontSize: 10.5, fontWeight: 700, color: "#0f5233" };
+const TH: any = { padding: "8px 10px", textAlign: "left", fontSize: 10.5, fontWeight: 700, color: "#334532" };
 const TD: any = { padding: "7px 10px", fontSize: 12 };
 
 const R$ = (v: number) => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -74,14 +74,14 @@ export default function HoraHomemPage() {
 
   return (
     <div>
-      <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>👷 Custo Hora-Homem</h1>
+      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>👷 Custo Hora-Homem</h1>
       <p style={{ color: "#6b7280", fontSize: 12, marginBottom: 14 }}>
         Quanto custa DE VERDADE cada hora de trabalho — e quanto cobrar em cada serviço para não errar o preço.
       </p>
 
       {/* PARÂMETROS */}
       <div style={CARD}>
-        <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 4 }}>⚙️ Parâmetros de encargos e jornada</h3>
+        <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 4 }}>⚙️ Parâmetros de encargos e jornada</h3>
         <p style={{ fontSize: 10.5, color: "#92400e", background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 7, padding: "6px 10px", marginBottom: 10 }}>
           Apoio gerencial — valide os percentuais com seu contador. A <b>eficiência</b> é o segredo: dos 220h pagos,
           quantos % viram trabalho no cliente (descontando deslocamento, chuva, DDS, montagem)?
@@ -101,7 +101,7 @@ export default function HoraHomemPage() {
 
       {/* CUSTO HH POR FUNÇÃO */}
       <div style={CARD}>
-        <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 10 }}>1️⃣ Custo real da hora de cada função (da sua folha)</h3>
+        <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 10 }}>1️⃣ Custo real da hora de cada função (da sua folha)</h3>
         {dados._semFolha && <p style={{ fontSize: 12, color: "#92400e" }}>Cadastre funcionários em RH &amp; Folha para calcular com dados reais.</p>}
         <table style={{ borderCollapse: "collapse", width: "100%" }}>
           <thead><tr style={{ background: "#e8f5ee" }}>
@@ -116,7 +116,7 @@ export default function HoraHomemPage() {
                 <td style={TD}>{R$(f.custo.encargosValor)} <span style={{ color: "#6b7280", fontSize: 10 }}>({f.custo.encargosPct.toFixed(1)}%)</span></td>
                 <td style={{ ...TD, fontWeight: 600 }}>{R$(f.custo.custoMensalTotal)}</td>
                 <td style={{ ...TD, color: "#6b7280" }}>{R$(f.custo.custoHoraPaga)}</td>
-                <td style={{ ...TD }}><span style={{ background: "#0f5233", color: "#fff", padding: "3px 10px", borderRadius: 8, fontWeight: 800, fontSize: 12 }}>{R$(f.custo.custoHoraProdutiva)}</span></td>
+                <td style={{ ...TD }}><span style={{ background: "#334532", color: "#fff", padding: "3px 10px", borderRadius: 8, fontWeight: 800, fontSize: 12 }}>{R$(f.custo.custoHoraProdutiva)}</span></td>
                 <td style={TD}><button onClick={() => setDetalheFuncao(detalheFuncao === f.funcao ? null : f.funcao)} style={{ background: "#e0e7ff", color: "#3730a3", border: "none", padding: "3px 9px", borderRadius: 7, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>{detalheFuncao === f.funcao ? "fechar" : "abrir conta"}</button></td>
               </tr>
               {detalheFuncao === f.funcao && (
@@ -140,7 +140,7 @@ export default function HoraHomemPage() {
 
       {/* CALCULADORA DE SERVIÇO */}
       <div style={CARD}>
-        <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 10 }}>2️⃣ Calculadora de serviço — quanto custa e quanto cobrar</h3>
+        <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 10 }}>2️⃣ Calculadora de serviço — quanto custa e quanto cobrar</h3>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
           <div>
             <label style={LS}>Serviço (produtividade de referência)</label>
@@ -165,7 +165,7 @@ export default function HoraHomemPage() {
             <button onClick={() => setEquipe((p) => p.filter((_, j) => j !== i))} style={{ background: "#fee2e2", color: "#991b1b", border: "none", padding: "6px 10px", borderRadius: 7, cursor: "pointer", fontSize: 11 }}>✕</button>
           </div>
         ))}
-        <button onClick={() => funcoes[0] && setEquipe((p) => [...p, { funcao: funcoes[0].funcao, quantidade: 1 }])} style={{ background: "#e8f5ee", color: "#0f5233", border: "1px solid #bbf7d0", padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700, marginBottom: 12 }}>+ Adicionar função</button>
+        <button onClick={() => funcoes[0] && setEquipe((p) => [...p, { funcao: funcoes[0].funcao, quantidade: 1 }])} style={{ background: "#e8f5ee", color: "#334532", border: "1px solid #bbf7d0", padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700, marginBottom: 12 }}>+ Adicionar função</button>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 12 }}>
           <div><label style={LS}>Equip./transp. R$/dia</label><input type="number" style={IS} value={extrasDia} onChange={(e) => setExtrasDia(Number(e.target.value) || 0)} /></div>

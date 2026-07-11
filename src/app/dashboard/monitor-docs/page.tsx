@@ -71,7 +71,7 @@ export default function MonitorDocsPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#0f5233", marginBottom: 4 }}>🚦 Monitor de Documentação</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🚦 Monitor de Documentação</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>
         Situação dos documentos exigidos pela contratante, por funcionário mobilizado. ASO, treinamentos NR e EPI entram automaticamente dos módulos correspondentes.
       </p>
@@ -86,19 +86,19 @@ export default function MonitorDocsPage() {
           <>
             <button onClick={() => post({ action: "aplicarModelo", modelo: "SST", contractId })}
               title="Relação de documentos de SST do Grupo SADA (19 itens) — só adiciona o que ainda não existe"
-              style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               ✨ Modelo SST (19 itens)
             </button>
             <button onClick={() => post({ action: "aplicarModelo", modelo: "CONTRATUAL", contractId })}
               title="Condições Gerais do Grupo SADA, cláusula 6.12 — folha, ponto, FGTS, INSS, GFIP, balanço, seguros… — só adiciona o que ainda não existe"
-              style={{ background: "#0f5233", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              style={{ background: "#334532", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               📋 Modelo Contratual SADA (cl. 6.12)
             </button>
           </>
         )}
         {contractId && (
           <button onClick={() => setMostrarNovoReq(!mostrarNovoReq)}
-            style={{ background: "#fff", color: "#1a7a4a", border: "1px solid #1a7a4a", padding: "9px 14px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            style={{ background: "#fff", color: "#4a9410", border: "1px solid #4a9410", padding: "9px 14px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
             + Requisito
           </button>
         )}
@@ -121,14 +121,14 @@ export default function MonitorDocsPage() {
             <input value={novoReq.validityDays} onChange={(e) => setNovoReq({ ...novoReq, validityDays: e.target.value })} placeholder="vazio = sem"
               style={{ padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, width: 110 }} /></div>
           <button onClick={async () => { if (novoReq.name && await post({ action: "requisito", contractId, ...novoReq })) { setNovoReq({ name: "", scope: "FUNCIONARIO", validityDays: "" }); setMostrarNovoReq(false); } }}
-            style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Adicionar</button>
+            style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Adicionar</button>
         </div>
       )}
 
       {dados && contractId && (
         <>
           <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
-            {card("Funcionários mobilizados", dados.resumo.funcionarios, "#1a7a4a")}
+            {card("Funcionários mobilizados", dados.resumo.funcionarios, "#4a9410")}
             {card("Vencidos", dados.resumo.vencidos, "#991b1b")}
             {card("A vencer (30 dias)", dados.resumo.aVencer, "#b45309")}
             {card("Faltantes", dados.resumo.faltantes, "#374151")}
@@ -137,7 +137,7 @@ export default function MonitorDocsPage() {
           {/* Documentos da empresa */}
           {dados.requisitosEmpresa.length > 0 && (
             <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 18 }}>
-              <h2 style={{ fontSize: 14, fontWeight: 800, color: "#0f5233", margin: "0 0 10px" }}>📄 Documentos da empresa</h2>
+              <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: "0 0 10px" }}>📄 Documentos da empresa</h2>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead><tr style={{ borderBottom: "2px solid #e5e7eb", textAlign: "left" }}>
@@ -166,7 +166,7 @@ export default function MonitorDocsPage() {
           {/* Matriz por funcionário */}
           {dados.requisitosFuncionario.length > 0 && (
             <div style={{ background: "#fff", borderRadius: 12, padding: 16 }}>
-              <h2 style={{ fontSize: 14, fontWeight: 800, color: "#0f5233", margin: "0 0 10px" }}>👷 Matriz por funcionário {dados.matriz.length === 0 && <span style={{ color: "#b45309", fontWeight: 600 }}>— nenhum funcionário mobilizado neste contrato (mobilize em RH → Mobilizações)</span>}</h2>
+              <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: "0 0 10px" }}>👷 Matriz por funcionário {dados.matriz.length === 0 && <span style={{ color: "#b45309", fontWeight: 600 }}>— nenhum funcionário mobilizado neste contrato (mobilize em RH → Mobilizações)</span>}</h2>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ borderCollapse: "collapse", fontSize: 11, minWidth: "100%" }}>
                   <thead>
@@ -175,7 +175,7 @@ export default function MonitorDocsPage() {
                       {dados.requisitosFuncionario.map((r: any) => (
                         <th key={r.id} style={{ padding: "8px 6px", textAlign: "center", minWidth: 108, fontWeight: 700, color: "#374151" }}>
                           {r.name.length > 34 ? r.name.slice(0, 32) + "…" : r.name}
-                          {r.autoSource && <span title="Preenchido automaticamente" style={{ display: "block", color: "#1a7a4a", fontWeight: 600 }}>⚙ auto</span>}
+                          {r.autoSource && <span title="Preenchido automaticamente" style={{ display: "block", color: "#4a9410", fontWeight: 600 }}>⚙ auto</span>}
                         </th>
                       ))}
                     </tr>
@@ -215,7 +215,7 @@ export default function MonitorDocsPage() {
       {celula && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }} onClick={() => setCelula(null)}>
           <div style={{ background: "#fff", borderRadius: 14, padding: 24, width: 420, maxWidth: "92vw" }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 800, color: "#0f5233" }}>{celula.requisitoNome}</h3>
+            <h3 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 800, color: "#334532" }}>{celula.requisitoNome}</h3>
             <p style={{ margin: "0 0 14px", fontSize: 12, color: "#6b7280" }}>{celula.funcionarioNome}{celula.origem && celula.origem !== "manual" ? ` · hoje preenchido por: ${celula.origem}` : ""}</p>
             <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Data de emissão</label>
             <input type="date" value={form.issuedAt} onChange={(e) => setForm({ ...form, issuedAt: e.target.value })}
@@ -228,7 +228,7 @@ export default function MonitorDocsPage() {
               style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, marginBottom: 16 }} />
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button onClick={() => setCelula(null)} style={{ background: "#f3f4f6", border: "none", padding: "9px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Cancelar</button>
-              <button onClick={salvarRegistro} style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 700 }}>Salvar</button>
+              <button onClick={salvarRegistro} style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 700 }}>Salvar</button>
             </div>
           </div>
         </div>

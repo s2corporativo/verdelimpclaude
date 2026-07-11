@@ -2,5 +2,5 @@
 body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; }
 input, select, textarea, button { font-family: inherit; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-thumb { background: #1a7a4a; border-radius: 4px; }
-input[type=checkbox], input[type=radio] { accent-color: #1a7a4a; }
+::-webkit-scrollbar-thumb { background: #4a9410; border-radius: 4px; }
+input[type=checkbox], input[type=radio] { accent-color: #4a9410; }

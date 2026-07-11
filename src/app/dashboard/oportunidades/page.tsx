@@ -50,13 +50,13 @@ export default function OportunidadesPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 900, color: "#0f5233", marginBottom: 4 }}>🎯 Oportunidades (CRM)</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🎯 Oportunidades (CRM)</h1>
           <p style={{ color: "#6b7280", fontSize: 13, margin: 0 }}>
-            Funil comercial de clientes privados · Em aberto: <strong style={{ color: "#0f5233" }}>{brl(dados.valorEmAberto || 0)}</strong>
+            Funil comercial de clientes privados · Em aberto: <strong style={{ color: "#334532" }}>{brl(dados.valorEmAberto || 0)}</strong>
           </p>
         </div>
         <button onClick={() => setMostrarForm(!mostrarForm)}
-          style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "10px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+          style={{ background: "#4a9410", color: "#fff", border: "none", padding: "10px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
           + Nova oportunidade
         </button>
       </div>
@@ -71,7 +71,7 @@ export default function OportunidadesPage() {
           {input("nextAction", "Próxima ação", { ph: "Ligar, visitar, enviar proposta…", width: 200 })}
           {input("nextActionDate", "Quando", { type: "date", width: 140 })}
           <button onClick={salvar} disabled={!form.prospectName}
-            style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.prospectName ? 0.5 : 1 }}>Salvar</button>
+            style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.prospectName ? 0.5 : 1 }}>Salvar</button>
           {msg && <span style={{ color: "#991b1b", fontSize: 12 }}>{msg}</span>}
         </div>
       )}
@@ -88,7 +88,7 @@ export default function OportunidadesPage() {
                 <div key={o.id} style={{ background: "#fff", borderRadius: 8, padding: 10, marginBottom: 8, boxShadow: "0 1px 3px rgba(0,0,0,.06)" }}>
                   <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: "#111827" }}>{o.prospectName}</p>
                   {o.serviceType && <p style={{ margin: "2px 0 0", fontSize: 10.5, color: "#6b7280" }}>{o.serviceType}</p>}
-                  {o.estimatedValue && <p style={{ margin: "2px 0 0", fontSize: 11, fontWeight: 700, color: "#0f5233" }}>{brl(Number(o.estimatedValue))}</p>}
+                  {o.estimatedValue && <p style={{ margin: "2px 0 0", fontSize: 11, fontWeight: 700, color: "#334532" }}>{brl(Number(o.estimatedValue))}</p>}
                   {(o.contactName || o.phone) && <p style={{ margin: "2px 0 0", fontSize: 10, color: "#6b7280" }}>{[o.contactName, o.phone].filter(Boolean).join(" · ")}</p>}
                   {o.nextAction && (
                     <p style={{ margin: "4px 0 0", fontSize: 10, color: "#b45309", fontWeight: 700 }}>

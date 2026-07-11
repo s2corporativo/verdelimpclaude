@@ -205,7 +205,7 @@ export function gerarHtmlSso(d: SsoDocData): string {
   }
   .page{width:210mm;min-height:280mm;margin:10px auto;padding:13mm 15mm 18mm;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);position:relative}
   .topo{border-bottom:3px solid #2e7d32;padding-bottom:10px;margin-bottom:14px}
-  .marca{font-size:16px;font-weight:900;color:#0f5233}
+  .marca{font-size:16px;font-weight:900;color:#334532}
   .marca span{font-weight:400;font-size:11px;color:#6b7280}
   .doc-tit{font-size:14px;font-weight:800;color:#2e7d32;margin-top:8px}
   .doc-sub{font-size:10.5px;color:#374151;margin-top:3px}
@@ -223,7 +223,7 @@ export function gerarHtmlSso(d: SsoDocData): string {
   .assin span{font-weight:700}
   .nota{font-size:10px;color:#6b7280;font-style:italic;margin-top:10px}
   .rodape{position:absolute;bottom:8mm;left:15mm;right:15mm;text-align:center;font-size:8.5px;color:#b0b6bd}
-  .printbar{position:sticky;top:0;background:#0f5233;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:9}
+  .printbar{position:sticky;top:0;background:#334532;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:9}
   .printbar button{background:#e8621a;border:none;color:#fff;font-weight:700;padding:8px 22px;border-radius:6px;cursor:pointer;font-size:13px}
 </style>
 </head>

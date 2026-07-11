@@ -35,7 +35,7 @@ export default function LoginPage() {
             <img src="/logo.png" alt="Verdelimp" onError={() => setSemLogo(true)}
               style={{ maxWidth: 220, maxHeight: 90, objectFit: "contain", marginBottom: 8 }} />
           )}
-          <h1 style={{ color: "#0f5233", fontSize: 22, fontWeight: 900 }}>VERDELIMP ERP</h1>
+          <h1 style={{ color: "#334532", fontSize: 22, fontWeight: 900 }}>VERDELIMP ERP</h1>
           <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4 }}>Sistema Integrado de Gestão</p>
         </div>
 
@@ -65,7 +65,7 @@ export default function LoginPage() {
 
           <button
             type="submit" disabled={loading}
-            style={{ width: "100%", background: "#1a7a4a", color: "#fff", border: "none", padding: 12, borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}
+            style={{ width: "100%", background: "#4a9410", color: "#fff", border: "none", padding: 12, borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>

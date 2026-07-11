@@ -19,7 +19,7 @@ function Grafico({ meses, tendencia }: { meses: any[], tendencia?: number }) {
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, flexWrap:"wrap", gap:8 }}>
         <div>
-          <h3 style={{ color:"#0f5233", fontSize:13, fontWeight:700, margin:0 }}>📈 Desempenho Financeiro — 12 meses</h3>
+          <h3 style={{ color:"#334532", fontSize:13, fontWeight:700, margin:0 }}>📈 Desempenho Financeiro — 12 meses</h3>
           {tendencia !== undefined && (
             <span style={{ fontSize:11, color: tendencia >= 0 ? "#15803d" : "#dc2626", fontWeight:600 }}>
               {tendencia >= 0 ? "▲" : "▼"} {Math.abs(tendencia)}% vs trimestre anterior
@@ -29,7 +29,7 @@ function Grafico({ meses, tendencia }: { meses: any[], tendencia?: number }) {
         <div style={{ display:"flex", gap:6 }}>
           {(["barras","margem"] as const).map(t => (
             <button key={t} onClick={()=>setAtivo(t)}
-              style={{ background: ativo===t?"#0f5233":"#f3f4f6", color: ativo===t?"#fff":"#374151", border:"none", padding:"4px 10px", borderRadius:6, cursor:"pointer", fontSize:10, fontWeight:600 }}>
+              style={{ background: ativo===t?"#334532":"#f3f4f6", color: ativo===t?"#fff":"#374151", border:"none", padding:"4px 10px", borderRadius:6, cursor:"pointer", fontSize:10, fontWeight:600 }}>
               {t === "barras" ? "📊 Faturamento" : "📉 Margem %"}
             </button>
           ))}
@@ -44,14 +44,14 @@ function Grafico({ meses, tendencia }: { meses: any[], tendencia?: number }) {
                 <div style={{ width:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-end", height:110, gap:1 }}>
                   <div style={{ background:"#f87171", height: maxFat > 0 ? `${(m.tributos/maxFat)*105}px` : "1px", minHeight:1, borderRadius:"1px 1px 0 0" }} title={`Tributos: ${fmt(m.tributos)}`}/>
                   <div style={{ background:"#fb923c", height: maxFat > 0 ? `${(m.despesas/maxFat)*105}px` : "1px", minHeight:1 }} title={`Despesas: ${fmt(m.despesas)}`}/>
-                  <div style={{ background:"#1a7a4a", height: maxFat > 0 ? `${(m.margem>0?m.margem/maxFat:0)*105}px` : "1px", minHeight:1 }} title={`Margem: ${fmt(m.margem)}`}/>
+                  <div style={{ background:"#4a9410", height: maxFat > 0 ? `${(m.margem>0?m.margem/maxFat:0)*105}px` : "1px", minHeight:1 }} title={`Margem: ${fmt(m.margem)}`}/>
                 </div>
                 <span style={{ fontSize:8, color:"#9ca3af", marginTop:2, textAlign:"center", lineHeight:1 }}>{m.label||m.mes?.slice(5)}</span>
               </div>
             ))}
           </div>
           <div style={{ display:"flex", gap:12, marginTop:6, fontSize:9, flexWrap:"wrap" }}>
-            {[["#f87171","Tributos"],["#fb923c","Despesas op."],["#1a7a4a","Margem líquida"]].map(([c,l])=>(
+            {[["#f87171","Tributos"],["#fb923c","Despesas op."],["#4a9410","Margem líquida"]].map(([c,l])=>(
               <div key={l} style={{ display:"flex", alignItems:"center", gap:3 }}>
                 <div style={{ width:8, height:8, background:c, borderRadius:1 }}/><span style={{ color:"#6b7280" }}>{l}</span>
               </div>
@@ -59,7 +59,7 @@ function Grafico({ meses, tendencia }: { meses: any[], tendencia?: number }) {
           </div>
           {/* Linha de valores no rodapé */}
           <div style={{ display:"flex", justifyContent:"space-between", marginTop:10, padding:"8px 10px", background:"#f9fafb", borderRadius:8, fontSize:11, flexWrap:"wrap", gap:6 }}>
-            <span>Faturado (mês): <strong style={{ color:"#0f5233" }}>{fmt(ultMes.faturamento)}</strong></span>
+            <span>Faturado (mês): <strong style={{ color:"#334532" }}>{fmt(ultMes.faturamento)}</strong></span>
             <span>Tributos: <strong style={{ color:"#dc2626" }}>{fmt(ultMes.tributos)}</strong></span>
             <span>Despesas: <strong style={{ color:"#d97706" }}>{fmt(ultMes.despesas)}</strong></span>
             <span>Margem: <strong style={{ color: ultMes.margemPct >= 20 ? "#15803d" : ultMes.margemPct >= 10 ? "#d97706" : "#dc2626" }}>{fmt(ultMes.margem)} ({ultMes.margemPct}%)</strong></span>
@@ -96,7 +96,7 @@ function Grafico({ meses, tendencia }: { meses: any[], tendencia?: number }) {
   );
 }
 
-function Kpi({ l, v, i, c = "#1a7a4a", alert = false }: any) {
+function Kpi({ l, v, i, c = "#4a9410", alert = false }: any) {
   return (
     <div style={{ background: "#fff", border: `1px solid ${alert ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 10, padding: "12px 14px", borderTop: `3px solid ${alert ? "#dc2626" : c}` }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -130,7 +130,7 @@ export default function DashboardPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <h1 style={{ color: "#0f5233", fontSize: 22, fontWeight: 700, margin: 0 }}>Dashboard</h1>
+          <h1 style={{ color: "#334532", fontSize: 22, fontWeight: 700, margin: 0 }}>Dashboard</h1>
           <p style={{ color: "#6b7280", fontSize: 12, margin: "3px 0 0" }}>
             VERDELIMP · CNPJ 30.198.776/0001-29 · Simples Nacional · Betim/MG
             {demo && <span style={{ marginLeft: 8, background: "#e0e7ff", color: "#3730a3", fontSize: 10, padding: "2px 8px", borderRadius: 8, fontWeight: 700 }}>Demo</span>}
@@ -155,7 +155,7 @@ export default function DashboardPage() {
         <Kpi label="Propostas" value={dados.totalPropostas || 2} icon="📄" color="#0891b2" />
         <Kpi label="Tributos em aberto" value={`R$${fmt(fiscal.tributosAberto || 8450)}`} icon="💸" color="#d97706" alert={fiscal.tributosAberto > 0} />
         <Kpi label="Tributos pagos" value={`R$${fmt(fiscal.tributosPago || 5770)}`} icon="✅" />
-        <Kpi label="Docs alerta" value={fiscal.docsVencer || 2} icon="📋" color={fiscal.docsVencer > 0 ? "#dc2626" : "#1a7a4a"} alert={fiscal.docsVencer > 0} />
+        <Kpi label="Docs alerta" value={fiscal.docsVencer || 2} icon="📋" color={fiscal.docsVencer > 0 ? "#dc2626" : "#4a9410"} alert={fiscal.docsVencer > 0} />
         <Kpi label="Contratos ativos" value={dados.totalContratos || "—"} icon="📋" />
       </div>
 
@@ -164,7 +164,7 @@ export default function DashboardPage() {
           <Grafico meses={graficos} tendencia={tendencia} />
         </div>
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>📅 Próximos vencimentos</h3>
+          <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 12 }}>📅 Próximos vencimentos</h3>
           {(fiscal.proximosVencimentos || [
             { taxType: "ISS", competence: "2026-04", dueDate: "2026-05-10", totalAmount: 950 },
             { taxType: "DAS", competence: "2026-04", dueDate: "2026-05-20", totalAmount: 3840 },
@@ -183,16 +183,16 @@ export default function DashboardPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 10 }}>🔗 APIs conectadas</h3>
+          <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 10 }}>🔗 APIs conectadas</h3>
           {[["ViaCEP", "Endereços automáticos", "✅"], ["BrasilAPI CNPJ", "Dados Receita Federal", "✅"], ["IBGE", "Municípios e UFs", "✅"], ["Feriados 2026", "Calendário fiscal", "✅"], ["ISS Betim LC33/2003", "Alíquotas automáticas", "✅"], ["PNCP", "Radar licitações", "✅"]].map(([n, d, s]) => (
             <div key={n} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #f3f4f6", fontSize: 11 }}>
               <span><strong>{n}</strong> <span style={{ color: "#9ca3af" }}>— {d}</span></span><span>{s}</span>
             </div>
           ))}
         </div>
-        <div style={{ background: "linear-gradient(135deg, #0f5233 0%, #1a7a4a 100%)", borderRadius: 12, padding: 16, color: "#fff" }}>
+        <div style={{ background: "linear-gradient(135deg, #334532 0%, #4a9410 100%)", borderRadius: 12, padding: 16, color: "#fff" }}>
           <h3 style={{ fontSize: 13, marginBottom: 12 }}>🚀 Acesso rápido</h3>
-          {[["⚡ Novo Contrato (impacto auto)", "/dashboard/novo-contrato", "#fff", "#fbbf24"], ["💼 Apurar tributos", "/dashboard/fiscal", "#dcfce7", "#0f5233"], ["📄 Nova proposta + PDF", "/dashboard/propostas", "#dcfce7", "#0f5233"], ["🔍 Buscar licitações", "/dashboard/radar-licitacoes", "#dcfce7", "#0f5233"], ["🚛 Logística semana", "/dashboard/logistica", "#dcfce7", "#0f5233"], ["🤖 Ajuda com IA", "/dashboard/ajuda", "#dcfce7", "#0f5233"]].map(([l, h, bg, co]) => (
+          {[["⚡ Novo Contrato (impacto auto)", "/dashboard/novo-contrato", "#fff", "#fbbf24"], ["💼 Apurar tributos", "/dashboard/fiscal", "#dcfce7", "#334532"], ["📄 Nova proposta + PDF", "/dashboard/propostas", "#dcfce7", "#334532"], ["🔍 Buscar licitações", "/dashboard/radar-licitacoes", "#dcfce7", "#334532"], ["🚛 Logística semana", "/dashboard/logistica", "#dcfce7", "#334532"], ["🤖 Ajuda com IA", "/dashboard/ajuda", "#dcfce7", "#334532"]].map(([l, h, bg, co]) => (
             <a key={h} href={h} style={{ display: "block", background: "rgba(255,255,255,.15)", borderRadius: 8, padding: "8px 12px", marginBottom: 6, textDecoration: "none", color: "#fff", fontSize: 12, fontWeight: 600 }}>{l}</a>
           ))}
         </div>

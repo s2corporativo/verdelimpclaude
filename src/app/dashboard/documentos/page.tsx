@@ -8,7 +8,7 @@ const CAT_ICON: any = {
 };
 const CAT_COR: any = {
   contrato:"#1d4ed8", fiscal:"#d97706", rh:"#7c3aed",
-  juridico:"#dc2626", licitacao:"#0f5233", tecnico:"#0369a1", outro:"#6b7280"
+  juridico:"#dc2626", licitacao:"#334532", tecnico:"#0369a1", outro:"#6b7280"
 };
 const CAT_LABEL: any = {
   contrato:"Contratos", fiscal:"Fiscal", rh:"RH", juridico:"Jurídico",
@@ -161,7 +161,7 @@ export default function DocumentosPage() {
       {/* HEADER */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:0}}>
+          <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             📁 Gerenciador de Documentos
             {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
           </h1>
@@ -173,7 +173,7 @@ export default function DocumentosPage() {
           <button onClick={()=>setView(v=>v==="lista"?"grid":"lista")} style={{background:"#f3f4f6",border:"none",padding:"8px 12px",borderRadius:8,cursor:"pointer",fontSize:12}}>
             {view==="lista"?"⊞ Grid":"☰ Lista"}
           </button>
-          <button onClick={()=>setShowUpload(f=>!f)} style={{background:"#0f5233",color:"#fff",border:"none",padding:"8px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
+          <button onClick={()=>setShowUpload(f=>!f)} style={{background:"#334532",color:"#fff",border:"none",padding:"8px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
             + Adicionar Documento
           </button>
         </div>
@@ -182,13 +182,13 @@ export default function DocumentosPage() {
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:14}}>
         {[
-          ["Total docs",totalDocs,"📁","#1a7a4a"],
+          ["Total docs",totalDocs,"📁","#4a9410"],
           ["Vencidos",vencidos,"🚨","#dc2626"],
           ["Vencendo (30d)",vencendo30,"⚠️","#d97706"],
           ...CATEGORIAS_LIST.map(c=>[ CAT_LABEL[c], statsCat.find((s:any)=>s.categoria===c)?._count?.id||0, CAT_ICON[c], CAT_COR[c] ])
         ].map(([l,v,i,c])=>(
           <div key={l as string} onClick={()=>CATEGORIAS_LIST.includes(l as string)?setCatAtiva(catAtiva===l?null:l as string):null}
-            style={{background:"#fff",border:`1px solid ${catAtiva===l?"#0f5233":"#e5e7eb"}`,borderRadius:10,padding:"10px 12px",borderTop:`3px solid ${c}`,cursor:CATEGORIAS_LIST.includes(l as string)?"pointer":"default",transition:"border .15s"}}>
+            style={{background:"#fff",border:`1px solid ${catAtiva===l?"#334532":"#e5e7eb"}`,borderRadius:10,padding:"10px 12px",borderTop:`3px solid ${c}`,cursor:CATEGORIAS_LIST.includes(l as string)?"pointer":"default",transition:"border .15s"}}>
             <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase"}}>{l}</span><span style={{fontSize:13}}>{i}</span></div>
             <div style={{fontSize:18,fontWeight:700,color:c as string,marginTop:4}}>{v}</div>
           </div>
@@ -204,22 +204,22 @@ export default function DocumentosPage() {
       <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
         <form onSubmit={buscarHandler} style={{display:"flex",gap:6,flex:1,minWidth:200}}>
           <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="Buscar por nome, tag, descrição..." style={{...IS,flex:1}}/>
-          <button type="submit" style={{background:"#0f5233",color:"#fff",border:"none",padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12}}>🔍</button>
+          <button type="submit" style={{background:"#334532",color:"#fff",border:"none",padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12}}>🔍</button>
         </form>
         {catAtiva&&<button onClick={()=>setCatAtiva(null)} style={{background:"#fee2e2",color:"#991b1b",border:"none",padding:"6px 12px",borderRadius:8,cursor:"pointer",fontSize:11,fontWeight:700}}>✕ {CAT_LABEL[catAtiva]}</button>}
       </div>
 
       {/* FORM UPLOAD */}
       {showUpload&&(
-        <div style={{background:"#fff",border:"2px solid #0f5233",borderRadius:14,padding:20,marginBottom:16}}>
-          <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:14}}>+ Adicionar Documento</h3>
+        <div style={{background:"#fff",border:"2px solid #334532",borderRadius:14,padding:20,marginBottom:16}}>
+          <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:14}}>+ Adicionar Documento</h3>
           {erro&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:7,padding:"7px 12px",fontSize:11,color:"#991b1b",marginBottom:10}}>{erro}</div>}
 
           {/* Estratégia */}
           <div style={{display:"flex",gap:8,marginBottom:14}}>
             {[["arquivo","🗄️ Enviar arquivo ao servidor (até 25MB)"],["url","🔗 Link externo (Google Drive, OneDrive, etc.)"],["base64","📤 Embutido no banco (até 2MB)"]].map(([v,l])=>(
               <button key={v} onClick={()=>setForm((p:any)=>({...p,estrategia:v,base64Data:undefined,urlArquivo:undefined}))}
-                style={{flex:1,background:form.estrategia===v?"#0f5233":"#f9fafb",color:form.estrategia===v?"#fff":"#374151",border:`1px solid ${form.estrategia===v?"#0f5233":"#e5e7eb"}`,padding:"9px",borderRadius:9,cursor:"pointer",fontSize:12,fontWeight:600}}>
+                style={{flex:1,background:form.estrategia===v?"#334532":"#f9fafb",color:form.estrategia===v?"#fff":"#374151",border:`1px solid ${form.estrategia===v?"#334532":"#e5e7eb"}`,padding:"9px",borderRadius:9,cursor:"pointer",fontSize:12,fontWeight:600}}>
                 {l}
               </button>
             ))}
@@ -288,7 +288,7 @@ export default function DocumentosPage() {
             <textarea style={{...IS,height:50}} value={form.descricao||""} onChange={e=>setForm((p:any)=>({...p,descricao:e.target.value}))} placeholder="Notas sobre o documento..."/>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={salvar} disabled={salvando} style={{background:salvando?"#6b7280":"#0f5233",color:"#fff",border:"none",padding:"10px 28px",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>
+            <button onClick={salvar} disabled={salvando} style={{background:salvando?"#6b7280":"#334532",color:"#fff",border:"none",padding:"10px 28px",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>
               {salvando?"⟳ Salvando...":"💾 Salvar Documento"}
             </button>
             <button onClick={()=>setShowUpload(false)} style={{background:"#f3f4f6",border:"none",padding:"10px 18px",borderRadius:9,cursor:"pointer",color:"#374151"}}>Cancelar</button>
@@ -307,12 +307,12 @@ export default function DocumentosPage() {
             const sel = docSelecionado?.id === doc.id;
             return(
               <div key={doc.id} onClick={()=>setDocSelecionado(sel?null:doc)}
-                style={{background:"#fff",border:`1px solid ${sel?"#0f5233":isVencido?"#fca5a5":isVencendo?"#fde68a":"#e5e7eb"}`,borderRadius:12,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${catCor}`}}>
+                style={{background:"#fff",border:`1px solid ${sel?"#334532":isVencido?"#fca5a5":isVencendo?"#fde68a":"#e5e7eb"}`,borderRadius:12,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${catCor}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
                   <div style={{flex:1}}>
                     <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap",marginBottom:5}}>
                       <span style={{fontSize:16}}>{mimeIcon(doc.mimeType||"")}</span>
-                      <span style={{fontWeight:700,fontSize:13,color:"#0f5233"}}>{doc.nome}</span>
+                      <span style={{fontWeight:700,fontSize:13,color:"#334532"}}>{doc.nome}</span>
                       {doc.versao>1&&<span style={{fontSize:9,background:"#dbeafe",color:"#1e40af",padding:"1px 6px",borderRadius:6,fontWeight:700}}>v{doc.versao}</span>}
                       {doc.confidencial&&<span style={{fontSize:10}}>🔒</span>}
                       <span style={{background:sbg,color:sco,padding:"1px 7px",borderRadius:8,fontSize:9,fontWeight:700}}>{stxt}</span>
@@ -335,7 +335,7 @@ export default function DocumentosPage() {
                 {sel&&(
                   <div style={{marginTop:10,display:"flex",gap:6,flexWrap:"wrap",borderTop:"1px solid #f3f4f6",paddingTop:8}}>
                     <button onClick={e=>{e.stopPropagation();downloadDoc(doc);}}
-                      style={{background:"#0f5233",color:"#fff",border:"none",padding:"6px 14px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>
+                      style={{background:"#334532",color:"#fff",border:"none",padding:"6px 14px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>
                       {doc.urlArquivo?"🔗 Abrir documento":"⬇️ Download"}
                     </button>
                     <button onClick={e=>{e.stopPropagation();setForm({...doc,documentoPaiId:doc.id,versao:(doc.versao||1)+1,base64Data:undefined});setShowUpload(true);}}
@@ -370,7 +370,7 @@ export default function DocumentosPage() {
               <div key={doc.id} style={{background:"#fff",border:`1px solid ${isVencido?"#fca5a5":"#e5e7eb"}`,borderRadius:12,padding:14,cursor:"pointer",borderTop:`3px solid ${catCor}`}}
                 onClick={()=>doc.urlArquivo?window.open(doc.urlArquivo,"_blank"):downloadDoc(doc)}>
                 <div style={{fontSize:28,marginBottom:8,textAlign:"center"}}>{mimeIcon(doc.mimeType||"")}</div>
-                <div style={{fontWeight:700,fontSize:12,color:"#0f5233",marginBottom:4,lineHeight:1.3}}>{doc.nome}</div>
+                <div style={{fontWeight:700,fontSize:12,color:"#334532",marginBottom:4,lineHeight:1.3}}>{doc.nome}</div>
                 <div style={{fontSize:10,color:catCor,fontWeight:600,marginBottom:4}}>{CAT_ICON[doc.categoria]} {doc.subcategoria||CAT_LABEL[doc.categoria]}</div>
                 {doc.validade&&<div style={{fontSize:9,color:isVencido?"#dc2626":"#9ca3af",fontWeight:isVencido?700:400}}>Val: {fmt(doc.validade)}</div>}
                 {doc.confidencial&&<div style={{fontSize:10,marginTop:4}}>🔒</div>}

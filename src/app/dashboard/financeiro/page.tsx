@@ -37,7 +37,7 @@ export default function FinanceiroPage() {
 
   return (
     <div>
-      <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,marginBottom:14}}>
+      <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>
         💰 Financeiro {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}
       </h1>
 
@@ -46,7 +46,7 @@ export default function FinanceiroPage() {
         {[
           ["Receitas","R$ "+fmt(totais.totalReceitas),"💚","#15803d"],
           ["Despesas","R$ "+fmt(totais.totalDespesas),"🔴","#dc2626"],
-          ["Saldo","R$ "+fmt(totais.saldo),"💰",totais.saldo>=0?"#1a7a4a":"#dc2626"],
+          ["Saldo","R$ "+fmt(totais.saldo),"💰",totais.saldo>=0?"#4a9410":"#dc2626"],
           ["A Receber","R$ "+fmt(totalGeral),"📋","#1d4ed8"],
           ["Vencido","R$ "+fmt(totalVencido),"🚨",totalVencido>0?"#dc2626":"#15803d"],
         ].map(([l,v,i,c])=>(
@@ -68,7 +68,7 @@ export default function FinanceiroPage() {
       <div style={{display:"flex",gap:8,marginBottom:14}}>
         {[["lancamentos","📋 Lançamentos"],["aging","📊 Aging A Receber"],["novo","+ Novo Lançamento"]].map(([id,l])=>(
           <button key={id} onClick={()=>setAba(id as any)}
-            style={{background:aba===id?"#0f5233":"transparent",color:aba===id?"#fff":"#374151",border:`1px solid ${aba===id?"#0f5233":"#d1d5db"}`,padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===id?700:400}}>{l}</button>
+            style={{background:aba===id?"#334532":"transparent",color:aba===id?"#fff":"#374151",border:`1px solid ${aba===id?"#334532":"#d1d5db"}`,padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===id?700:400}}>{l}</button>
         ))}
       </div>
 
@@ -174,7 +174,7 @@ export default function FinanceiroPage() {
       {/* NOVO LANÇAMENTO */}
       {aba==="novo" && (
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:18}}>
-          <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:14}}>+ Novo Lançamento</h3>
+          <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:14}}>+ Novo Lançamento</h3>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:10,marginBottom:10}}>
             <div><label style={LS}>Descrição *</label><input style={IS} value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></div>
             <div><label style={LS}>Valor (R$) *</label><input type="number" step="0.01" style={IS} value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))}/></div>
@@ -189,7 +189,7 @@ export default function FinanceiroPage() {
             <div><label style={LS}>Categoria</label><input style={IS} value={form.categoryName} onChange={e=>setForm(p=>({...p,categoryName:e.target.value}))}/></div>
           </div>
           <div style={{marginBottom:14}}><label style={LS}>Observações</label><textarea style={{...IS,height:50}} value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}/></div>
-          <button onClick={salvar} disabled={!form.description||!form.amount||!form.dueDate} style={{background:"#0f5233",color:"#fff",border:"none",padding:"10px 28px",borderRadius:8,cursor:"pointer",fontWeight:700}}>💾 Salvar Lançamento</button>
+          <button onClick={salvar} disabled={!form.description||!form.amount||!form.dueDate} style={{background:"#334532",color:"#fff",border:"none",padding:"10px 28px",borderRadius:8,cursor:"pointer",fontWeight:700}}>💾 Salvar Lançamento</button>
         </div>
       )}
     </div>

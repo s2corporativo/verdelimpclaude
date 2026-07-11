@@ -26,7 +26,7 @@ export default function AlertasPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#0f5233", marginBottom: 4 }}>🚨 Central de Alertas</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🚨 Central de Alertas</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>
         Tudo que está vencido ou vence em breve: contratos (90 dias), ASO, treinamentos, CNH, EPI, licenças ambientais, documentos e férias.
       </p>
@@ -40,20 +40,20 @@ export default function AlertasPage() {
           <p style={{ margin: 0, fontSize: 11, color: "#6b7280", fontWeight: 600 }}>ATENÇÃO (a vencer)</p>
           <p style={{ margin: "4px 0 0", fontSize: 28, fontWeight: 900, color: "#b45309" }}>{dados.resumo.atencao}</p>
         </div>
-        <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", flex: 1, borderLeft: "4px solid #1a7a4a", minWidth: 140 }}>
+        <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", flex: 1, borderLeft: "4px solid #4a9410", minWidth: 140 }}>
           <p style={{ margin: 0, fontSize: 11, color: "#6b7280", fontWeight: 600 }}>TOTAL</p>
-          <p style={{ margin: "4px 0 0", fontSize: 28, fontWeight: 900, color: "#0f5233" }}>{dados.resumo.total}</p>
+          <p style={{ margin: "4px 0 0", fontSize: 28, fontWeight: 900, color: "#334532" }}>{dados.resumo.total}</p>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         <button onClick={() => setFiltro("")}
-          style={{ background: !filtro ? "#0f5233" : "#fff", color: !filtro ? "#fff" : "#374151", border: "1px solid #d1d5db", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+          style={{ background: !filtro ? "#334532" : "#fff", color: !filtro ? "#fff" : "#374151", border: "1px solid #d1d5db", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
           Todos ({dados.resumo.total})
         </button>
         {Object.entries(dados.resumo.porCategoria).map(([cat, n]: any) => (
           <button key={cat} onClick={() => setFiltro(filtro === cat ? "" : cat)}
-            style={{ background: filtro === cat ? "#0f5233" : "#fff", color: filtro === cat ? "#fff" : "#374151", border: "1px solid #d1d5db", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            style={{ background: filtro === cat ? "#334532" : "#fff", color: filtro === cat ? "#fff" : "#374151", border: "1px solid #d1d5db", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
             {cat} ({n})
           </button>
         ))}

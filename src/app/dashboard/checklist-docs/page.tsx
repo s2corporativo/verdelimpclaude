@@ -71,14 +71,14 @@ export default function ChecklistDocsPage() {
 
   const Passo = ({ n, t }: { n: number; t: string }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0 10px" }}>
-      <span style={{ background: "#0f5233", color: "#fff", width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>{n}</span>
-      <h3 style={{ color: "#0f5233", fontSize: 14, fontWeight: 700 }}>{t}</h3>
+      <span style={{ background: "#334532", color: "#fff", width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>{n}</span>
+      <h3 style={{ color: "#334532", fontSize: 14, fontWeight: 700 }}>{t}</h3>
     </div>
   );
 
   return (
     <div>
-      <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>📑 Checklist de Documentos</h1>
+      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>📑 Checklist de Documentos</h1>
       <p style={{ color: "#6b7280", fontSize: 12, marginBottom: 14 }}>
         Escolha o contrato ou o tipo de serviço — o sistema reconhece os documentos exigidos (incluindo a relação SST da contratante), você marca e ele gera tudo automaticamente, por funcionário.
       </p>
@@ -116,7 +116,7 @@ export default function ChecklistDocsPage() {
             <p style={{ fontSize: 11, fontWeight: 800, color: "#15803d", marginBottom: 6 }}>✏️ GERADOS AUTOMATICAMENTE PELO SISTEMA</p>
             {docsGeraveis.map((i) => (
               <label key={i.key} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "8px 10px", background: marcados.includes(i.key) ? "#f0fdf4" : "#f9fafb", border: `1px solid ${marcados.includes(i.key) ? "#86efac" : "#e5e7eb"}`, borderRadius: 9, marginBottom: 6, cursor: "pointer" }}>
-                <input type="checkbox" checked={marcados.includes(i.key)} onChange={() => toggle(marcados, setMarcados, i.key)} style={{ marginTop: 2, accentColor: "#0f5233" }} />
+                <input type="checkbox" checked={marcados.includes(i.key)} onChange={() => toggle(marcados, setMarcados, i.key)} style={{ marginTop: 2, accentColor: "#334532" }} />
                 <span style={{ flex: 1 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#111" }}>{i.titulo}</span>
                   <span style={{ display: "block", fontSize: 10.5, color: "#6b7280" }}>{i.descricao}</span>
@@ -149,14 +149,14 @@ export default function ChecklistDocsPage() {
       <div style={CARD}>
         <Passo n={3} t="Selecione os funcionários (todos, alguns ou um só)" />
         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <button onClick={() => setSelecionados(funcionarios.map((f) => f.id))} style={{ background: "#e8f5ee", color: "#0f5233", border: "1px solid #bbf7d0", padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Selecionar todos ({funcionarios.length})</button>
+          <button onClick={() => setSelecionados(funcionarios.map((f) => f.id))} style={{ background: "#e8f5ee", color: "#334532", border: "1px solid #bbf7d0", padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Selecionar todos ({funcionarios.length})</button>
           {contratoInfo && <button onClick={() => setSelecionados(funcionarios.filter((f) => f.mobilizado).map((f) => f.id))} style={{ background: "#e0e7ff", color: "#3730a3", border: "1px solid #c7d2fe", padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Só mobilizados no contrato</button>}
           <button onClick={() => setSelecionados([])} style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Limpar</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 8 }}>
           {funcionarios.map((f) => (
             <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: selecionados.includes(f.id) ? "#f0fdf4" : "#f9fafb", border: `1px solid ${selecionados.includes(f.id) ? "#86efac" : "#e5e7eb"}`, borderRadius: 9 }}>
-              <input type="checkbox" checked={selecionados.includes(f.id)} onChange={() => toggle(selecionados, setSelecionados, f.id)} style={{ accentColor: "#0f5233" }} />
+              <input type="checkbox" checked={selecionados.includes(f.id)} onChange={() => toggle(selecionados, setSelecionados, f.id)} style={{ accentColor: "#334532" }} />
               <span style={{ flex: 1, cursor: "pointer" }} onClick={() => toggle(selecionados, setSelecionados, f.id)}>
                 <span style={{ fontSize: 12, fontWeight: 700 }}>{f.name}</span>
                 <span style={{ display: "block", fontSize: 10, color: "#6b7280" }}>{f.role}{f.mobilizado ? " · 🦺 mobilizado" : ""}</span>
@@ -169,7 +169,7 @@ export default function ChecklistDocsPage() {
       </div>
 
       {/* GERAR */}
-      <div style={{ ...CARD, background: "#0f5233", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+      <div style={{ ...CARD, background: "#334532", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <div style={{ color: "#fff", fontSize: 13 }}>
           <b>{totalDocs} documento(s)</b> serão gerados — {coletivos} coletivo(s) + {porFuncionario} por funcionário × {selecionados.length} funcionário(s)
         </div>

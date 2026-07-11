@@ -103,7 +103,7 @@ export default function LogisticaPage() {
       {/* HEADER */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:0}}>
+          <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🚛 Logística Operacional
             {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
           </h1>
@@ -113,7 +113,7 @@ export default function LogisticaPage() {
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           <button onClick={()=>setMostrarForm(f=>!f)}
-            style={{background:"#1a7a4a",color:"#fff",border:"none",padding:"8px 16px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
+            style={{background:"#4a9410",color:"#fff",border:"none",padding:"8px 16px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
             + Nova OS
           </button>
           <button onClick={gerarPlano} disabled={gerandoPlano||pendentes===0}
@@ -126,10 +126,10 @@ export default function LogisticaPage() {
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:9,marginBottom:16}}>
         {[
-          ["Total OS",os.length,"📋","#1a7a4a"],
+          ["Total OS",os.length,"📋","#4a9410"],
           ["🔴 Urgentes",urgentes,"⚠️","#dc2626"],
           ["Pendentes",pendentes,"⏳","#d97706"],
-          ["Concluídas",concluidas,"✅","#1a7a4a"],
+          ["Concluídas",concluidas,"✅","#4a9410"],
           ["Equipe",funcs.length,"👷","#1d4ed8"],
         ].map(([l,v,i,c])=>(
           <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"10px 13px",borderTop:`3px solid ${c}`,borderLeft:l==="🔴 Urgentes"&&(v as number)>0?`3px solid #dc2626`:""}}>
@@ -141,8 +141,8 @@ export default function LogisticaPage() {
 
       {/* FORMULÁRIO NOVA OS */}
       {mostrarForm&&(
-        <div style={{background:"#fff",border:"2px solid #1a7a4a",borderRadius:12,padding:18,marginBottom:14}}>
-          <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:14}}>+ Nova Ordem de Serviço</h3>
+        <div style={{background:"#fff",border:"2px solid #4a9410",borderRadius:12,padding:18,marginBottom:14}}>
+          <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:14}}>+ Nova Ordem de Serviço</h3>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:10,marginBottom:10}}>
             <div><label style={LS}>Título / Descrição*</label><input style={IS} value={novaOs.titulo||""} onChange={e=>setNovaOs(p=>({...p,titulo:e.target.value}))} placeholder="Ex: Roçada Canteiros Norte — Cicloviário"/></div>
             <div><label style={LS}>Cliente*</label><input style={IS} value={novaOs.clienteNome||""} onChange={e=>setNovaOs(p=>({...p,clienteNome:e.target.value}))} placeholder="Nome do cliente"/></div>
@@ -176,7 +176,7 @@ export default function LogisticaPage() {
             <textarea style={{...IS,height:60,resize:"vertical"}} value={novaOs.observacoes||""} onChange={e=>setNovaOs(p=>({...p,observacoes:e.target.value}))} placeholder="Ex: Levar 2 roçadeiras + soprador. Supervisor: Ana Luiza. Necessário EPI completo."/>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={addOs} disabled={!novaOs.titulo||!novaOs.clienteNome} style={{background:"#1a7a4a",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>+ Adicionar OS</button>
+            <button onClick={addOs} disabled={!novaOs.titulo||!novaOs.clienteNome} style={{background:"#4a9410",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>+ Adicionar OS</button>
             <button onClick={()=>setMostrarForm(false)} style={{background:"#f3f4f6",border:"none",padding:"9px 20px",borderRadius:8,cursor:"pointer",color:"#374151"}}>Cancelar</button>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function LogisticaPage() {
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
         {[["os",`📋 Ordens de Serviço (${os.length})`],["plano","📅 Plano Semanal IA"],["equipe","👷 Equipe Disponível"],["config","⚙️ Configurações"]].map(([id,l])=>(
           <button key={id} onClick={()=>setAba(id)}
-            style={{background:aba===id?"#0f5233":"transparent",color:aba===id?"#fff":"#374151",border:`1px solid ${aba===id?"#0f5233":"#d1d5db"}`,padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===id?700:400}}>
+            style={{background:aba===id?"#334532":"transparent",color:aba===id?"#fff":"#374151",border:`1px solid ${aba===id?"#334532":"#d1d5db"}`,padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===id?700:400}}>
             {l}
           </button>
         ))}
@@ -220,7 +220,7 @@ export default function LogisticaPage() {
                     <div style={{flex:1}}>
                       <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
                         <span style={{fontSize:14}}>{pic}</span>
-                        <h3 style={{fontWeight:700,fontSize:14,color:"#0f5233",margin:0}}>{o.titulo}</h3>
+                        <h3 style={{fontWeight:700,fontSize:14,color:"#334532",margin:0}}>{o.titulo}</h3>
                         <span style={{background:pbg,color:pco,padding:"1px 8px",borderRadius:10,fontSize:10,fontWeight:700}}>{o.prioridade.replace("_"," ").toUpperCase()}</span>
                         <span style={{background:sbg,color:sco,padding:"1px 8px",borderRadius:10,fontSize:10,fontWeight:700}}>{o.status.replace("_"," ")}</span>
                       </div>
@@ -244,7 +244,7 @@ export default function LogisticaPage() {
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {(["pendente","agendado","em_execucao","concluido"] as Status[]).map(s=>(
                       <button key={s} onClick={()=>updateStatus(o.id,s)}
-                        style={{background:o.status===s?"#0f5233":"#f3f4f6",color:o.status===s?"#fff":"#374151",border:"none",padding:"4px 10px",borderRadius:7,cursor:"pointer",fontSize:10,fontWeight:o.status===s?700:400}}>
+                        style={{background:o.status===s?"#334532":"#f3f4f6",color:o.status===s?"#fff":"#374151",border:"none",padding:"4px 10px",borderRadius:7,cursor:"pointer",fontSize:10,fontWeight:o.status===s?700:400}}>
                         {s==="pendente"?"Pendente":s==="agendado"?"Agendado":s==="em_execucao"?"Em Execução":"Concluído"}
                       </button>
                     ))}
@@ -289,7 +289,7 @@ export default function LogisticaPage() {
           {plano&&(
             <div>
               {/* Resumo */}
-              <div style={{background:"linear-gradient(135deg,#0f5233,#1a7a4a)",color:"#fff",borderRadius:12,padding:18,marginBottom:14}}>
+              <div style={{background:"linear-gradient(135deg,#334532,#4a9410)",color:"#fff",borderRadius:12,padding:18,marginBottom:14}}>
                 <h3 style={{fontSize:15,fontWeight:700,margin:"0 0 8px"}}>📅 Plano: {plano.semana}</h3>
                 <p style={{fontSize:13,opacity:.9,margin:"0 0 10px"}}>{plano.resumo}</p>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
@@ -314,7 +314,7 @@ export default function LogisticaPage() {
               {plano.dias?.map((dia:any,di:number)=>(
                 <div key={di} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,marginBottom:12,overflow:"hidden"}}>
                   <div style={{background:"#e8f5ee",padding:"10px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-                    <h4 style={{color:"#0f5233",fontSize:14,fontWeight:700,margin:0}}>
+                    <h4 style={{color:"#334532",fontSize:14,fontWeight:700,margin:0}}>
                       {dia.diaSemana} — {dia.data?new Date(dia.data+"T12:00:00").toLocaleDateString("pt-BR"):""}
                     </h4>
                     <div style={{display:"flex",gap:10,fontSize:11,color:"#6b7280"}}>
@@ -326,9 +326,9 @@ export default function LogisticaPage() {
                   <div style={{padding:14}}>
                     {dia.os?.map((item:any,oi:number)=>(
                       <div key={oi} style={{display:"flex",gap:12,padding:"10px 12px",background:oi%2===0?"#f9fafb":"#fff",borderRadius:8,marginBottom:6,flexWrap:"wrap"}}>
-                        <div style={{width:24,height:24,background:"#0f5233",color:"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>{item.ordem}</div>
+                        <div style={{width:24,height:24,background:"#334532",color:"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>{item.ordem}</div>
                         <div style={{flex:1,minWidth:200}}>
-                          <div style={{fontWeight:600,fontSize:13,color:"#0f5233",marginBottom:3}}>
+                          <div style={{fontWeight:600,fontSize:13,color:"#334532",marginBottom:3}}>
                             {os.find(o=>o.id===item.osId)?.titulo || item.osId}
                           </div>
                           <div style={{display:"flex",gap:10,fontSize:11,color:"#6b7280",flexWrap:"wrap"}}>
@@ -353,10 +353,10 @@ export default function LogisticaPage() {
               {/* Recomendações */}
               {plano.recomendacoes?.length>0&&(
                 <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16}}>
-                  <h4 style={{color:"#0f5233",fontSize:13,fontWeight:700,marginBottom:10}}>💡 Recomendações da IA</h4>
+                  <h4 style={{color:"#334532",fontSize:13,fontWeight:700,marginBottom:10}}>💡 Recomendações da IA</h4>
                   {plano.recomendacoes.map((r:string,i:number)=>(
                     <div key={i} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:"1px solid #f3f4f6",fontSize:12}}>
-                      <span style={{color:"#1a7a4a",fontWeight:700,flexShrink:0}}>{i+1}.</span><span>{r}</span>
+                      <span style={{color:"#4a9410",fontWeight:700,flexShrink:0}}>{i+1}.</span><span>{r}</span>
                     </div>
                   ))}
                 </div>
@@ -381,7 +381,7 @@ export default function LogisticaPage() {
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
             {funcs.map((f:any,i:number)=>(
               <div key={i} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:"12px 14px"}}>
-                <div style={{width:36,height:36,background:"#0f5233",color:"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,marginBottom:8}}>
+                <div style={{width:36,height:36,background:"#334532",color:"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,marginBottom:8}}>
                   {f.name.charAt(0)}
                 </div>
                 <div style={{fontWeight:700,fontSize:13}}>{f.name}</div>
@@ -402,7 +402,7 @@ export default function LogisticaPage() {
       {aba==="config"&&(
         <div>
           <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:18,marginBottom:14}}>
-            <h3 style={{color:"#0f5233",fontSize:14,marginBottom:12}}>⚙️ Parâmetros de Logística</h3>
+            <h3 style={{color:"#334532",fontSize:14,marginBottom:12}}>⚙️ Parâmetros de Logística</h3>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
               <div><label style={LS}>Horário de saída da base</label><input type="time" style={IS} defaultValue="07:00"/></div>
               <div><label style={LS}>Horário máximo de retorno</label><input type="time" style={IS} defaultValue="17:00"/></div>

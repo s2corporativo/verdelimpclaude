@@ -42,7 +42,7 @@ export default function RhOcorrenciasPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#0f5233", marginBottom: 4 }}>🏖️ Férias & Ocorrências</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🏖️ Férias & Ocorrências</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>
         Controle de períodos aquisitivos (CLT: gozo em até 11 meses após completar o período, senão paga em dobro), advertências e suspensões.
       </p>
@@ -81,7 +81,7 @@ export default function RhOcorrenciasPage() {
                 {/* Agendar férias */}
                 {l.periodoAquisitivo && (
                   <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap", marginBottom: 14 }}>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: "#0f5233" }}>🏖️ Agendar férias:</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#334532" }}>🏖️ Agendar férias:</span>
                     <div><label style={{ fontSize: 10.5, fontWeight: 700, color: "#374151", display: "block" }}>Início do gozo</label>
                       <input type="date" value={formFerias.startDate} onChange={(e) => setFormFerias({ ...formFerias, startDate: e.target.value })}
                         style={{ padding: "7px 9px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 12 }} /></div>
@@ -93,7 +93,7 @@ export default function RhOcorrenciasPage() {
                       const fim = ini ? new Date(new Date(ini).setDate(ini.getDate() + Number(formFerias.days || 30) - 1)) : null;
                       await post({ tipo: "ferias", employeeId: l.id, acqStart: l.periodoAquisitivo.inicio, acqEnd: l.periodoAquisitivo.fim, startDate: formFerias.startDate || null, endDate: fim ? fim.toISOString().slice(0, 10) : null, days: formFerias.days });
                     }}
-                      style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "8px 14px", borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Salvar</button>
+                      style={{ background: "#4a9410", color: "#fff", border: "none", padding: "8px 14px", borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Salvar</button>
                   </div>
                 )}
 

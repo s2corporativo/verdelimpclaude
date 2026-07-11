@@ -47,14 +47,14 @@ export default function PipelinePage() {
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:0}}>
+          <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🏆 Pipeline de Licitações — CRM
             {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>Acompanhe licitações do monitoramento até a assinatura — visão Kanban por estágio</p>
         </div>
         <button onClick={()=>setNovo({stage:"monitorando",prioridade:"media",probabilidade:30,uf:"MG"})}
-          style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
+          style={{background:"#334532",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
           + Nova Licitação
         </button>
       </div>
@@ -62,7 +62,7 @@ export default function PipelinePage() {
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:10,marginBottom:16}}>
         {[
-          ["Total no radar",bids.length,"📋","#1a7a4a"],
+          ["Total no radar",bids.length,"📋","#4a9410"],
           ["Pipeline ativo",bids.filter(b=>!["ganho","perdido"].includes(b.stage)).length,"⚡","#7c3aed"],
           ["Valor ganho","R$"+fmt(totalGanho),"🏆","#15803d"],
           ["Pipeline ponderado","R$"+fmt(totalPipeline),"📊","#1d4ed8"],
@@ -76,8 +76,8 @@ export default function PipelinePage() {
 
       {/* Formulário novo */}
       {novo&&(
-        <div style={{background:"#fff",border:"2px solid #0f5233",borderRadius:12,padding:18,marginBottom:14}}>
-          <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:12}}>+ Nova Licitação no Pipeline</h3>
+        <div style={{background:"#fff",border:"2px solid #334532",borderRadius:12,padding:18,marginBottom:14}}>
+          <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:12}}>+ Nova Licitação no Pipeline</h3>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:10,marginBottom:10}}>
             <div><label style={LS}>Título *</label><input style={IS} value={novo.titulo||""} onChange={e=>setNovo((p:any)=>({...p,titulo:e.target.value}))} placeholder="Manutenção Áreas Verdes Lote 3"/></div>
             <div><label style={LS}>Órgão *</label><input style={IS} value={novo.orgao||""} onChange={e=>setNovo((p:any)=>({...p,orgao:e.target.value}))} placeholder="Prefeitura de BH"/></div>
@@ -100,7 +100,7 @@ export default function PipelinePage() {
             <div><label style={LS}>URL do edital</label><input style={IS} value={novo.url||""} onChange={e=>setNovo((p:any)=>({...p,url:e.target.value}))} placeholder="https://pncp.gov.br/..."/></div>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={salvarNovo} disabled={!novo.titulo||!novo.orgao} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>Adicionar ao Pipeline</button>
+            <button onClick={salvarNovo} disabled={!novo.titulo||!novo.orgao} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>Adicionar ao Pipeline</button>
             <button onClick={()=>setNovo(null)} style={{background:"#f3f4f6",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer"}}>Cancelar</button>
           </div>
         </div>
@@ -128,12 +128,12 @@ export default function PipelinePage() {
                     <div key={bid.id} draggable
                       onDragStart={()=>setDragId(bid.id)}
                       onClick={()=>setSelecionado(selecionado?.id===bid.id?null:bid)}
-                      style={{background:"#fff",border:`1px solid ${selecionado?.id===bid.id?"#0f5233":"#e5e7eb"}`,borderRadius:10,padding:"10px 12px",cursor:"grab",boxShadow:selecionado?.id===bid.id?"0 2px 8px rgba(15,82,51,.2)":"0 1px 3px rgba(0,0,0,.06)"}}>
+                      style={{background:"#fff",border:`1px solid ${selecionado?.id===bid.id?"#334532":"#e5e7eb"}`,borderRadius:10,padding:"10px 12px",cursor:"grab",boxShadow:selecionado?.id===bid.id?"0 2px 8px rgba(15,82,51,.2)":"0 1px 3px rgba(0,0,0,.06)"}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
                         <span style={{fontSize:9,background:pbg,color:pco,padding:"1px 6px",borderRadius:6,fontWeight:700}}>{pic} {bid.prioridade}</span>
                         <span style={{fontSize:9,color:"#9ca3af"}}>{bid.probabilidade}%</span>
                       </div>
-                      <div style={{fontWeight:700,fontSize:12,color:"#0f5233",marginBottom:2}}>{bid.titulo}</div>
+                      <div style={{fontWeight:700,fontSize:12,color:"#334532",marginBottom:2}}>{bid.titulo}</div>
                       <div style={{fontSize:10,color:"#6b7280"}}>{bid.orgao}</div>
                       {bid.valorEstimado&&<div style={{fontSize:11,fontWeight:700,color:"#374151",marginTop:4}}>R$ {fmt(bid.valorEstimado)}</div>}
                       {bid.dataAbertura&&<div style={{fontSize:9,color:"#9ca3af",marginTop:2}}>📅 {new Date(bid.dataAbertura+"T12:00:00").toLocaleDateString("pt-BR")}</div>}

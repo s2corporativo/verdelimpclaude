@@ -39,7 +39,7 @@ export default function SsoPage() {
 
   return (
     <div>
-      <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Documentação SSO</h1>
+      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Documentação SSO</h1>
       <p style={{ color: "#6b7280", fontSize: 12, marginBottom: 14 }}>
         Dossiê de Saúde e Segurança do Trabalho — checklist dos 19 requisitos da contratante, por funcionário ou consolidado do mês.
       </p>
@@ -49,7 +49,7 @@ export default function SsoPage() {
       </div>
 
       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>Parâmetros do documento</h3>
+        <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 12 }}>Parâmetros do documento</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 10 }}>
           <div><label style={LS}>Competência</label><input type="month" style={IS} value={form.competencia} onChange={(e) => setForm((p) => ({ ...p, competencia: e.target.value }))} /></div>
           <div><label style={LS}>Atividade</label><input style={IS} value={form.atividade} onChange={(e) => setForm((p) => ({ ...p, atividade: e.target.value }))} /></div>
@@ -63,13 +63,13 @@ export default function SsoPage() {
             <div key={k}><label style={{ ...LS, fontWeight: 400, color: "#6b7280" }}>{l}</label><input style={IS} value={(form as any)[k]} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))} /></div>
           ))}
         </div>
-        <button onClick={() => gerar()} style={{ ...BTN, background: "#1a7a4a", color: "#fff", padding: "10px 24px", fontSize: 13 }}>
+        <button onClick={() => gerar()} style={{ ...BTN, background: "#4a9410", color: "#fff", padding: "10px 24px", fontSize: 13 }}>
           📄 Gerar documento mensal consolidado ({data.length} funcionários)
         </button>
       </div>
 
       <table style={{ borderCollapse: "collapse", width: "100%", background: "#fff", borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb" }}>
-        <thead><tr style={{ background: "#e8f5ee" }}>{["Funcionário", "Função", "ASO", "Treinamentos NR", "Última entrega EPI", "Dossiê"].map((h) => <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#0f5233" }}>{h}</th>)}</tr></thead>
+        <thead><tr style={{ background: "#e8f5ee" }}>{["Funcionário", "Função", "ASO", "Treinamentos NR", "Última entrega EPI", "Dossiê"].map((h) => <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#334532" }}>{h}</th>)}</tr></thead>
         <tbody>{data.map((f) => (
           <tr key={f.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
             <td style={{ padding: "8px 12px", fontWeight: 600, fontSize: 12 }}>{f.nome}</td>

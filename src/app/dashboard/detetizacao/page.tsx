@@ -57,14 +57,14 @@ export default function DetetizacaoPage() {
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:0}}>
+          <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🪲 Dedetização — Controle de Pragas
             {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>Desinsetização · Desratização · Descupinização · Controle de Formigas</p>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setMostrarForm(f=>!f)} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>+ Nova OS</button>
+          <button onClick={()=>setMostrarForm(f=>!f)} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>+ Nova OS</button>
         </div>
       </div>
 
@@ -79,7 +79,7 @@ export default function DetetizacaoPage() {
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginBottom:16}}>
         {[
-          ["Total OS",jobs.length,"🪲","#1a7a4a"],
+          ["Total OS",jobs.length,"🪲","#4a9410"],
           ["Agendados",agendados,"📅","#1d4ed8"],
           ["Faturado",`R$ ${fmt(faturado)}`,"💰","#15803d"],
           ["Cert. pendentes",certificadosPendentes,"📄","#d97706"],
@@ -96,14 +96,14 @@ export default function DetetizacaoPage() {
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
         {[["jobs","🪲 OS/Serviços"],["viabilidade","🧮 Precificação"],["catalogo","🧪 Produtos ANVISA"],["docs","📄 Documentos"]].map(([id,l])=>(
           <button key={id} onClick={()=>setAba(id as any)}
-            style={{background:aba===id?"#0f5233":"transparent",color:aba===id?"#fff":"#374151",border:`1px solid ${aba===id?"#0f5233":"#d1d5db"}`,padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===id?700:400}}>{l}</button>
+            style={{background:aba===id?"#334532":"transparent",color:aba===id?"#fff":"#374151",border:`1px solid ${aba===id?"#334532":"#d1d5db"}`,padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===id?700:400}}>{l}</button>
         ))}
       </div>
 
       {/* FORM nova OS */}
       {mostrarForm&&(
-        <div style={{background:"#fff",border:"2px solid #0f5233",borderRadius:12,padding:18,marginBottom:14}}>
-          <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:12}}>+ Nova Ordem de Serviço — Dedetização</h3>
+        <div style={{background:"#fff",border:"2px solid #334532",borderRadius:12,padding:18,marginBottom:14}}>
+          <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:12}}>+ Nova Ordem de Serviço — Dedetização</h3>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:10,marginBottom:10}}>
             <div><label style={LS}>Cliente *</label><input style={IS} value={novoJob.clienteNome||""} onChange={e=>setNovoJob((p:any)=>({...p,clienteNome:e.target.value}))}/></div>
             <div><label style={LS}>Tipo de serviço *</label><select style={IS} value={novoJob.tipoServico} onChange={e=>setNovoJob((p:any)=>({...p,tipoServico:e.target.value}))}>{TIPOS.map(t=><option key={t}>{t}</option>)}</select></div>
@@ -123,7 +123,7 @@ export default function DetetizacaoPage() {
           </div>
           <div style={{marginBottom:12}}><label style={LS}>Observações</label><textarea style={{...IS,height:50}} value={novoJob.observacoes||""} onChange={e=>setNovoJob((p:any)=>({...p,observacoes:e.target.value}))}/></div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={salvarJob} disabled={salvando||!novoJob.clienteNome||!novoJob.endereco} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>💾 Salvar OS</button>
+            <button onClick={salvarJob} disabled={salvando||!novoJob.clienteNome||!novoJob.endereco} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>💾 Salvar OS</button>
             <button onClick={()=>setMostrarForm(false)} style={{background:"#f3f4f6",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer"}}>Cancelar</button>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function DetetizacaoPage() {
                       {j.certificadoEmitido&&<span style={{background:"#dcfce7",color:"#15803d",padding:"1px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>📄 Cert. emitido</span>}
                       {retornoProx&&<span style={{background:"#fee2e2",color:"#991b1b",padding:"1px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>⏰ Retorno próximo!</span>}
                     </div>
-                    <h3 style={{fontWeight:700,fontSize:14,color:"#0f5233",margin:"0 0 4px"}}>{j.clienteNome}</h3>
+                    <h3 style={{fontWeight:700,fontSize:14,color:"#334532",margin:"0 0 4px"}}>{j.clienteNome}</h3>
                     <div style={{display:"flex",gap:12,fontSize:11,color:"#6b7280",flexWrap:"wrap"}}>
                       <span>📍 {j.endereco}{j.municipio?`, ${j.municipio}`:""}</span>
                       {j.areaM2&&<span>📐 {Number(j.areaM2).toLocaleString("pt-BR")} m²</span>}
@@ -162,7 +162,7 @@ export default function DetetizacaoPage() {
                     </div>
                   </div>
                   <div style={{textAlign:"right"}}>
-                    {j.valorCobrado&&<div style={{fontSize:16,fontWeight:700,color:"#0f5233"}}>R$ {fmt(j.valorCobrado)}</div>}
+                    {j.valorCobrado&&<div style={{fontSize:16,fontWeight:700,color:"#334532"}}>R$ {fmt(j.valorCobrado)}</div>}
                     {j.custoTotal&&<div style={{fontSize:10,color:"#6b7280"}}>Custo: R$ {fmt(j.custoTotal)}</div>}
                     {j.valorCobrado&&j.custoTotal&&<div style={{fontSize:11,fontWeight:700,color:"#15803d"}}>Margem: {(((j.valorCobrado-j.custoTotal)/j.valorCobrado)*100).toFixed(0)}%</div>}
                   </div>
@@ -179,19 +179,19 @@ export default function DetetizacaoPage() {
       {aba==="viabilidade"&&(
         <div>
           <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:18,marginBottom:14}}>
-            <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:14}}>🧮 Calculadora de Precificação</h3>
+            <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:14}}>🧮 Calculadora de Precificação</h3>
             <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:10,marginBottom:12}}>
               <div><label style={LS}>Tipo de serviço</label><select style={IS} value={calcInput.tipo} onChange={e=>setCalcInput(p=>({...p,tipo:e.target.value}))}>{TIPOS.map(t=><option key={t}>{t}</option>)}</select></div>
               <div><label style={LS}>Área (m²)</label><input type="number" style={IS} value={calcInput.area} onChange={e=>setCalcInput(p=>({...p,area:e.target.value}))}/></div>
               <div><label style={LS}>Valor proposto (R$)</label><input type="number" step="0.01" style={IS} value={calcInput.valor} onChange={e=>setCalcInput(p=>({...p,valor:e.target.value}))} placeholder="0 = ver custo"/></div>
             </div>
-            <button onClick={calcularViab} style={{background:"#0f5233",color:"#fff",border:"none",padding:"10px 28px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:14}}>⚡ Calcular</button>
+            <button onClick={calcularViab} style={{background:"#334532",color:"#fff",border:"none",padding:"10px 28px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:14}}>⚡ Calcular</button>
           </div>
 
           {calc&&(
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
               <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16}}>
-                <h4 style={{color:"#0f5233",fontSize:13,fontWeight:700,marginBottom:10}}>💰 Faixa de Preço de Mercado</h4>
+                <h4 style={{color:"#334532",fontSize:13,fontWeight:700,marginBottom:10}}>💰 Faixa de Preço de Mercado</h4>
                 <table style={{width:"100%",fontSize:12}}>
                   <tbody>
                     {[
@@ -206,7 +206,7 @@ export default function DetetizacaoPage() {
                         <td style={{padding:"6px 0",textAlign:"right",fontSize:10,color:"#9ca3af"}}>R$ {((v as number)/Number(calcInput.area)).toFixed(2)}/m²</td>
                       </tr>
                     ))}
-                    {calc.valorProposto>0&&<tr style={{background:"#e8f5ee"}}><td style={{padding:"6px 0",fontWeight:700}}>Seu valor</td><td style={{padding:"6px 0",textAlign:"right",fontWeight:700,color:"#0f5233"}}>R$ {fmt(calc.valorProposto)}</td><td style={{padding:"6px 0",textAlign:"right",fontSize:11,fontWeight:700,color:calc.margemReal>=20?"#15803d":calc.margemReal>=0?"#d97706":"#dc2626"}}>{calc.margemReal}%</td></tr>}
+                    {calc.valorProposto>0&&<tr style={{background:"#e8f5ee"}}><td style={{padding:"6px 0",fontWeight:700}}>Seu valor</td><td style={{padding:"6px 0",textAlign:"right",fontWeight:700,color:"#334532"}}>R$ {fmt(calc.valorProposto)}</td><td style={{padding:"6px 0",textAlign:"right",fontSize:11,fontWeight:700,color:calc.margemReal>=20?"#15803d":calc.margemReal>=0?"#d97706":"#dc2626"}}>{calc.margemReal}%</td></tr>}
                   </tbody>
                 </table>
                 <div style={{marginTop:12,background:calc.recomendacao.startsWith("✅")?"#dcfce7":calc.recomendacao.startsWith("⚠️")?"#fef9c3":"#fee2e2",borderRadius:8,padding:"8px 12px",fontWeight:700,fontSize:12,color:calc.recomendacao.startsWith("✅")?"#15803d":calc.recomendacao.startsWith("⚠️")?"#92400e":"#991b1b"}}>
@@ -214,10 +214,10 @@ export default function DetetizacaoPage() {
                 </div>
               </div>
               <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16}}>
-                <h4 style={{color:"#0f5233",fontSize:13,fontWeight:700,marginBottom:10}}>📋 Documentos Obrigatórios</h4>
+                <h4 style={{color:"#334532",fontSize:13,fontWeight:700,marginBottom:10}}>📋 Documentos Obrigatórios</h4>
                 {calc.documentosObrigatorios?.map((d:string,i:number)=>(
                   <div key={i} style={{display:"flex",gap:8,padding:"5px 0",borderBottom:"1px solid #f3f4f6",fontSize:11}}>
-                    <span style={{color:"#1a7a4a",fontWeight:700,flexShrink:0}}>✓</span><span>{d}</span>
+                    <span style={{color:"#4a9410",fontWeight:700,flexShrink:0}}>✓</span><span>{d}</span>
                   </div>
                 ))}
               </div>
@@ -236,7 +236,7 @@ export default function DetetizacaoPage() {
             {catalogo.map((p:any)=>(
               <div key={p.id} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:14}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                  <h4 style={{fontWeight:700,fontSize:13,color:"#0f5233",margin:0}}>{p.nomeComercial}</h4>
+                  <h4 style={{fontWeight:700,fontSize:13,color:"#334532",margin:0}}>{p.nomeComercial}</h4>
                   <span style={{background:"#dbeafe",color:"#1e40af",padding:"1px 7px",borderRadius:6,fontSize:9,fontWeight:700}}>{p.tipo}</span>
                 </div>
                 <div style={{fontSize:11,color:"#374151",marginBottom:4}}>Princípio ativo: <strong>{p.principioAtivo}</strong></div>
@@ -249,7 +249,7 @@ export default function DetetizacaoPage() {
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <span style={{fontSize:9,fontFamily:"monospace",color:"#6b7280",background:"#f9fafb",padding:"2px 6px",borderRadius:4}}>ANVISA: {p.registroAnvisa}</span>
-                  {p.custoLitro&&<span style={{fontSize:11,fontWeight:700,color:"#0f5233"}}>R$ {fmt(p.custoLitro)}/L</span>}
+                  {p.custoLitro&&<span style={{fontSize:11,fontWeight:700,color:"#334532"}}>R$ {fmt(p.custoLitro)}/L</span>}
                 </div>
               </div>
             ))}
@@ -261,7 +261,7 @@ export default function DetetizacaoPage() {
       {aba==="docs"&&(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
           <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16}}>
-            <h4 style={{color:"#0f5233",fontSize:13,fontWeight:700,marginBottom:12}}>📂 Documentos da Empresa para operar</h4>
+            <h4 style={{color:"#334532",fontSize:13,fontWeight:700,marginBottom:12}}>📂 Documentos da Empresa para operar</h4>
             {[
               ["Licença da Vigilância Sanitária Municipal","Prefeitura/ANVISA","Anual","Obrigatória"],
               ["Alvará de Funcionamento","Prefeitura","Anual","Obrigatório"],
@@ -282,7 +282,7 @@ export default function DetetizacaoPage() {
             ))}
           </div>
           <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16}}>
-            <h4 style={{color:"#0f5233",fontSize:13,fontWeight:700,marginBottom:12}}>📋 Documentos por Serviço (entregues ao cliente)</h4>
+            <h4 style={{color:"#334532",fontSize:13,fontWeight:700,marginBottom:12}}>📋 Documentos por Serviço (entregues ao cliente)</h4>
             {[
               ["Certificado de Dedetização","Todos","Comprovante do serviço realizado"],
               ["Laudo técnico pré-aplicação","Todos","Diagnóstico da infestação"],

@@ -52,19 +52,19 @@ export default function EquipamentosPage() {
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:0}}>
+          <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🔧 Gestão de Equipamentos
             {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>Frota, ferramentas, manutenção preventiva/corretiva e alertas de revisão</p>
         </div>
-        <button onClick={()=>setShowNovo(f=>!f)} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>+ Novo Equipamento</button>
+        <button onClick={()=>setShowNovo(f=>!f)} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>+ Novo Equipamento</button>
       </div>
 
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginBottom:16}}>
         {[
-          ["Total",stats.total||0,"🔧","#1a7a4a"],
+          ["Total",stats.total||0,"🔧","#4a9410"],
           ["Operacionais",stats.operacional||0,"✅","#15803d"],
           ["Em Manutenção",stats.manutencao||0,"🔧","#dc2626"],
           ["Alertas revisão",stats.alertas||0,"⚠️","#d97706"],
@@ -93,8 +93,8 @@ export default function EquipamentosPage() {
 
       {/* Form novo equipamento */}
       {showNovo&&(
-        <div style={{background:"#fff",border:"2px solid #0f5233",borderRadius:12,padding:18,marginBottom:14}}>
-          <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:12}}>+ Cadastrar Equipamento</h3>
+        <div style={{background:"#fff",border:"2px solid #334532",borderRadius:12,padding:18,marginBottom:14}}>
+          <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:12}}>+ Cadastrar Equipamento</h3>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:10,marginBottom:10}}>
             <div><label style={LS}>Descrição *</label><input style={IS} value={novoEq.descricao||""} onChange={e=>setNovoEq((p:any)=>({...p,descricao:e.target.value}))}/></div>
             <div><label style={LS}>Tipo</label>
@@ -112,7 +112,7 @@ export default function EquipamentosPage() {
             <div><label style={LS}>Próxima revisão</label><input type="date" style={IS} value={novoEq.proximaRevisao||""} onChange={e=>setNovoEq((p:any)=>({...p,proximaRevisao:e.target.value}))}/></div>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={cadastrarEq} disabled={!novoEq.descricao} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>Cadastrar</button>
+            <button onClick={cadastrarEq} disabled={!novoEq.descricao} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>Cadastrar</button>
             <button onClick={()=>setShowNovo(false)} style={{background:"#f3f4f6",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer"}}>Cancelar</button>
           </div>
         </div>
@@ -125,11 +125,11 @@ export default function EquipamentosPage() {
           const sel=selecionado?.id===eq.id;
           return(
             <div key={eq.id} onClick={()=>setSelecionado(sel?null:eq)}
-              style={{background:"#fff",border:`2px solid ${sel?"#0f5233":"#e5e7eb"}`,borderRadius:12,padding:14,cursor:"pointer",transition:"border-color 0.15s"}}>
+              style={{background:"#fff",border:`2px solid ${sel?"#334532":"#e5e7eb"}`,borderRadius:12,padding:14,cursor:"pointer",transition:"border-color 0.15s"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                 <div>
                   <span style={{fontSize:22}}>{TIPO_ICON[eq.tipo]||"🔧"}</span>
-                  <h3 style={{fontWeight:700,fontSize:13,color:"#0f5233",margin:"4px 0 2px"}}>{eq.descricao}</h3>
+                  <h3 style={{fontWeight:700,fontSize:13,color:"#334532",margin:"4px 0 2px"}}>{eq.descricao}</h3>
                   <div style={{fontSize:10,color:"#6b7280"}}>{eq.codigo} · {eq.marca} {eq.modelo} {eq.anoFabricacao?`(${eq.anoFabricacao})`:""}</div>
                   {eq.numeroProprio&&<div style={{fontSize:10,color:"#374151",fontWeight:600}}>{eq.tipo==="Veiculo"?"Placa":"Patrimônio"}: {eq.numeroProprio}</div>}
                 </div>
@@ -166,7 +166,7 @@ export default function EquipamentosPage() {
       {showMan&&selecionado&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}}>
           <div style={{background:"#fff",borderRadius:14,padding:24,maxWidth:480,width:"95%",boxShadow:"0 8px 32px rgba(0,0,0,.2)"}}>
-            <h3 style={{color:"#0f5233",fontSize:16,fontWeight:700,marginBottom:14}}>🔧 Registrar Manutenção — {selecionado.descricao}</h3>
+            <h3 style={{color:"#334532",fontSize:16,fontWeight:700,marginBottom:14}}>🔧 Registrar Manutenção — {selecionado.descricao}</h3>
             <div style={{display:"grid",gap:10,marginBottom:12}}>
               <div><label style={LS}>Tipo</label>
                 <select style={IS} value={manut.tipo} onChange={e=>setManut((p:any)=>({...p,tipo:e.target.value}))}>
@@ -185,7 +185,7 @@ export default function EquipamentosPage() {
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
               <button onClick={()=>setShowMan(false)} style={{background:"#f3f4f6",border:"none",padding:"9px 20px",borderRadius:8,cursor:"pointer"}}>Cancelar</button>
-              <button onClick={registrarManutencao} disabled={!manut.descricao||!manut.dataAgendada} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>Registrar</button>
+              <button onClick={registrarManutencao} disabled={!manut.descricao||!manut.dataAgendada} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>Registrar</button>
             </div>
           </div>
         </div>

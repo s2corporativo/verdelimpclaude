@@ -51,18 +51,18 @@ export default function AsoPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#0f5233", marginBottom: 4 }}>🩺 ASO — Saúde Ocupacional</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🩺 ASO — Saúde Ocupacional</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>Exame mais recente de cada funcionário. Alimenta automaticamente o Monitor de Documentação e o dossiê SSO.</p>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
-        {card("Funcionários ativos", dados.resumo.total, "#1a7a4a")}
+        {card("Funcionários ativos", dados.resumo.total, "#4a9410")}
         {card("Sem ASO registrado", dados.resumo.semAso, "#374151")}
         {card("Vencidos", dados.resumo.vencidos, "#991b1b")}
         {card("A vencer (30 dias)", dados.resumo.aVencer, "#b45309")}
       </div>
 
       <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 18 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 800, color: "#0f5233", margin: "0 0 12px" }}>➕ Registrar exame</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: "0 0 12px" }}>➕ Registrar exame</h2>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: "#374151", display: "block" }}>Funcionário</label>
@@ -91,7 +91,7 @@ export default function AsoPage() {
           {input("doctor", "Médico", "text", { width: 180 })}
           {input("crm", "CRM", "text", { width: 100 })}
           <button onClick={salvar} disabled={!form.employeeId || !form.examDate}
-            style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.employeeId || !form.examDate ? 0.5 : 1 }}>
+            style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.employeeId || !form.examDate ? 0.5 : 1 }}>
             Salvar
           </button>
         </div>

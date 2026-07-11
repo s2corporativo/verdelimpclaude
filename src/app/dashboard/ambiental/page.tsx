@@ -39,11 +39,11 @@ export default function AmbientalPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#0f5233", marginBottom: 4 }}>🌱 Registros Ambientais</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🌱 Registros Ambientais</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>Licenças, DOF, autorizações de poda/supressão e comprovantes de descarte — com alerta de vencimento.</p>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
-        {card("Registros", dados.resumo.total, "#1a7a4a")}
+        {card("Registros", dados.resumo.total, "#4a9410")}
         {card("Vencidos", dados.resumo.vencidos, "#991b1b")}
         {card("A vencer (30 dias)", dados.resumo.aVencer, "#b45309")}
       </div>
@@ -69,7 +69,7 @@ export default function AmbientalPage() {
         <div><label style={{ fontSize: 11, fontWeight: 700, color: "#374151", display: "block" }}>Válido até</label>
           <input type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} style={{ padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} /></div>
         <button onClick={salvar}
-          style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Registrar</button>
+          style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Registrar</button>
         {msg && <span style={{ color: "#991b1b", fontSize: 12 }}>{msg}</span>}
       </div>
 

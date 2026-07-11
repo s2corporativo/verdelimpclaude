@@ -61,13 +61,13 @@ export default function CronogramaPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#0f5233", marginBottom: 4 }}>📅 Cronograma de Serviços</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>📅 Cronograma de Serviços</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>Programação das equipes por contrato — planeje a semana e acompanhe a execução.</p>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         <button onClick={() => setSemana((s) => { const d = new Date(s); d.setDate(d.getDate() - 7); return d; })}
           style={{ background: "#fff", border: "1px solid #d1d5db", padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>← Semana anterior</button>
-        <span style={{ fontWeight: 800, color: "#0f5233", fontSize: 14 }}>
+        <span style={{ fontWeight: 800, color: "#334532", fontSize: 14 }}>
           {semana.toLocaleDateString("pt-BR")} a {fim.toLocaleDateString("pt-BR")}
         </span>
         <button onClick={() => setSemana((s) => { const d = new Date(s); d.setDate(d.getDate() + 7); return d; })}
@@ -102,7 +102,7 @@ export default function CronogramaPage() {
           <input value={form.team} onChange={(e) => setForm({ ...form, team: e.target.value })} placeholder="Ex.: João + 2 auxiliares"
             style={{ padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, width: 180 }} /></div>
         <button onClick={salvar} disabled={!form.contractId || !form.date || !form.activity}
-          style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.contractId || !form.date || !form.activity ? 0.5 : 1 }}>
+          style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.contractId || !form.date || !form.activity ? 0.5 : 1 }}>
           + Programar
         </button>
         {msg && <p style={{ color: "#991b1b", fontSize: 13 }}>{msg}</p>}
@@ -114,8 +114,8 @@ export default function CronogramaPage() {
           const doDia = itens.filter((it) => new Date(it.date).toDateString() === d.toDateString());
           const hoje = new Date().toDateString() === d.toDateString();
           return (
-            <div key={i} style={{ background: hoje ? "#f0fdf4" : "#fff", borderRadius: 10, padding: 10, minHeight: 140, border: hoje ? "2px solid #1a7a4a" : "1px solid #e5e7eb" }}>
-              <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 800, color: hoje ? "#1a7a4a" : "#374151" }}>
+            <div key={i} style={{ background: hoje ? "#f0fdf4" : "#fff", borderRadius: 10, padding: 10, minHeight: 140, border: hoje ? "2px solid #4a9410" : "1px solid #e5e7eb" }}>
+              <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 800, color: hoje ? "#4a9410" : "#374151" }}>
                 {nomesDias[i]} {d.getDate().toString().padStart(2, "0")}/{(d.getMonth() + 1).toString().padStart(2, "0")}
               </p>
               {doDia.length === 0 && <p style={{ fontSize: 11, color: "#d1d5db", margin: 0 }}>—</p>}

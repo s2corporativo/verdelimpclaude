@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 const IS: any = { width: "100%", padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 };
 const LS: any = { fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 3 };
 const CARD: any = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 16 };
-const TH: any = { padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#0f5233" };
+const TH: any = { padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#334532" };
 const TD: any = { padding: "8px 12px", fontSize: 12 };
 const BTN: any = { border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600 };
 
@@ -26,12 +26,12 @@ export default function AdminPage() {
 
   return (
     <div>
-      <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Administração do Sistema</h1>
+      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Administração do Sistema</h1>
       <p style={{ color: "#6b7280", fontSize: 12, marginBottom: 14 }}>Usuários, papéis de acesso, permissões e trilha de auditoria.</p>
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
         {ABAS.map((a) => (
           <button key={a.id} onClick={() => setAba(a.id)}
-            style={{ ...BTN, padding: "8px 16px", fontSize: 12, background: aba === a.id ? "#0f5233" : "#fff", color: aba === a.id ? "#fff" : "#374151", border: aba === a.id ? "1px solid #0f5233" : "1px solid #d1d5db" }}>
+            style={{ ...BTN, padding: "8px 16px", fontSize: 12, background: aba === a.id ? "#334532" : "#fff", color: aba === a.id ? "#fff" : "#374151", border: aba === a.id ? "1px solid #334532" : "1px solid #d1d5db" }}>
             {a.label}
           </button>
         ))}
@@ -52,7 +52,7 @@ function AbaResumo() {
   if (d.error) return <p style={{ fontSize: 13, color: "#991b1b" }}>{d.error}</p>;
   const K = ({ n, l, cor }: any) => (
     <div style={{ ...CARD, marginBottom: 0, textAlign: "center", padding: 14 }}>
-      <p style={{ margin: 0, fontSize: 24, fontWeight: 800, color: cor || "#0f5233" }}>{n}</p>
+      <p style={{ margin: 0, fontSize: 24, fontWeight: 800, color: cor || "#334532" }}>{n}</p>
       <p style={{ margin: "2px 0 0", fontSize: 11, color: "#6b7280" }}>{l}</p>
     </div>
   );
@@ -68,7 +68,7 @@ function AbaResumo() {
         <K n={d.eventos7d} l="Eventos 7 dias" />
       </div>
       <div style={CARD}>
-        <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 10 }}>Últimos acessos</h3>
+        <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 10 }}>Últimos acessos</h3>
         <table style={{ borderCollapse: "collapse", width: "100%" }}>
           <thead><tr style={{ background: "#e8f5ee" }}>{["Usuário", "E-mail", "Último login"].map((h) => <th key={h} style={TH}>{h}</th>)}</tr></thead>
           <tbody>{(d.ultimosLogins || []).map((u: any) => (
@@ -163,7 +163,7 @@ function AbaUsuarios() {
       )}
 
       <div style={CARD}>
-        <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>+ Novo Usuário</h3>
+        <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 12 }}>+ Novo Usuário</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
           <div><label style={LS}>Nome*</label><input style={IS} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
           <div><label style={LS}>E-mail*</label><input style={IS} value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} /></div>
@@ -171,12 +171,12 @@ function AbaUsuarios() {
         <label style={LS}>Papéis de acesso</label>
         <CheckPapeis selecionados={form.roleIds} onToggle={(id) => setForm((p) => ({ ...p, roleIds: togglePapel(p.roleIds, id) }))} />
         {msg && <p style={{ color: msg.startsWith("✓") ? "#059669" : "#dc2626", fontSize: 12, margin: "10px 0 0" }}>{msg}</p>}
-        <button onClick={criar} disabled={!form.name || !form.email} style={{ ...BTN, background: "#1a7a4a", color: "#fff", padding: "9px 24px", marginTop: 10, fontSize: 13 }}>+ Criar usuário</button>
+        <button onClick={criar} disabled={!form.name || !form.email} style={{ ...BTN, background: "#4a9410", color: "#fff", padding: "9px 24px", marginTop: 10, fontSize: 13 }}>+ Criar usuário</button>
       </div>
 
       {editando && (
-        <div style={{ ...CARD, border: "2px solid #0f5233" }}>
-          <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>✏️ Editando: {editando.email}</h3>
+        <div style={{ ...CARD, border: "2px solid #334532" }}>
+          <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 12 }}>✏️ Editando: {editando.email}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
             <div><label style={LS}>Nome</label><input style={IS} value={editando.name} onChange={(e) => setEditando((p: any) => ({ ...p, name: e.target.value }))} /></div>
             <div><label style={LS}>E-mail</label><input style={IS} value={editando.email} onChange={(e) => setEditando((p: any) => ({ ...p, email: e.target.value }))} /></div>
@@ -184,7 +184,7 @@ function AbaUsuarios() {
           <label style={LS}>Papéis de acesso</label>
           <CheckPapeis selecionados={editando.roleIds} onToggle={(id) => setEditando((p: any) => ({ ...p, roleIds: togglePapel(p.roleIds, id) }))} />
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <button onClick={salvarEdicao} style={{ ...BTN, background: "#1a7a4a", color: "#fff", padding: "8px 20px", fontSize: 12 }}>Salvar</button>
+            <button onClick={salvarEdicao} style={{ ...BTN, background: "#4a9410", color: "#fff", padding: "8px 20px", fontSize: 12 }}>Salvar</button>
             <button onClick={() => setEditando(null)} style={{ ...BTN, background: "#f3f4f6", color: "#374151", padding: "8px 20px", fontSize: 12 }}>Cancelar</button>
           </div>
         </div>
@@ -263,18 +263,18 @@ function AbaPapeis() {
   return (
     <div>
       <div style={CARD}>
-        <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>+ Novo Papel</h3>
+        <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 12 }}>+ Novo Papel</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginBottom: 10 }}>
           <div><label style={LS}>Nome* (ex.: COMERCIAL)</label><input style={IS} value={novo.name} onChange={(e) => setNovo((p) => ({ ...p, name: e.target.value }))} /></div>
           <div><label style={LS}>Descrição</label><input style={IS} value={novo.description} onChange={(e) => setNovo((p) => ({ ...p, description: e.target.value }))} /></div>
         </div>
         {msg && <p style={{ color: msg.startsWith("✓") ? "#059669" : "#dc2626", fontSize: 12, marginBottom: 8 }}>{msg}</p>}
-        <button onClick={criar} disabled={!novo.name} style={{ ...BTN, background: "#1a7a4a", color: "#fff", padding: "9px 24px", fontSize: 13 }}>+ Criar papel</button>
+        <button onClick={criar} disabled={!novo.name} style={{ ...BTN, background: "#4a9410", color: "#fff", padding: "9px 24px", fontSize: 13 }}>+ Criar papel</button>
       </div>
 
       {sel && (
-        <div style={{ ...CARD, border: "2px solid #0f5233" }}>
-          <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 10 }}>🛡️ Permissões do papel {sel.name}</h3>
+        <div style={{ ...CARD, border: "2px solid #334532" }}>
+          <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 10 }}>🛡️ Permissões do papel {sel.name}</h3>
           <div style={{ marginBottom: 10 }}><label style={LS}>Descrição</label><input style={IS} value={sel.description || ""} onChange={(e) => setSel((p: any) => ({ ...p, description: e.target.value }))} /></div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -295,7 +295,7 @@ function AbaPapeis() {
             </table>
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <button onClick={salvarPermissoes} style={{ ...BTN, background: "#1a7a4a", color: "#fff", padding: "8px 20px", fontSize: 12 }}>Salvar permissões</button>
+            <button onClick={salvarPermissoes} style={{ ...BTN, background: "#4a9410", color: "#fff", padding: "8px 20px", fontSize: 12 }}>Salvar permissões</button>
             <button onClick={() => setSel(null)} style={{ ...BTN, background: "#f3f4f6", color: "#374151", padding: "8px 20px", fontSize: 12 }}>Cancelar</button>
           </div>
         </div>

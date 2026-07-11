@@ -11,9 +11,9 @@ export default function DiarioPage() {
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
   const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
   return(<div>
-    <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,marginBottom:14}}>Diário de Obras {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Diário de Obras {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:16}}>
-      <h3 style={{color:"#0f5233",fontSize:13,marginBottom:12}}>+ Novo Registro</h3>
+      <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>+ Novo Registro</h3>
       <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr",gap:9,marginBottom:9}}>
         <div><label style={LS}>Local / Contrato*</label><input style={IS} value={form.location} onChange={e=>setForm(p=>({...p,location:e.target.value}))} placeholder="Ex: PBH — Canteiro Região Norte"/></div>
         <div><label style={LS}>Supervisor*</label><input style={IS} value={form.supervisor} onChange={e=>setForm(p=>({...p,supervisor:e.target.value}))}/></div>
@@ -27,14 +27,14 @@ export default function DiarioPage() {
         <div><label style={LS}>Equipamentos Usados</label><input style={IS} value={form.equipmentUsed} onChange={e=>setForm(p=>({...p,equipmentUsed:e.target.value}))}/></div>
         <div><label style={LS}>Ocorrências</label><input style={IS} value={form.occurrences} onChange={e=>setForm(p=>({...p,occurrences:e.target.value}))} placeholder="Nenhuma ocorrência"/></div>
       </div>
-      <button onClick={salvar} disabled={!form.location||!form.activitiesDone} style={{background:"#1a7a4a",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>+ Salvar Registro</button>
+      <button onClick={salvar} disabled={!form.location||!form.activitiesDone} style={{background:"#4a9410",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>+ Salvar Registro</button>
     </div>
     {data.map((d:any,i:number)=>{
       const [wbg,wco,wic]=WC[d.weather]||["#f3f4f6","#374151","?"];
       return(<div key={i} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:10}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:10,flexWrap:"wrap",gap:8}}>
           <div>
-            <div style={{fontWeight:700,fontSize:14,color:"#0f5233"}}>{d.location}</div>
+            <div style={{fontWeight:700,fontSize:14,color:"#334532"}}>{d.location}</div>
             <div style={{fontSize:11,color:"#6b7280"}}>📅 {d.date?new Date(d.date).toLocaleDateString("pt-BR",""):""} · 👷 {d.supervisor} · 👥 {d.teamSize} pessoas</div>
           </div>
           <span style={{background:wbg,color:wco,padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:700}}>{wic} {d.weather}</span>

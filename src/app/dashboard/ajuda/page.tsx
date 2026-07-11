@@ -57,17 +57,17 @@ export default function AjudaPage() {
 
   return (
     <div>
-      <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:"0 0 4px"}}>🤖 Central de Ajuda</h1>
+      <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:"0 0 4px"}}>🤖 Central de Ajuda</h1>
       <p style={{color:"#6b7280",fontSize:12,margin:"0 0 16px"}}>Chat com IA especializada no Verdelimp ERP + perguntas frequentes</p>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
         {/* CHAT */}
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{background:"#0f5233",padding:"10px 14px",color:"#fff",fontSize:12,fontWeight:700}}>💬 Chat com IA</div>
+          <div style={{background:"#334532",padding:"10px 14px",color:"#fff",fontSize:12,fontWeight:700}}>💬 Chat com IA</div>
           <div ref={chatRef} style={{flex:1,overflowY:"auto",padding:12,maxHeight:400,display:"flex",flexDirection:"column",gap:8}}>
             {msgs.map((m,i)=>(
               <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-                <div style={{maxWidth:"85%",background:m.role==="user"?"#0f5233":"#f3f4f6",color:m.role==="user"?"#fff":"#1f2937",padding:"8px 11px",borderRadius:m.role==="user"?"10px 10px 0 10px":"10px 10px 10px 0",fontSize:12,lineHeight:1.5,whiteSpace:"pre-wrap"}}>
+                <div style={{maxWidth:"85%",background:m.role==="user"?"#334532":"#f3f4f6",color:m.role==="user"?"#fff":"#1f2937",padding:"8px 11px",borderRadius:m.role==="user"?"10px 10px 0 10px":"10px 10px 10px 0",fontSize:12,lineHeight:1.5,whiteSpace:"pre-wrap"}}>
                   {m.text}
                 </div>
               </div>
@@ -84,19 +84,19 @@ export default function AjudaPage() {
 
           <div style={{padding:"8px 10px",borderTop:"1px solid #f3f4f6",display:"flex"}}>
             <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&enviar()} placeholder="Pergunte algo sobre o sistema..." style={IS}/>
-            <button onClick={()=>enviar()} disabled={loading||!input.trim()} style={{background:loading||!input.trim()?"#9ca3af":"#0f5233",color:"#fff",border:"none",padding:"9px 16px",borderRadius:"0 8px 8px 0",cursor:"pointer",fontWeight:700,fontSize:13}}>→</button>
+            <button onClick={()=>enviar()} disabled={loading||!input.trim()} style={{background:loading||!input.trim()?"#9ca3af":"#334532",color:"#fff",border:"none",padding:"9px 16px",borderRadius:"0 8px 8px 0",cursor:"pointer",fontWeight:700,fontSize:13}}>→</button>
           </div>
         </div>
 
         {/* FAQ */}
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-          <div style={{background:"#0f5233",padding:"10px 14px",color:"#fff",fontSize:12,fontWeight:700}}>❓ Perguntas Frequentes</div>
+          <div style={{background:"#334532",padding:"10px 14px",color:"#fff",fontSize:12,fontWeight:700}}>❓ Perguntas Frequentes</div>
 
           {/* Filtro por categoria */}
           <div style={{padding:"8px 10px",borderBottom:"1px solid #f3f4f6",display:"flex",gap:4,flexWrap:"wrap"}}>
-            <button onClick={()=>setCatAtiva(null)} style={{background:!catAtiva?"#0f5233":"#f3f4f6",color:!catAtiva?"#fff":"#374151",border:"none",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:10,fontWeight:600}}>Todas</button>
+            <button onClick={()=>setCatAtiva(null)} style={{background:!catAtiva?"#334532":"#f3f4f6",color:!catAtiva?"#fff":"#374151",border:"none",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:10,fontWeight:600}}>Todas</button>
             {cats.map(c=>(
-              <button key={c} onClick={()=>setCatAtiva(catAtiva===c?null:c)} style={{background:catAtiva===c?"#0f5233":"#f3f4f6",color:catAtiva===c?"#fff":"#374151",border:"none",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:10,fontWeight:600}}>{c}</button>
+              <button key={c} onClick={()=>setCatAtiva(catAtiva===c?null:c)} style={{background:catAtiva===c?"#334532":"#f3f4f6",color:catAtiva===c?"#fff":"#374151",border:"none",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:10,fontWeight:600}}>{c}</button>
             ))}
           </div>
 
@@ -110,7 +110,7 @@ export default function AjudaPage() {
                 {faqAberta===i&&(
                   <div style={{padding:"0 14px 12px",fontSize:11,color:"#6b7280",lineHeight:1.6,background:"#f9fafb"}}>
                     {f.a}
-                    <button onClick={()=>enviar(f.q)} style={{display:"block",marginTop:6,background:"none",border:"none",color:"#1a7a4a",cursor:"pointer",fontSize:10,fontWeight:600,padding:0}}>
+                    <button onClick={()=>enviar(f.q)} style={{display:"block",marginTop:6,background:"none",border:"none",color:"#4a9410",cursor:"pointer",fontSize:10,fontWeight:600,padding:0}}>
                       💬 Perguntar mais sobre isso →
                     </button>
                   </div>

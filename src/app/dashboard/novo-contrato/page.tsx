@@ -256,7 +256,7 @@ const analisarEquipe = async () => {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ color: "#0f5233", fontSize: 22, fontWeight: 700, margin: 0 }}>📋 Cadastrar Contrato/Cotação</h1>
+        <h1 style={{ color: "#334532", fontSize: 22, fontWeight: 700, margin: 0 }}>📋 Cadastrar Contrato/Cotação</h1>
         <p style={{ color: "#6b7280", fontSize: 13, margin: "4px 0 0" }}>
           Ao salvar, o sistema propaga automaticamente em <strong>Logística</strong>, <strong>Tributário</strong>, <strong>Financeiro</strong>, <strong>RH</strong>, <strong>DRE</strong> e <strong>Almoxarifado</strong>.
         </p>
@@ -271,7 +271,7 @@ const analisarEquipe = async () => {
           ["equipe", "4. Equipe + Docs"],
           ["sucesso", "5. Confirmação"],
         ].map(([id, l], i) => (
-          <div key={id} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: aba === id ? "#0f5233" : "#f9fafb", color: aba === id ? "#fff" : "#6b7280", fontWeight: 600, fontSize: 12, textAlign: "center" }}>
+          <div key={id} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: aba === id ? "#334532" : "#f9fafb", color: aba === id ? "#fff" : "#6b7280", fontWeight: 600, fontSize: 12, textAlign: "center" }}>
             {l}
           </div>
         ))}
@@ -287,7 +287,7 @@ const analisarEquipe = async () => {
             <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>Como você quer informar os dados?</div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setModoEntrada("manual")}
-                style={{ background: modoEntrada === "manual" ? "#0f5233" : "#f3f4f6", color: modoEntrada === "manual" ? "#fff" : "#374151", border: "none", padding: "9px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
+                style={{ background: modoEntrada === "manual" ? "#334532" : "#f3f4f6", color: modoEntrada === "manual" ? "#fff" : "#374151", border: "none", padding: "9px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
                 ✍️ Preencher manualmente
               </button>
               <button onClick={() => setModoEntrada("colar")}
@@ -315,7 +315,7 @@ const analisarEquipe = async () => {
           {/* Formulário */}
           {modoEntrada === "manual" && (
             <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 18, marginBottom: 14 }}>
-              <h3 style={{ color: "#0f5233", fontSize: 14, fontWeight: 700, marginBottom: 14 }}>📝 Dados do Contrato</h3>
+              <h3 style={{ color: "#334532", fontSize: 14, fontWeight: 700, marginBottom: 14 }}>📝 Dados do Contrato</h3>
 
               {/* Cliente */}
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10, marginBottom: 10 }}>
@@ -371,7 +371,7 @@ const analisarEquipe = async () => {
               </div>
 
               <button onClick={calcularImpacto} disabled={calculando || !c.valorMensal || !c.vigenciaMeses}
-                style={{ background: calculando ? "#6b7280" : "#0f5233", color: "#fff", border: "none", padding: "12px 28px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: (!c.valorMensal || !c.vigenciaMeses) ? 0.5 : 1 }}>
+                style={{ background: calculando ? "#6b7280" : "#334532", color: "#fff", border: "none", padding: "12px 28px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: (!c.valorMensal || !c.vigenciaMeses) ? 0.5 : 1 }}>
                 {calculando ? "⟳ Calculando impacto em todos os módulos..." : "🚀 Calcular Impacto Total →"}
               </button>
             </div>
@@ -383,7 +383,7 @@ const analisarEquipe = async () => {
       {aba === "impacto" && impacto && (
         <div>
           {/* Resumo executivo */}
-          <div style={{ background: "linear-gradient(135deg, #0f5233, #1a7a4a)", color: "#fff", borderRadius: 12, padding: 18, marginBottom: 14 }}>
+          <div style={{ background: "linear-gradient(135deg, #334532, #4a9410)", color: "#fff", borderRadius: 12, padding: 18, marginBottom: 14 }}>
             <h3 style={{ fontSize: 15, margin: "0 0 6px" }}>💼 {c.objeto || "Contrato"}</h3>
             <p style={{ fontSize: 12, opacity: 0.9, margin: "0 0 10px" }}>{c.clienteNome} · {c.municipio}/{c.uf} · Vigência {c.vigenciaMeses} meses</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 8 }}>
@@ -488,7 +488,7 @@ const analisarEquipe = async () => {
             {/* PRECIFICAÇÃO */}
             <div style={{ background: "#fff", border: `1px solid ${impacto.precificacao.competitividade === "lucrativo" ? "#86efac" : impacto.precificacao.competitividade === "apertado" ? "#fde68a" : "#fca5a5"}`, borderRadius: 12, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                <h4 style={{ color: "#0f5233", fontSize: 13, fontWeight: 700, margin: 0 }}>🧮 Precificação</h4>
+                <h4 style={{ color: "#334532", fontSize: 13, fontWeight: 700, margin: 0 }}>🧮 Precificação</h4>
                 <span style={{ background: impacto.precificacao.competitividade === "lucrativo" ? "#dcfce7" : impacto.precificacao.competitividade === "apertado" ? "#fef9c3" : "#fee2e2", color: impacto.precificacao.competitividade === "lucrativo" ? "#15803d" : impacto.precificacao.competitividade === "apertado" ? "#92400e" : "#991b1b", padding: "1px 7px", borderRadius: 8, fontSize: 9, fontWeight: 700 }}>
                   {impacto.precificacao.competitividade.toUpperCase()}
                 </span>
@@ -496,7 +496,7 @@ const analisarEquipe = async () => {
               <table style={{ width: "100%", fontSize: 11 }}>
                 <tbody>
                   <tr><td style={{ color: "#6b7280", padding: "3px 0" }}>Valor contratado / mês</td><td style={{ textAlign: "right", fontWeight: 700 }}>R$ {fmt(impacto.precificacao.valorContratado)}</td></tr>
-                  <tr><td style={{ color: "#6b7280", padding: "3px 0" }}>Valor ideal (markup 25%)</td><td style={{ textAlign: "right", fontWeight: 700, color: "#0f5233" }}>R$ {fmt(impacto.precificacao.valorIdeal)}</td></tr>
+                  <tr><td style={{ color: "#6b7280", padding: "3px 0" }}>Valor ideal (markup 25%)</td><td style={{ textAlign: "right", fontWeight: 700, color: "#334532" }}>R$ {fmt(impacto.precificacao.valorIdeal)}</td></tr>
                   <tr style={{ borderTop: "1px solid #f3f4f6" }}><td style={{ padding: "5px 0", fontWeight: 700 }}>Diferença</td><td style={{ textAlign: "right", fontWeight: 700, color: impacto.precificacao.diferenca >= 0 ? "#15803d" : "#dc2626" }}>{impacto.precificacao.diferenca >= 0 ? "+" : ""}R$ {fmt(impacto.precificacao.diferenca)}</td></tr>
                 </tbody>
               </table>
@@ -505,7 +505,7 @@ const analisarEquipe = async () => {
             {/* DRE */}
             <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 14, gridColumn: "span 1" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                <h4 style={{ color: "#0f5233", fontSize: 13, fontWeight: 700, margin: 0 }}>📊 DRE Mensal</h4>
+                <h4 style={{ color: "#334532", fontSize: 13, fontWeight: 700, margin: 0 }}>📊 DRE Mensal</h4>
                 <span style={{ background: impacto.dre.margemPct >= 25 ? "#dcfce7" : impacto.dre.margemPct >= 15 ? "#fef9c3" : "#fee2e2", color: impacto.dre.margemPct >= 25 ? "#15803d" : impacto.dre.margemPct >= 15 ? "#92400e" : "#991b1b", padding: "1px 7px", borderRadius: 8, fontSize: 9, fontWeight: 700 }}>
                   Margem {impacto.dre.margemPct}%
                 </span>
@@ -517,7 +517,7 @@ const analisarEquipe = async () => {
                   <tr><td style={{ padding: "3px 0", color: "#dc2626" }}>(−) Folha</td><td style={{ textAlign: "right", color: "#dc2626" }}>R$ {fmt(impacto.dre.folha)}</td></tr>
                   <tr><td style={{ padding: "3px 0", color: "#dc2626" }}>(−) Deslocamento</td><td style={{ textAlign: "right", color: "#dc2626" }}>R$ {fmt(impacto.dre.deslocamento)}</td></tr>
                   <tr><td style={{ padding: "3px 0", color: "#dc2626" }}>(−) Material + EPI</td><td style={{ textAlign: "right", color: "#dc2626" }}>R$ {fmt(impacto.dre.material + impacto.dre.epi)}</td></tr>
-                  <tr style={{ borderTop: "2px solid #0f5233" }}><td style={{ padding: "6px 0", fontWeight: 700 }}>(=) Margem líquida</td><td style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: impacto.dre.margemPct >= 15 ? "#15803d" : "#dc2626" }}>R$ {fmt(impacto.dre.margemMensal)}</td></tr>
+                  <tr style={{ borderTop: "2px solid #334532" }}><td style={{ padding: "6px 0", fontWeight: 700 }}>(=) Margem líquida</td><td style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: impacto.dre.margemPct >= 15 ? "#15803d" : "#dc2626" }}>R$ {fmt(impacto.dre.margemMensal)}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -547,7 +547,7 @@ const analisarEquipe = async () => {
                 {gerandoCronograma ? "⟳ Gerando cronograma com IA..." : "📅 Gerar Cronograma →"}
               </button>
               <button onClick={propagarContrato} disabled={salvando}
-                style={{ background: salvando ? "#6b7280" : "#0f5233", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+                style={{ background: salvando ? "#6b7280" : "#334532", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
                 {salvando ? "⟳ Salvando..." : "✅ Confirmar e Salvar"}
               </button>
             </div>
@@ -596,7 +596,7 @@ const analisarEquipe = async () => {
 
           {/* Linha do tempo mensal */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 14 }}>
-            <h4 style={{ color: "#0f5233", fontSize: 13, fontWeight: 700, marginBottom: 10 }}>📊 Visão geral por mês — {cronograma.meses.length} meses</h4>
+            <h4 style={{ color: "#334532", fontSize: 13, fontWeight: 700, marginBottom: 10 }}>📊 Visão geral por mês — {cronograma.meses.length} meses</h4>
             <div style={{ display: "flex", overflowX: "auto", gap: 4, paddingBottom: 8 }}>
               {cronograma.meses.map((m: any, idx: number) => {
                 const cor = m.qualidadeClimaPct >= 85 ? "#15803d"
@@ -620,12 +620,12 @@ const analisarEquipe = async () => {
 
           {/* Detalhamento por mês */}
           <div style={{ marginBottom: 14 }}>
-            <h4 style={{ color: "#0f5233", fontSize: 14, fontWeight: 700, marginBottom: 10 }}>📋 Cronograma detalhado</h4>
+            <h4 style={{ color: "#334532", fontSize: 14, fontWeight: 700, marginBottom: 10 }}>📋 Cronograma detalhado</h4>
             {cronograma.meses.map((m: any, mi: number) => (
               <div key={mi} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
                 <div style={{ background: "#e8f5ee", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                   <div>
-                    <span style={{ fontWeight: 700, color: "#0f5233", fontSize: 14 }}>{m.nomeMes}</span>
+                    <span style={{ fontWeight: 700, color: "#334532", fontSize: 14 }}>{m.nomeMes}</span>
                     <span style={{ fontSize: 11, color: "#6b7280", marginLeft: 8 }}>{m.execucoes.length} execuções · {Math.round(m.horasTotais)}h equipe</span>
                   </div>
                   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -674,7 +674,7 @@ const analisarEquipe = async () => {
           <div style={{ display: "flex", gap: 10, justifyContent: "space-between", marginTop: 16 }}>
             <button onClick={() => setAba("impacto")} style={{ background: "#f3f4f6", color: "#374151", border: "none", padding: "11px 24px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>← Voltar para impacto</button>
             <button onClick={analisarEquipe} disabled={analisandoEquipe}
-              style={{ background: analisandoEquipe ? "#6b7280" : "#0f5233", color: "#fff", border: "none", padding: "12px 28px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+              style={{ background: analisandoEquipe ? "#6b7280" : "#334532", color: "#fff", border: "none", padding: "12px 28px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
               {analisandoEquipe ? "⟳ Analisando equipe ideal..." : "👷 Analisar Equipe & Documentos →"}
             </button>
           </div>
@@ -686,7 +686,7 @@ const analisarEquipe = async () => {
       {aba === "equipe" && equipeAnalise && (
         <div>
           {/* Resumo: 3 cenários comparativos */}
-          <div style={{ background: "linear-gradient(135deg,#0f5233,#1a7a4a)", color: "#fff", borderRadius: 12, padding: 18, marginBottom: 14 }}>
+          <div style={{ background: "linear-gradient(135deg,#334532,#4a9410)", color: "#fff", borderRadius: 12, padding: 18, marginBottom: 14 }}>
             <h3 style={{ fontSize: 16, margin: "0 0 4px" }}>👷 Equipe Otimizada para o Contrato</h3>
             <p style={{ fontSize: 12, opacity: 0.9, margin: 0 }}>
               Equipe mínima necessária: <strong>{equipeAnalise.pessoasMinimas} pessoas</strong> · {equipeAnalise.totalDisponiveis} disponíveis · Qualificações: {equipeAnalise.qualificacoesRequeridas.obrigatorias.join(", ")}
@@ -736,7 +736,7 @@ const analisarEquipe = async () => {
           {/* Lista de funcionários para selecionar manualmente */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 6 }}>
-              <h4 style={{ color: "#0f5233", fontSize: 13, fontWeight: 700, margin: 0 }}>
+              <h4 style={{ color: "#334532", fontSize: 13, fontWeight: 700, margin: 0 }}>
                 Selecione os funcionários a mobilizar ({funcSelecionados.length} selecionados)
               </h4>
               <span style={{ fontSize: 11, color: "#6b7280" }}>
@@ -770,7 +770,7 @@ const analisarEquipe = async () => {
           {/* Geração de documentos */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
-              <h4 style={{ color: "#0f5233", fontSize: 13, fontWeight: 700, margin: 0 }}>📄 Documentos do Contrato</h4>
+              <h4 style={{ color: "#334532", fontSize: 13, fontWeight: 700, margin: 0 }}>📄 Documentos do Contrato</h4>
               <button onClick={gerarDocs} disabled={gerandoDocs || !funcSelecionados.length}
                 style={{ background: gerandoDocs ? "#6b7280" : "#7c3aed", color: "#fff", border: "none", padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, opacity: !funcSelecionados.length ? 0.5 : 1 }}>
                 {gerandoDocs ? "⟳ Gerando..." : "📋 Gerar lista de documentos"}
@@ -783,8 +783,8 @@ const analisarEquipe = async () => {
               <div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8, marginBottom: 14 }}>
                   {[
-                    ["Total docs", docs.stats.total, "#0f5233"],
-                    ["📂 Empresa", docs.stats.empresa, "#1a7a4a"],
+                    ["Total docs", docs.stats.total, "#334532"],
+                    ["📂 Empresa", docs.stats.empresa, "#4a9410"],
                     ["👷 Funcionários", docs.stats.funcionarios, "#7c3aed"],
                     ["🚧 Contrato", docs.stats.contrato, "#1d4ed8"],
                     ["✏️ Gerados", docs.stats.gerados, "#15803d"],
@@ -798,16 +798,16 @@ const analisarEquipe = async () => {
                 </div>
 
                 <button onClick={imprimirDocsHtml}
-                  style={{ width: "100%", background: "#0f5233", color: "#fff", border: "none", padding: "12px 20px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+                  style={{ width: "100%", background: "#334532", color: "#fff", border: "none", padding: "12px 20px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
                   🖨️ Abrir TODOS os Documentos para Impressão / PDF
                 </button>
 
                 <details>
-                  <summary style={{ cursor: "pointer", fontSize: 12, color: "#0f5233", fontWeight: 700, padding: "6px 0" }}>Ver lista completa de documentos →</summary>
+                  <summary style={{ cursor: "pointer", fontSize: 12, color: "#334532", fontWeight: 700, padding: "6px 0" }}>Ver lista completa de documentos →</summary>
                   <div style={{ marginTop: 10, maxHeight: 400, overflowY: "auto" }}>
                     {["EMPRESA","FUNCIONARIO","CONTRATO"].map(cat => (
                       <div key={cat} style={{ marginBottom: 14 }}>
-                        <h5 style={{ color: "#0f5233", fontSize: 12, fontWeight: 700, padding: "6px 8px", background: "#e8f5ee", borderRadius: 5 }}>
+                        <h5 style={{ color: "#334532", fontSize: 12, fontWeight: 700, padding: "6px 8px", background: "#e8f5ee", borderRadius: 5 }}>
                           {cat === "EMPRESA" ? "📂 EMPRESA" : cat === "FUNCIONARIO" ? "👷 POR FUNCIONÁRIO" : "🚧 CONTRATO"}
                         </h5>
                         {docs.documentos.filter((d: any) => d.categoria === cat).map((d: any, i: number) => (
@@ -834,7 +834,7 @@ const analisarEquipe = async () => {
           <div style={{ display: "flex", gap: 10, justifyContent: "space-between", marginTop: 16 }}>
             <button onClick={() => setAba("cronograma")} style={{ background: "#f3f4f6", color: "#374151", border: "none", padding: "11px 24px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>← Voltar para cronograma</button>
             <button onClick={propagarContrato} disabled={salvando || !funcSelecionados.length}
-              style={{ background: salvando ? "#6b7280" : "#0f5233", color: "#fff", border: "none", padding: "12px 32px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: !funcSelecionados.length ? 0.5 : 1 }}>
+              style={{ background: salvando ? "#6b7280" : "#334532", color: "#fff", border: "none", padding: "12px 32px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: !funcSelecionados.length ? 0.5 : 1 }}>
               {salvando ? "⟳ Salvando contrato + mobilizando equipe..." : "✅ Confirmar Contrato + Mobilizar " + funcSelecionados.length + " Funcionário(s) →"}
             </button>
           </div>
@@ -847,12 +847,12 @@ const analisarEquipe = async () => {
           <div style={{ fontSize: 56, marginBottom: 14 }}>🎉</div>
           <h2 style={{ color: "#15803d", fontSize: 22, fontWeight: 700, margin: "0 0 8px" }}>{resultado.mensagem}</h2>
           <p style={{ color: "#6b7280", fontSize: 14, margin: "0 0 22px" }}>
-            Contrato <strong style={{ color: "#0f5233", fontFamily: "monospace" }}>{resultado.contratoNumero}</strong> criado e propagado.
+            Contrato <strong style={{ color: "#334532", fontFamily: "monospace" }}>{resultado.contratoNumero}</strong> criado e propagado.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 10, marginBottom: 22 }}>
             {[
-              ["Cliente", resultado.propagacao.clienteCriado ? "✅ Cadastrado" : "✓ Já existia", "#0f5233"],
-              ["Contrato", "✅ Criado", "#0f5233"],
+              ["Cliente", resultado.propagacao.clienteCriado ? "✅ Cadastrado" : "✓ Já existia", "#334532"],
+              ["Contrato", "✅ Criado", "#334532"],
               ["Tributos projetados", "✅ " + resultado.propagacao.tributosProjetados + " lançamentos", "#92400e"],
               ["Receitas projetadas", "✅ " + resultado.propagacao.receitasProjetadas + " no caixa", "#15803d"],
               ["OS na logística", "✅ " + resultado.propagacao.osProjetadas + " geradas", "#1e40af"],
@@ -871,7 +871,7 @@ const analisarEquipe = async () => {
             </div>
           )}
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="/dashboard/contratos" style={{ background: "#0f5233", color: "#fff", padding: "10px 20px", borderRadius: 8, textDecoration: "none", fontWeight: 700, fontSize: 13 }}>📋 Ver Contratos</a>
+            <a href="/dashboard/contratos" style={{ background: "#334532", color: "#fff", padding: "10px 20px", borderRadius: 8, textDecoration: "none", fontWeight: 700, fontSize: 13 }}>📋 Ver Contratos</a>
             <button onClick={()=>setAba("cronograma")} style={{ background: "#7c3aed", color: "#fff", padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>📅 Ver Cronograma</button>
             <a href="/dashboard/logistica" style={{ background: "#1e40af", color: "#fff", padding: "10px 20px", borderRadius: 8, textDecoration: "none", fontWeight: 700, fontSize: 13 }}>🚛 Ver na Logística</a>
             <a href="/dashboard/fiscal" style={{ background: "#92400e", color: "#fff", padding: "10px 20px", borderRadius: 8, textDecoration: "none", fontWeight: 700, fontSize: 13 }}>💸 Ver Tributos</a>
