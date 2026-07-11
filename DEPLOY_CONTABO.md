@@ -8,6 +8,28 @@ Este guia publica o Verdelimp ERP em uma VPS Contabo com Ubuntu, Docker, Postgre
 > prefixo `verdelimp`, Postgres interno sem porta exposta no host e um site Nginx
 > adicional — os sites existentes não são tocados.
 
+## ⚡ Opção A — Instalação automática (recomendada)
+
+Todo o roteiro abaixo (pré-voo, pacotes, Docker, banco, migrations, seed, Nginx,
+SSL e backup) pode ser executado de uma vez pelo instalador. Na VPS, como root:
+
+```bash
+mkdir -p /opt && cd /opt
+git clone https://github.com/s2corporativo/verdelimpclaude.git verdelimp-erp
+cd /opt/verdelimp-erp
+chmod +x deploy/contabo/install.sh
+./deploy/contabo/install.sh
+```
+
+O instalador pergunta apenas o domínio (com opção `sslip.io` se o DNS ainda não
+estiver pronto), o e-mail do certificado e a chave GROQ (opcional); gera as
+senhas/segredos sozinho, escolhe uma porta livre automaticamente e **pode ser
+re-executado com segurança** — o que já estiver feito é pulado. Ao final,
+imprime a URL e a senha inicial do admin.
+
+As seções numeradas a seguir (**Opção B — manual**) fazem exatamente o mesmo,
+passo a passo, e servem de referência para diagnóstico.
+
 ## 0. Pré-voo em VPS compartilhada (fazer ANTES de tudo)
 
 ```bash
