@@ -149,14 +149,14 @@ export default function DashboardPage() {
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 9, marginBottom: 18 }}>
-        <Kpi label="Clientes" value={dados.totalClientes || 5} icon="🤝" />
-        <Kpi label="Funcionários" value={dados.totalFuncionarios || 8} icon="👷" color="#1d4ed8" />
-        <Kpi label="NFS-e emitidas" value={dados.totalNfse || 3} icon="🧾" color="#7c3aed" />
-        <Kpi label="Propostas" value={dados.totalPropostas || 2} icon="📄" color="#0891b2" />
-        <Kpi label="Tributos em aberto" value={`R$${fmt(fiscal.tributosAberto || 8450)}`} icon="💸" color="#d97706" alert={fiscal.tributosAberto > 0} />
-        <Kpi label="Tributos pagos" value={`R$${fmt(fiscal.tributosPago || 5770)}`} icon="✅" />
-        <Kpi label="Docs alerta" value={fiscal.docsVencer || 2} icon="📋" color={fiscal.docsVencer > 0 ? "#dc2626" : "#4a9410"} alert={fiscal.docsVencer > 0} />
-        <Kpi label="Contratos ativos" value={dados.totalContratos || "—"} icon="📋" />
+        <Kpi l="Clientes" v={dados.totalClientes || 5} i="🤝" />
+        <Kpi l="Funcionários" v={dados.totalFuncionarios || 8} i="👷" c="#1d4ed8" />
+        <Kpi l="NFS-e emitidas" v={dados.totalNfse || 3} i="🧾" c="#7c3aed" />
+        <Kpi l="Propostas" v={dados.totalPropostas || 2} i="📄" c="#0891b2" />
+        <Kpi l="Tributos em aberto" v={`R$${fmt(fiscal.tributosAberto || 8450)}`} i="💸" c="#d97706" alert={fiscal.tributosAberto > 0} />
+        <Kpi l="Tributos pagos" v={`R$${fmt(fiscal.tributosPago || 5770)}`} i="✅" />
+        <Kpi l="Docs alerta" v={fiscal.docsVencer || 2} i="📋" c={fiscal.docsVencer > 0 ? "#dc2626" : "#4a9410"} alert={fiscal.docsVencer > 0} />
+        <Kpi l="Contratos ativos" v={dados.totalContratos || "—"} i="📋" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, marginBottom: 14 }}>

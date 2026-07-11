@@ -9,7 +9,7 @@ export default function TreinamentosPage() {
     fetch("/api/treinamentos").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);});
     fetch("/api/funcionarios").then(r=>r.json()).then(d=>setFuncs(d.data||[]));
   },[]);
-  const salvar=async()=>{ await fetch("/api/treinamentos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)}); };
+  const salvar=async()=>{ const r=await fetch("/api/treinamentos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)}); if(r.ok){ const d=await fetch("/api/treinamentos").then(x=>x.json()); setData(d.data||[]); } };
   const NRS=["NR-06","NR-12","NR-35","NR-20","NR-10","ASO","CNH Cat. B","CNH Cat. C","Direção Defensiva","Primeiros Socorros","SIPAT","Outro"];
   const SC:any={valido:["#dcfce7","#15803d","✅ Válido"],a_vencer:["#fef9c3","#92400e","⚠️ A vencer"],vencido:["#fee2e2","#991b1b","⛔ Vencido"]};
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};

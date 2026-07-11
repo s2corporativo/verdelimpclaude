@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const data = await prisma.supplier.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" } });

@@ -21,7 +21,7 @@ export default function FolhaDetalhadaPage() {
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
       <table style={{borderCollapse:"collapse",width:"100%"}}>
         <thead>
-          <tr style={{background:"#e8f5ee"}}>{["Funcionário","Cargo","Salário Bruto","(-) INSS","(-) IRRF","= Líquido","FGTS (emp)","INSS Pat.","Custo Total"].map(h=><th key={h} style={{padding:"8px 11px",textAlign:"right",fontSize:10,fontWeight:700,color:"#334532",":first-child":{textAlign:"left"}}}>{h}</th>)}</tr>
+          <tr style={{background:"#e8f5ee"}}>{["Funcionário","Cargo","Salário Bruto","(-) INSS","(-) IRRF","= Líquido","FGTS (emp)","INSS Pat.","Custo Total"].map(h=><th key={h} style={{padding:"8px 11px",textAlign:"right",fontSize:10,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr>
           <tr style={{background:"#f0fdf4"}}><td colSpan={9} style={{padding:"4px 12px",fontSize:10,color:"#6b7280",fontStyle:"italic"}}>INSS progressivo: 7,5% (até R$1.412) · 9% (até R$2.666) · 12% (até R$4.000) · 14% (até R$7.786) — Teto INSS. IRRF: isento até R$2.259,20.</td></tr>
         </thead>
         <tbody>

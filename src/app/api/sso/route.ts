@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 function statusValidade(expiresAt?: Date | null): "valido" | "a_vencer" | "vencido" | "ausente" {
   if (!expiresAt) return "ausente";
   const dias = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000);

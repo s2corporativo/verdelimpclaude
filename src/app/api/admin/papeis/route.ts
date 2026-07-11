@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin, registrarAuditoria } from "@/lib/admin";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { erro } = await exigirAdmin();
   if (erro) return erro;

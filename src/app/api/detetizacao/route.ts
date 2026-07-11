@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ── Catálogo padrão de produtos (antes do banco ser populado) ────
-export const CATALOGO_DEFAULT = [
+const CATALOGO_DEFAULT = [
   { id:"p1", nomeComercial:"Maxforce FC Select", principioAtivo:"Fipronil 0,001%", registroAnvisa:"7.205.0097.002", fabricante:"Bayer", tipo:"inseticida", alvosPrincipais:"baratas", concentracao:"0,001%", custoLitro:180 },
   { id:"p2", nomeComercial:"Demand CS", principioAtivo:"Lambda-Cialotrina 9,7%", registroAnvisa:"7.205.0073.001", fabricante:"Syngenta", tipo:"inseticida", alvosPrincipais:"baratas,formigas,mosquitos,percevejos", concentracao:"9,7%", custoLitro:320 },
   { id:"p3", nomeComercial:"Maxxthor EC", principioAtivo:"Bifentrina 10%", registroAnvisa:"7.205.0077.003", fabricante:"Sumitomo", tipo:"inseticida", alvosPrincipais:"baratas,formigas,carrapatos,escorpiao", concentracao:"10%", custoLitro:290 },

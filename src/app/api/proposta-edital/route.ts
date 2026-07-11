@@ -60,11 +60,11 @@ Seja específico com valores realistas para MG. Indique que é apoio gerencial.`
         data: {
           number,
           clientId: clientId || null,
-          title: title || extracted.objeto || "Proposta gerada por IA",
-          status: "Rascunho",
+          object: title || extracted.objeto || "Proposta gerada por IA",
+          status: "Aberta",
           totalValue: extracted.valor_estimado || 0,
-          validUntil: new Date(Date.now() + 30 * 86400000),
-          notes: proposta,
+          validityDays: 30,
+          technicalNotes: proposta,
         },
       });
     } catch { /* salvar é opcional */ }

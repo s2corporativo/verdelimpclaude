@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const STAGES = ["monitorando","analisando","proposta_enviada","em_julgamento","ganho","perdido"];
 
 export async function GET() {

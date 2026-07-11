@@ -27,10 +27,10 @@ export async function GET() {
       prisma.training.findMany({ where: { expiresAt: { lte: em30 } }, include: { employee: { select: { name: true, active: true } } } }),
       prisma.inventoryEpiDelivery.findMany({
         where: { status: "ativo", OR: [{ caExpirationDate: { lte: em30 } }, { expectedReplacementDate: { lte: em30 } }] },
-        include: { employee: { select: { name: true, active: true } }, item: { select: { name: true } } },
-      }).catch(() => [] as any[]),
+        include: { employee: { select: { name: true, active: true } }, item: { select: { description: true } } },
+      }),
       prisma.environmentalRecord.findMany({ where: { expiresAt: { lte: em30, not: null } }, include: { contract: { select: { number: true } } } }),
-      prisma.document.findMany({ where: { status: "ativo", validade: { lte: em30, not: null } }, select: { titulo: true, categoria: true, validade: true } }).catch(() => [] as any[]),
+      prisma.document.findMany({ where: { status: "ativo", validade: { lte: em30, not: null } }, select: { nome: true, categoria: true, validade: true } }),
       prisma.employeeDoc.findMany({ where: { expiresAt: { lte: em30 } }, include: { employee: { select: { name: true, active: true } } } }),
       prisma.vacation.findMany({ include: { employee: { select: { id: true, name: true, active: true } } } }),
     ]);
@@ -74,7 +74,7 @@ export async function GET() {
       const data = e.caExpirationDate && new Date(e.caExpirationDate) <= em30 ? e.caExpirationDate : e.expectedReplacementDate;
       alertas.push({
         categoria: "EPI", nivel: nivelPorData(data),
-        titulo: `${e.employee.name} — ${e.item?.name || "EPI"}`,
+        titulo: `${e.employee.name} — ${e.item?.description || "EPI"}`,
         detalhe: e.caExpirationDate && new Date(e.caExpirationDate) <= em30 ? `CA ${e.caNumber || ""} vence em ${fdata(e.caExpirationDate)}` : `reposição prevista para ${fdata(e.expectedReplacementDate)}`,
         vence: data, link: "/dashboard/epi",
       });
@@ -91,7 +91,7 @@ export async function GET() {
     // GED: certidões e documentos com validade
     for (const d of gedDocs) alertas.push({
       categoria: "Documentos (GED)", nivel: nivelPorData(d.validade),
-      titulo: d.titulo, detalhe: `${d.categoria} — ${d.validade && new Date(d.validade) < hoje ? "VENCIDO" : "vence"} em ${fdata(d.validade)}`,
+      titulo: d.nome, detalhe: `${d.categoria} — ${d.validade && new Date(d.validade) < hoje ? "VENCIDO" : "vence"} em ${fdata(d.validade)}`,
       vence: d.validade, link: "/dashboard/documentos",
     });
 

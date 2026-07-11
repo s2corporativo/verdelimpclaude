@@ -1,70 +1,51 @@
 "use client";
 import { NotificacoesWidget } from "@/components/NotificacoesWidget";
+import { SubNav } from "@/components/SubNav";
+import { grupoDe } from "@/lib/nav-grupos";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// Menu consolidado: módulos afins viram um hub (entrada única) com abas no
+// topo da página (SubNav). Todas as URLs antigas continuam funcionando.
 const MENU = [
   { s: "VISÃO GERAL" },
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
-  { href: "/dashboard/alertas", label: "Central de Alertas", icon: "🚨" },
+  { href: "/dashboard/alertas", label: "Central de Alertas", icon: "🚨", grupo: "alertas" },
   { href: "/dashboard/ajuda", label: "Ajuda com IA", icon: "🤖" },
 
   { s: "COMERCIAL" },
   { href: "/dashboard/oportunidades", label: "Oportunidades CRM", icon: "🎯" },
-  { href: "/dashboard/pipeline", label: "Pipeline Licitações", icon: "🏆" },
-  { href: "/dashboard/radar-licitacoes", label: "Radar PNCP", icon: "🏛️" },
+  { href: "/dashboard/pipeline", label: "Licitações", icon: "🏆", grupo: "licitacoes" },
   { href: "/dashboard/propostas", label: "Propostas + PDF", icon: "📄" },
-  { href: "/dashboard/proposta-edital", label: "Proposta por Edital IA", icon: "📋" },
-  { href: "/dashboard/precificacao-central", label: "Precificação", icon: "🧮" },
-  { href: "/dashboard/hora-homem", label: "Custo Hora-Homem", icon: "👷" },
+  { href: "/dashboard/precificacao-central", label: "Precificação", icon: "🧮", grupo: "precificacao" },
 
   { s: "CONTRATOS" },
-  { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato", icon: "📋" },
-  { href: "/dashboard/contratos", label: "Contratos", icon: "📋" },
-  { href: "/dashboard/documentos", label: "Documentos (GED)", icon: "📁" },
-  { href: "/dashboard/checklist-docs", label: "Checklist de Docs", icon: "📑" },
-  { href: "/dashboard/monitor-docs", label: "Monitor de Docs", icon: "🚦" },
-  { href: "/dashboard/cronograma", label: "Cronograma", icon: "📅" },
-  { href: "/dashboard/medicao", label: "Medição Mensal", icon: "📏" },
+  { href: "/dashboard/contratos", label: "Contratos", icon: "📋", grupo: "contratos" },
+  { href: "/dashboard/monitor-docs", label: "Docs & Conformidade", icon: "🚦", grupo: "docs" },
   { href: "/dashboard/clientes", label: "Clientes", icon: "🤝" },
   { href: "/dashboard/fornecedores", label: "Fornecedores", icon: "📦" },
 
   { s: "CAMPO" },
-  { href: "/dashboard/logistica", label: "Logística Operacional", icon: "🚛" },
-  { href: "/dashboard/diario-obras", label: "Diário de Obras", icon: "📝" },
-  { href: "/dashboard/retro", label: "Retroescavadeira", icon: "🚜" },
-  { href: "/dashboard/detetizacao", label: "Dedetização", icon: "🪲" },
-  { href: "/dashboard/equipamentos", label: "Equipamentos", icon: "🔧" },
-  { href: "/dashboard/combustivel", label: "Combustível", icon: "⛽" },
+  { href: "/dashboard/logistica", label: "Operação de Campo", icon: "🚛", grupo: "campo" },
+  { href: "/dashboard/equipamentos", label: "Frota & Equipamentos", icon: "🔧", grupo: "frota" },
+  { href: "/dashboard/retro", label: "Serviços Especiais", icon: "🚜", grupo: "especiais" },
 
   { s: "ESTOQUE & SEGURANÇA" },
-  { href: "/dashboard/almoxarifado", label: "Almoxarifado", icon: "🏭" },
-  { href: "/dashboard/epi", label: "Controle de EPI", icon: "🦺" },
-  { href: "/dashboard/aso", label: "ASO Ocupacional", icon: "🩺" },
-  { href: "/dashboard/sso", label: "Documentação SSO", icon: "🛟" },
+  { href: "/dashboard/almoxarifado", label: "Almoxarifado & EPI", icon: "🏭", grupo: "estoque" },
   { href: "/dashboard/ambiental", label: "Ambiental", icon: "🌱" },
 
   { s: "FINANCEIRO & FISCAL" },
   { href: "/dashboard/financeiro", label: "Financeiro + Aging", icon: "💰" },
   { href: "/dashboard/rentabilidade", label: "Rentabilidade", icon: "💹" },
-  { href: "/dashboard/fiscal", label: "Central Fiscal", icon: "💼" },
-  { href: "/dashboard/dre", label: "DRE — Resultado", icon: "📊" },
-  { href: "/dashboard/nfe-import", label: "Importar NF-e", icon: "📥" },
-  { href: "/dashboard/regularidade", label: "Regularidade Fiscal", icon: "🔎" },
-  { href: "/dashboard/relatorio-contador", label: "Relatório Contador", icon: "📊" },
+  { href: "/dashboard/fiscal", label: "Fiscal & Contábil", icon: "💼", grupo: "fiscal" },
 
   { s: "RH" },
-  { href: "/dashboard/rh", label: "RH & Folha", icon: "👷" },
-  { href: "/dashboard/rh-ocorrencias", label: "Férias & Ocorrências", icon: "🏖️" },
-  { href: "/dashboard/mobilizacoes", label: "Mobilizações", icon: "📋" },
-  { href: "/dashboard/treinamentos", label: "NRs e Treinamentos", icon: "🎓" },
-  { href: "/dashboard/folha-detalhada", label: "Folha INSS/IRRF", icon: "📑" },
+  { href: "/dashboard/rh", label: "RH & Pessoas", icon: "👷", grupo: "rh" },
 
   { s: "SISTEMA" },
   { href: "/dashboard/admin", label: "Administração", icon: "🛡️", roles: ["ADMIN"] },
   { href: "/dashboard/integracoes", label: "Integrações", icon: "🔌" },
-  { href: "/dashboard/whatsapp", label: "WhatsApp Alertas", icon: "📱" },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: "⚙️" },
   { href: "/dashboard/alterar-senha", label: "Alterar Senha", icon: "🔐" },
 ];
@@ -108,7 +89,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
             const requeridos = (m as any).roles as string[] | undefined;
             if (requeridos && !requeridos.some((r) => (user?.roles || []).includes(r))) return null;
-            const active = pathname === m.href || (m.href !== "/dashboard" && pathname?.startsWith(m.href!));
+            const grupoItem = (m as any).grupo as string | undefined;
+            const grupoAtual = grupoDe(pathname);
+            const active = pathname === m.href
+              || (m.href !== "/dashboard" && pathname?.startsWith(m.href!))
+              || (!!grupoItem && grupoAtual?.key === grupoItem);
             return (
               <button key={m.href} onClick={() => router.push(m.href!)}
                 style={{ width: "100%", display: "flex", alignItems: "center", gap: 7, padding: "7px 8px", border: "none", background: active ? "rgba(255,255,255,.18)" : "transparent", color: "#fff", cursor: "pointer", borderRadius: 7, marginBottom: 1, fontSize: 11, fontWeight: active ? 700 : 400, textAlign: "left", borderLeft: active ? "3px solid #e05008" : "3px solid transparent" }}>
@@ -133,6 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span style={{ fontSize: 11, color: "#9ca3af" }}>🌿 Verdelimp ERP v2.2</span>
         </div>
         <main style={{ flex: 1, overflowY: "auto", padding: 22, background: "#f3f4f6" }}>
+        <SubNav />
         {children}
       </main>
       </div>

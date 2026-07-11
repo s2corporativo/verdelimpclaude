@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin, registrarAuditoria, gerarSenhaProvisoria } from "@/lib/admin";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { erro } = await exigirAdmin();
   if (erro) return erro;

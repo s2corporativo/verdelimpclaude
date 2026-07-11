@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     let cfg = CONFIG_DEFAULT;
     try {
       const dbCfg = await prisma.retroConfig.findFirst();
-      if (dbCfg) cfg = { ...CONFIG_DEFAULT, ...dbCfg };
+      if (dbCfg) cfg = Object.fromEntries(Object.keys(CONFIG_DEFAULT).map((k) => [k, Number((dbCfg as any)[k] ?? (CONFIG_DEFAULT as any)[k])])) as typeof CONFIG_DEFAULT;
     } catch {}
 
     const prod = PRODUTIVIDADE[tipoServico] || PRODUTIVIDADE["Outro"];
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
     let cfg = CONFIG_DEFAULT;
     try {
       const dbCfg = await prisma.retroConfig.findFirst();
-      if (dbCfg) cfg = { ...CONFIG_DEFAULT, ...dbCfg };
+      if (dbCfg) cfg = Object.fromEntries(Object.keys(CONFIG_DEFAULT).map((k) => [k, Number((dbCfg as any)[k] ?? (CONFIG_DEFAULT as any)[k])])) as typeof CONFIG_DEFAULT;
     } catch {}
 
     const horas = Number(body.horasEstimadas) || 0;

@@ -43,7 +43,7 @@ export default function FiscalPage() {
         ))}
       </div>
       <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-        <thead><tr style={{background:"#e8f5ee"}}>{["Tipo","Descrição","Competência","Vencimento","Valor","Origem","Status"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+        <thead><tr style={{background:"#e8f5ee"}}>{["Tipo","Descrição","Competência","Vencimento","Valor","Origem","Status",""].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
         <tbody>{despesas.map((d:any)=><tr key={d.id} style={{borderBottom:"1px solid #f3f4f6"}}>
           <td style={{padding:"8px 12px"}}><span style={{background:"#f3f4f6",padding:"2px 7px",borderRadius:7,fontSize:11,fontWeight:700}}>{d.taxType}</span></td>
           <td style={{padding:"8px 12px",fontSize:12}}>{d.description}</td>
@@ -52,6 +52,7 @@ export default function FiscalPage() {
           <td style={{padding:"8px 12px",fontWeight:700,color:"#4a9410"}}>R${fmt(Number(d.totalAmount||d.principalAmount))}</td>
           <td style={{padding:"8px 12px"}}>{d.generatedAuto?<span style={{background:"#f3e8ff",color:"#6d28d9",fontSize:10,padding:"2px 7px",borderRadius:7,fontWeight:700}}>🤖 AUTO</span>:<span style={{fontSize:10,color:"#9ca3af"}}>Manual</span>}</td>
           <td style={{padding:"8px 12px"}}><span style={{background:d.status==="pago"?"#dcfce7":d.status==="vencido"?"#fee2e2":"#fef9c3",color:d.status==="pago"?"#15803d":d.status==="vencido"?"#991b1b":"#92400e",padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{d.status}</span></td>
+          <td style={{padding:"8px 12px"}}>{d.status!=="pago"&&!demo&&<button onClick={()=>marcarPago(d.id)} style={{background:"#4a9410",color:"#fff",border:"none",padding:"4px 10px",borderRadius:7,fontSize:10,fontWeight:700,cursor:"pointer"}}>✓ Pagar</button>}</td>
         </tr>)}</tbody>
       </table>
     </div>)}

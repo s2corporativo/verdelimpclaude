@@ -267,3 +267,6 @@ ${d.funcionarios.map((f: any, idx: number) => `
 
 </body></html>`;
 }
+
+export default renderDocsHtml;
+export { renderDocsHtml };

@@ -124,7 +124,7 @@ export default function PortalClientePage() {
       </div>
 
       <div style={{textAlign:"center",marginTop:20,fontSize:10,color:"#9ca3af"}}>
-        Portal fornecido pela VERDELIMP Servicos e Terceirizacao Ltda — CNPJ 30.198.776/0001-29
+        Portal fornecido pela VERDELIMP Serviços e Terceirização Ltda — CNPJ 30.198.776/0001-29
       </div>
     </div>
   );
