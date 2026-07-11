@@ -57,8 +57,13 @@ async function main() {
     }
   }
 
-  // Usuários
-  const hash = await bcrypt.hash("Verdelimp@2026", 12);
+  // Usuários — em produção defina SEED_ADMIN_PASSWORD no ambiente;
+  // a senha padrão abaixo é pública (está no repositório) e serve só para desenvolvimento
+  const senhaInicial = process.env.SEED_ADMIN_PASSWORD || "Verdelimp@2026";
+  if (!process.env.SEED_ADMIN_PASSWORD) {
+    console.warn("⚠️  SEED_ADMIN_PASSWORD não definida — usando senha padrão de desenvolvimento. NÃO use em produção.");
+  }
+  const hash = await bcrypt.hash(senhaInicial, 12);
   const admin = await prisma.user.upsert({
     where: { email: "admin@verdelimp.com.br" },
     update: {},

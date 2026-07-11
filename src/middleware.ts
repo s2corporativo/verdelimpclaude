@@ -48,6 +48,7 @@ export default withAuth(
         const publicApi = [
           "/api/integracoes/publicas/",
           "/api/auth/",
+          "/api/health",
         ];
         if (publicApi.some((p) => req.nextUrl.pathname.startsWith(p))) return true;
         return !!token;

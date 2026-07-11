@@ -83,7 +83,13 @@ Preencha pelo menos:
 POSTGRES_PASSWORD=senha_forte_aqui
 NEXTAUTH_URL=https://erp.seudominio.com.br
 NEXTAUTH_SECRET=gere_uma_string_forte
+SEED_ADMIN_PASSWORD=senha_inicial_dos_usuarios
+GROQ_API_KEY=chave_do_console_groq
 ```
+
+A `GROQ_API_KEY` (plano gratuito em https://console.groq.com) habilita os recursos de IA:
+proposta por edital, análise de licitação/preço, cronograma, plano logístico, chat de
+ajuda e transcrição de voz. Sem ela, o restante do ERP funciona normalmente.
 
 Para gerar segredo:
 
@@ -96,16 +102,13 @@ Não envie `.env.production` para o GitHub.
 ## 7. Subir banco e aplicação
 
 ```bash
-docker compose up -d --build
+docker compose build app
+docker compose up -d db
+docker compose run --rm app npx prisma migrate deploy
+docker compose up -d app
 ```
 
-Aplicar banco:
-
-```bash
-docker compose exec app npx prisma db push
-```
-
-Popular dados iniciais:
+Popular dados iniciais (**apenas na primeira instalação**, com `SEED_ADMIN_PASSWORD` definida no `.env.production`):
 
 ```bash
 docker compose exec app npm run prisma:seed
@@ -178,11 +181,12 @@ Ou manualmente:
 ```bash
 cd /opt/verdelimp-erp
 git pull origin main
-docker compose up -d --build app
-docker compose exec app npx prisma db push
-docker compose exec app npm run prisma:seed
-docker compose restart app
+docker compose build app
+docker compose run --rm app npx prisma migrate deploy
+docker compose up -d app
 ```
+
+O seed **não** deve ser executado em atualizações — apenas na primeira instalação.
 
 ## 11. Backup do banco
 
@@ -198,7 +202,16 @@ Restaurar backup:
 cat backup_verdelimp_YYYY-MM-DD.sql | docker compose exec -T db psql -U verdelimp verdelimp_erp
 ```
 
-Recomenda-se configurar backup automático diário para fora da VPS.
+Backup automático diário (cron do root na VPS):
+
+```bash
+mkdir -p /opt/backups
+crontab -e
+# adicionar a linha (todo dia às 02h, mantém 14 dias):
+0 2 * * * cd /opt/verdelimp-erp && docker compose exec -T db pg_dump -U verdelimp verdelimp_erp | gzip > /opt/backups/verdelimp_$(date +\%F).sql.gz && find /opt/backups -name 'verdelimp_*.sql.gz' -mtime +14 -delete
+```
+
+Recomenda-se também copiar os backups para fora da VPS (rclone para Google Drive/S3, por exemplo) — se a VPS falhar, o backup local se perde junto.
 
 ## 12. Segurança obrigatória
 
