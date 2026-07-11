@@ -7,9 +7,55 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Iniciando seed...");
 
-  // Roles
-  await prisma.role.upsert({ where: { name: "ADMIN" }, update: {}, create: { id: "role-admin", name: "ADMIN", description: "Administrador completo" } });
-  await prisma.role.upsert({ where: { name: "GESTOR" }, update: {}, create: { id: "role-gestor", name: "GESTOR", description: "Gestor operacional" } });
+  // Roles — perfis usados pelos guards do middleware
+  const roles = [
+    { id: "role-admin",        name: "ADMIN",        description: "Administrador completo" },
+    { id: "role-gestor",       name: "GESTOR",       description: "Gestor operacional" },
+    { id: "role-comercial",    name: "COMERCIAL",    description: "Propostas, licitações e clientes" },
+    { id: "role-operacional",  name: "OPERACIONAL",  description: "Campo, obras e equipamentos" },
+    { id: "role-financeiro",   name: "FINANCEIRO",   description: "Financeiro e fiscal" },
+    { id: "role-fiscal",       name: "FISCAL",       description: "Central fiscal e apurações" },
+    { id: "role-rh",           name: "RH",           description: "RH, folha e treinamentos" },
+    { id: "role-almoxarifado", name: "ALMOXARIFADO", description: "Estoque, EPI e ferramentas" },
+  ];
+  for (const r of roles) {
+    await prisma.role.upsert({ where: { name: r.name }, update: { description: r.description }, create: r });
+  }
+
+  // Catálogo de permissões (módulo × ação) e vínculo por papel
+  const MODULOS = ["dashboard", "comercial", "contratos", "clientes", "campo", "estoque", "financeiro", "fiscal", "rh", "sistema", "admin"];
+  const ACOES = ["visualizar", "criar", "editar", "excluir"];
+  const permIds: Record<string, string> = {};
+  for (const m of MODULOS) for (const a of ACOES) {
+    const p = await prisma.permission.upsert({
+      where: { module_action: { module: m, action: a } },
+      update: {},
+      create: { module: m, action: a },
+    });
+    permIds[`${m}:${a}`] = p.id;
+  }
+  const modulosPorRole: Record<string, string[]> = {
+    ADMIN: MODULOS,
+    GESTOR: MODULOS.filter((m) => m !== "admin"),
+    COMERCIAL: ["dashboard", "comercial", "clientes", "contratos"],
+    OPERACIONAL: ["dashboard", "campo", "estoque", "contratos"],
+    FINANCEIRO: ["dashboard", "financeiro", "fiscal"],
+    FISCAL: ["dashboard", "fiscal"],
+    RH: ["dashboard", "rh"],
+    ALMOXARIFADO: ["dashboard", "estoque"],
+  };
+  for (const [roleName, modulos] of Object.entries(modulosPorRole)) {
+    const role = await prisma.role.findUnique({ where: { name: roleName } });
+    if (!role) continue;
+    for (const m of modulos) for (const a of ACOES) {
+      const permissionId = permIds[`${m}:${a}`];
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: role.id, permissionId } },
+        update: {},
+        create: { roleId: role.id, permissionId },
+      });
+    }
+  }
 
   // Usuários
   const hash = await bcrypt.hash("Verdelimp@2026", 12);
@@ -29,7 +75,7 @@ async function main() {
   // Empresa
   const cfgExistente = await prisma.companyConfig.findFirst({ where: { cnpj: "30.198.776/0001-29" } });
   if (!cfgExistente) {
-    await prisma.companyConfig.create({ data: { razaoSocial: "VERDELIMP SERVICOS E TERCEIRIZACAO LTDA", nomeFantasia: "VERDELIMP", cnpj: "30.198.776/0001-29", porte: "EPP", regimeTributario: "Simples Nacional", cnaePrincipal: "81.30-3-00", municipio: "Betim", uf: "MG", cep: "32685-066", email: "ADM@VERDELIMP.COM.BR", telefone: "(31) 3591-4546", aliqIss: 5, aliqInss: 7, aliqIrrf: 0, aliqFgts: 8, aliqDas: 6.72 } });
+    await prisma.companyConfig.create({ data: { razaoSocial: "VERDELIMP SERVICOS E TERCEIRIZACAO LTDA", nomeFantasia: "VERDELIMP", cnpj: "30.198.776/0001-29", porte: "EPP", regimeTributario: "Simples Nacional", cnaePrincipal: "81.30-3-00", municipio: "Betim", uf: "MG", cep: "32685-066", email: "ADM@VERDELIMP.COM.BR", telefone: "(31) 3591-4546", aliqISS: 5, aliqINSS: 7, aliqIRRF: 0, aliqFGTS: 8, aliqDAS: 6.72 } });
   }
 
   // Funcionários

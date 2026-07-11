@@ -35,6 +35,7 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 - Treinamentos e NRs
 - Integrações
 - WhatsApp alertas
+- Administração (usuários, papéis, permissões e auditoria)
 - Configurações
 
 ## Stack técnica

@@ -51,6 +51,7 @@ const MENU = [
   { href: "/dashboard/folha-detalhada", label: "Folha INSS/IRRF", icon: "📑" },
 
   { s: "SISTEMA" },
+  { href: "/dashboard/admin", label: "Administração", icon: "🛡️", roles: ["ADMIN"] },
   { href: "/dashboard/integracoes", label: "Integrações", icon: "🔌" },
   { href: "/dashboard/whatsapp", label: "WhatsApp Alertas", icon: "📱" },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: "⚙️" },
@@ -88,6 +89,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             if ((m as any).s) return (
               <p key={i} style={{ margin: "8px 8px 3px", fontSize: 9, color: "rgba(255,255,255,.3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px" }}>{(m as any).s}</p>
             );
+            const requeridos = (m as any).roles as string[] | undefined;
+            if (requeridos && !requeridos.some((r) => (user?.roles || []).includes(r))) return null;
             const active = pathname === m.href || (m.href !== "/dashboard" && pathname?.startsWith(m.href!));
             return (
               <button key={m.href} onClick={() => router.push(m.href!)}
