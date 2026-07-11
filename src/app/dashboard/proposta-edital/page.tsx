@@ -28,10 +28,10 @@ export default function PropostaEditalPage() {
     // Simple markdown to HTML
     return text
       .split("\n").map((line, i) => {
-        if (line.startsWith("## ")) return <h3 key={i} style={{ color: "#0f5233", fontSize: 14, fontWeight: 700, margin: "14px 0 6px" }}>{line.slice(3)}</h3>;
-        if (line.startsWith("# ")) return <h2 key={i} style={{ color: "#0f5233", fontSize: 16, fontWeight: 700, margin: "16px 0 8px" }}>{line.slice(2)}</h2>;
+        if (line.startsWith("## ")) return <h3 key={i} style={{ color: "#334532", fontSize: 14, fontWeight: 700, margin: "14px 0 6px" }}>{line.slice(3)}</h3>;
+        if (line.startsWith("# ")) return <h2 key={i} style={{ color: "#334532", fontSize: 16, fontWeight: 700, margin: "16px 0 8px" }}>{line.slice(2)}</h2>;
         if (line.startsWith("**") && line.endsWith("**")) return <p key={i} style={{ fontWeight: 700, margin: "4px 0" }}>{line.slice(2, -2)}</p>;
-        if (line.startsWith("- ")) return <div key={i} style={{ display: "flex", gap: 8, padding: "2px 0", fontSize: 12 }}><span style={{ color: "#1a7a4a", flexShrink: 0 }}>•</span><span>{line.slice(2)}</span></div>;
+        if (line.startsWith("- ")) return <div key={i} style={{ display: "flex", gap: 8, padding: "2px 0", fontSize: 12 }}><span style={{ color: "#4a9410", flexShrink: 0 }}>•</span><span>{line.slice(2)}</span></div>;
         if (line.trim() === "") return <br key={i} />;
         return <p key={i} style={{ fontSize: 12, margin: "3px 0", lineHeight: 1.6 }}>{line}</p>;
       });
@@ -39,7 +39,7 @@ export default function PropostaEditalPage() {
 
   return (
     <div>
-      <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>🤖 Proposta por Edital — IA</h1>
+      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>🤖 Proposta por Edital — IA</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 14 }}>Cole o texto do edital ou escopo técnico. A IA extrai os requisitos, calcula os custos e gera a proposta completa com memorial de cálculo.</p>
 
       <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "9px 13px", marginBottom: 14, fontSize: 11, color: "#1e40af" }}>
@@ -72,7 +72,7 @@ export default function PropostaEditalPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 14 }}>
           {/* Dados extraídos */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, alignSelf: "start" }}>
-            <h3 style={{ color: "#0f5233", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>📊 Dados extraídos pela IA</h3>
+            <h3 style={{ color: "#334532", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>📊 Dados extraídos pela IA</h3>
             {resultado.propostaNumero && <div style={{ background: "#dcfce7", borderRadius: 7, padding: "6px 10px", marginBottom: 10, fontSize: 12, fontWeight: 700, color: "#15803d" }}>✅ Salvo como: {resultado.propostaNumero}</div>}
             {[
               ["Objeto", resultado.extracted.objeto],
@@ -101,11 +101,11 @@ export default function PropostaEditalPage() {
           {/* Proposta gerada */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 18 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-              <h3 style={{ color: "#0f5233", fontSize: 13, fontWeight: 700 }}>📄 Proposta Gerada</h3>
+              <h3 style={{ color: "#334532", fontSize: 13, fontWeight: 700 }}>📄 Proposta Gerada</h3>
               <div style={{ display: "flex", gap: 8 }}>
                 {resultado.propostaId && (
                   <a href={`/api/propostas/${resultado.propostaId}/pdf`} target="_blank"
-                    style={{ background: "#0f5233", color: "#fff", padding: "5px 14px", borderRadius: 7, textDecoration: "none", fontSize: 11, fontWeight: 700 }}>
+                    style={{ background: "#334532", color: "#fff", padding: "5px 14px", borderRadius: 7, textDecoration: "none", fontSize: 11, fontWeight: 700 }}>
                     🖨️ PDF
                   </a>
                 )}

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const linha = (l: string, v: string) => `<tr><td style="padding:6px 10px;border:1px solid #e5e7eb">${l}</td><td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:right"><b>${v}</b></td></tr>`;
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:640px">
-        <h2 style="color:#0f5233">🌿 ${config?.razaoSocial || "VERDELIMP"} — Relatório Mensal</h2>
+        <h2 style="color:#334532">🌿 ${config?.razaoSocial || "VERDELIMP"} — Relatório Mensal</h2>
         <p style="color:#374151">Competência <b>${competencia}</b> — resumo gerencial para conferência contábil.</p>
         <table style="border-collapse:collapse;width:100%;font-size:14px">
           ${linha("Faturamento (NFS-e emitidas: " + nfses.length + ")", "R$ " + fmt(faturamento))}
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           ${linha("Margem estimada", "R$ " + fmt(margem))}
         </table>
         ${tributos.length ? `
-        <h3 style="color:#0f5233;margin-top:18px">Tributos da competência</h3>
+        <h3 style="color:#334532;margin-top:18px">Tributos da competência</h3>
         <table style="border-collapse:collapse;width:100%;font-size:13px">
           ${tributos.map((t) => linha(`${t.taxType} — venc. ${new Date(t.dueDate).toLocaleDateString("pt-BR")} (${t.status})`, "R$ " + fmt(Number(t.totalAmount)))).join("")}
         </table>` : ""}

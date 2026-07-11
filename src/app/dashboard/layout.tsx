@@ -81,7 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [status, router]);
 
   if (status === "loading") return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: "#1a7a4a", fontSize: 18 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: "#4a9410", fontSize: 18 }}>
       🌿 Carregando...
     </div>
   );
@@ -91,7 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      <aside style={{ width: 220, background: "#0f5233", color: "#fff", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      <aside style={{ width: 220, background: "#334532", color: "#fff", display: "flex", flexDirection: "column", flexShrink: 0 }}>
         <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid rgba(255,255,255,.12)" }}>
           {!semLogo && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -111,7 +111,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const active = pathname === m.href || (m.href !== "/dashboard" && pathname?.startsWith(m.href!));
             return (
               <button key={m.href} onClick={() => router.push(m.href!)}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: 7, padding: "7px 8px", border: "none", background: active ? "rgba(255,255,255,.18)" : "transparent", color: "#fff", cursor: "pointer", borderRadius: 7, marginBottom: 1, fontSize: 11, fontWeight: active ? 700 : 400, textAlign: "left", borderLeft: active ? "3px solid rgba(255,255,255,.6)" : "3px solid transparent" }}>
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 7, padding: "7px 8px", border: "none", background: active ? "rgba(255,255,255,.18)" : "transparent", color: "#fff", cursor: "pointer", borderRadius: 7, marginBottom: 1, fontSize: 11, fontWeight: active ? 700 : 400, textAlign: "left", borderLeft: active ? "3px solid #e05008" : "3px solid transparent" }}>
                 <span style={{ fontSize: 13 }}>{m.icon}</span>
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.label}</span>
               </button>

@@ -48,7 +48,7 @@ export default function MedicaoPage() {
 
   return (
     <div>
-      <h1 style={{ color:"#0f5233", fontSize:20, fontWeight:700, margin:"0 0 6px" }}>
+      <h1 style={{ color:"#334532", fontSize:20, fontWeight:700, margin:"0 0 6px" }}>
         📏 Medição Mensal
         {demo && <span style={{ fontSize:11, background:"#e0e7ff", color:"#3730a3", padding:"2px 8px", borderRadius:8, marginLeft:8 }}>Demo</span>}
       </h1>
@@ -66,7 +66,7 @@ export default function MedicaoPage() {
             {/* Cabeçalho */}
             <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10, marginBottom:10 }}>
               <div>
-                <div style={{ fontWeight:700, fontSize:14, color:"#0f5233", marginBottom:3 }}>{m.contract?.object}</div>
+                <div style={{ fontWeight:700, fontSize:14, color:"#334532", marginBottom:3 }}>{m.contract?.object}</div>
                 <div style={{ fontSize:11, color:"#6b7280" }}>
                   Contrato: <strong>{m.contract?.number}</strong> · Período: <strong>{m.period}</strong>
                   {m.startDate && ` · ${new Date(m.startDate).toLocaleDateString("pt-BR")} a ${new Date(m.endDate).toLocaleDateString("pt-BR")}`}
@@ -78,7 +78,7 @@ export default function MedicaoPage() {
                 )}
               </div>
               <div style={{ textAlign:"right" }}>
-                <div style={{ fontSize:22, fontWeight:700, color:"#1a7a4a" }}>R$ {fmt(Number(m.value))}</div>
+                <div style={{ fontSize:22, fontWeight:700, color:"#4a9410" }}>R$ {fmt(Number(m.value))}</div>
                 <span style={{ background:bg, color:co, padding:"2px 9px", borderRadius:8, fontSize:10, fontWeight:700 }}>{stxt}</span>
               </div>
             </div>
@@ -89,7 +89,7 @@ export default function MedicaoPage() {
                 <thead>
                   <tr style={{ background:"#e8f5ee" }}>
                     {["Descrição","Un.","Qtd.","V.Unit.","Total"].map(h => (
-                      <th key={h} style={{ padding:"6px 10px", textAlign:"left", fontSize:10, fontWeight:700, color:"#0f5233" }}>{h}</th>
+                      <th key={h} style={{ padding:"6px 10px", textAlign:"left", fontSize:10, fontWeight:700, color:"#334532" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -100,7 +100,7 @@ export default function MedicaoPage() {
                       <td style={{ padding:"6px 10px", fontSize:11, color:"#6b7280" }}>{i.unit}</td>
                       <td style={{ padding:"6px 10px", fontWeight:600 }}>{Number(i.quantity).toLocaleString("pt-BR", { maximumFractionDigits:2 })}</td>
                       <td style={{ padding:"6px 10px" }}>R$ {fmt(Number(i.unitValue))}</td>
-                      <td style={{ padding:"6px 10px", fontWeight:700, color:"#1a7a4a" }}>R$ {fmt(Number(i.totalValue))}</td>
+                      <td style={{ padding:"6px 10px", fontWeight:700, color:"#4a9410" }}>R$ {fmt(Number(i.totalValue))}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -111,7 +111,7 @@ export default function MedicaoPage() {
             {foiAprovada && (
               <div style={{ background:"#dcfce7", border:"1px solid #86efac", borderRadius:8, padding:"8px 12px", marginBottom:10, fontSize:12, color:"#15803d", fontWeight:600 }}>
                 ✅ Medição aprovada e salva no GED automaticamente! {" "}
-                <a href="/dashboard/documentos" style={{ color:"#0f5233", fontWeight:700 }}>Ver no GED →</a>
+                <a href="/dashboard/documentos" style={{ color:"#334532", fontWeight:700 }}>Ver no GED →</a>
               </div>
             )}
 
@@ -161,7 +161,7 @@ export default function MedicaoPage() {
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}
           onClick={e => { if (e.target === e.currentTarget) setShowApproveModal(null); }}>
           <div style={{ background:"#fff", borderRadius:14, padding:24, maxWidth:420, width:"95%", boxShadow:"0 8px 32px rgba(0,0,0,.2)" }}>
-            <h3 style={{ color:"#0f5233", fontSize:15, fontWeight:700, marginBottom:4 }}>✅ Aprovar Medição</h3>
+            <h3 style={{ color:"#334532", fontSize:15, fontWeight:700, marginBottom:4 }}>✅ Aprovar Medição</h3>
             <p style={{ color:"#6b7280", fontSize:12, margin:"0 0 16px" }}>
               <strong>{showApproveModal.contract?.number}</strong> · {showApproveModal.period} · R$ {fmt(Number(showApproveModal.value))}
             </p>

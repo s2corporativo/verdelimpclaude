@@ -30,7 +30,7 @@ function Badge({ s, txt }: any) {
   return <span style={{ background: bg, color: co, padding: "2px 9px", borderRadius: 10, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>{txt || label}</span>;
 }
 
-function Kpi({ l, v, i, c = "#1a7a4a", alert = false }: any) {
+function Kpi({ l, v, i, c = "#4a9410", alert = false }: any) {
   return (
     <div style={{ background: "#fff", border: `1px solid ${alert ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 10, padding: "12px 14px", borderTop: `3px solid ${alert ? "#dc2626" : c}` }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -109,7 +109,7 @@ export default function RegularidadePage() {
   const rConsulta = () => (
     <div>
       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <h3 style={{ color: "#0f5233", fontSize: 14, marginBottom: 12 }}>🔍 Consultar CNPJ na Receita Federal</h3>
+        <h3 style={{ color: "#334532", fontSize: 14, marginBottom: 12 }}>🔍 Consultar CNPJ na Receita Federal</h3>
         <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "8px 13px", marginBottom: 14, fontSize: 11, color: "#1e40af" }}>
           🔗 <strong>Fonte:</strong> Dados da Receita Federal via BrasilAPI · Cache de 6 horas · Situação cadastral, CNAE, porte, natureza jurídica · Validação matemática do CNPJ antes de consultar
         </div>
@@ -118,7 +118,7 @@ export default function RegularidadePage() {
             <label style={{ fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>CNPJ (14 dígitos, com ou sem pontuação)</label>
             <input style={IS} value={cnpj} onChange={e => setCnpj(e.target.value)} onKeyDown={e => e.key === "Enter" && consultar()} placeholder="00.000.000/0000-00 ou 00000000000000" maxLength={18} />
           </div>
-          <button onClick={consultar} disabled={loading || cnpj.replace(/\D/g, "").length !== 14} style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 28px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: loading ? 0.7 : 1 }}>
+          <button onClick={consultar} disabled={loading || cnpj.replace(/\D/g, "").length !== 14} style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 28px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: loading ? 0.7 : 1 }}>
             {loading ? "⟳ Consultando..." : "Consultar"}
           </button>
         </div>
@@ -146,7 +146,7 @@ export default function RegularidadePage() {
           <div style={{ background: "#fff", border: `2px solid ${resultado.regularidadeRF === "regular" ? "#86efac" : resultado.regularidadeRF === "irregular" ? "#fca5a5" : "#fde68a"}`, borderRadius: 12, padding: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
               <div>
-                <h2 style={{ color: "#0f5233", fontSize: 16, fontWeight: 700, margin: 0 }}>{resultado.razaoSocial}</h2>
+                <h2 style={{ color: "#334532", fontSize: 16, fontWeight: 700, margin: 0 }}>{resultado.razaoSocial}</h2>
                 <p style={{ color: "#6b7280", fontSize: 12, margin: "4px 0 0" }}>{resultado.cnpj}</p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
@@ -193,12 +193,12 @@ export default function RegularidadePage() {
           {/* Fontes para consulta oficial */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px 16px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-              <h4 style={{ color: "#0f5233", fontSize: 13, margin: 0 }}>📋 Certidões oficiais — links de emissão</h4>
+              <h4 style={{ color: "#334532", fontSize: 13, margin: 0 }}>📋 Certidões oficiais — links de emissão</h4>
               <button
                 onClick={salvarNoGed}
                 disabled={salvandoGed}
                 style={{
-                  background: salvandoGed ? "#6b7280" : "#0f5233",
+                  background: salvandoGed ? "#6b7280" : "#334532",
                   color: "#fff", border: "none", padding: "8px 16px",
                   borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12,
                   display: "flex", alignItems: "center", gap: 6,
@@ -225,7 +225,7 @@ export default function RegularidadePage() {
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 7, padding: "7px 11px", marginBottom: 10, fontSize: 10, color: "#92400e" }}>
               💡 <strong>Salvar no GED</strong> cria automaticamente um registro para cada certidão com a URL de emissão, data de vencimento calculada e link para renovação. Vencimentos: CRF/FGTS = 30 dias · demais = 180 dias.
             </div>
-            <h4 style={{ color: "#0f5233", fontSize: 13, marginBottom: 10, display: "none" }}>📋 Consultar certidões originais (fontes oficiais)</h4>
+            <h4 style={{ color: "#334532", fontSize: 13, marginBottom: 10, display: "none" }}>📋 Consultar certidões originais (fontes oficiais)</h4>
             <div style={{ background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 7, padding: "7px 11px", marginBottom: 10, fontSize: 11, color: "#92400e" }}>
               ⚠️ Os dados acima são informativos. Para contratos, licitações e fins legais, sempre consultar as certidões originais diretamente nos órgãos oficiais abaixo.
             </div>
@@ -236,7 +236,7 @@ export default function RegularidadePage() {
                   <div style={{ fontSize: 10, color: "#9ca3af" }}>{f.obs}</div>
                 </div>
                 <a href={f.url} target="_blank" rel="noopener noreferrer"
-                  style={{ background: "#1a7a4a", color: "#fff", padding: "5px 12px", borderRadius: 7, fontSize: 11, textDecoration: "none", fontWeight: 600, flexShrink: 0 }}>
+                  style={{ background: "#4a9410", color: "#fff", padding: "5px 12px", borderRadius: 7, fontSize: 11, textDecoration: "none", fontWeight: 600, flexShrink: 0 }}>
                   Acessar →
                 </a>
               </div>
@@ -256,10 +256,10 @@ export default function RegularidadePage() {
   const rLote = () => (
     <div>
       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <h3 style={{ color: "#0f5233", fontSize: 14, marginBottom: 8 }}>Verificação em lote — todos os clientes e fornecedores</h3>
+        <h3 style={{ color: "#334532", fontSize: 14, marginBottom: 8 }}>Verificação em lote — todos os clientes e fornecedores</h3>
         <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 14 }}>Consulta a situação cadastral de todos os CNPJs cadastrados no sistema via Receita Federal (BrasilAPI). Cache de 6 horas por CNPJ.</p>
         <button onClick={consultarLote} disabled={loadingLote}
-          style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "10px 28px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: loadingLote ? 0.7 : 1 }}>
+          style={{ background: "#4a9410", color: "#fff", border: "none", padding: "10px 28px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: loadingLote ? 0.7 : 1 }}>
           {loadingLote ? "⟳ Consultando..." : "🔄 Verificar todos agora"}
         </button>
       </div>
@@ -292,7 +292,7 @@ export default function RegularidadePage() {
             <table style={{ borderCollapse: "collapse", width: "100%" }}>
               <thead><tr style={{ background: "#e8f5ee" }}>
                 {["Tipo", "Nome", "CNPJ", "Situação RF", "Regularidade"].map(h =>
-                  <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#0f5233" }}>{h}</th>)}
+                  <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#334532" }}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {lote.resultados?.map((r: any) => (
@@ -335,7 +335,7 @@ export default function RegularidadePage() {
                 <p style={{ margin: "3px 0 0", fontSize: 10, color: "#9ca3af", fontFamily: "monospace" }}>{f.url}</p>
               </div>
               <a href={f.url} target="_blank" rel="noopener noreferrer"
-                style={{ background: "#0f5233", color: "#fff", padding: "7px 16px", borderRadius: 8, fontSize: 12, textDecoration: "none", fontWeight: 600, flexShrink: 0 }}>
+                style={{ background: "#334532", color: "#fff", padding: "7px 16px", borderRadius: 8, fontSize: 12, textDecoration: "none", fontWeight: 600, flexShrink: 0 }}>
                 Acessar →
               </a>
             </div>
@@ -359,7 +359,7 @@ export default function RegularidadePage() {
   const rHistorico = () => (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
-        <h3 style={{ color: "#0f5233", fontSize: 14 }}>Histórico de consultas desta sessão ({historico.length})</h3>
+        <h3 style={{ color: "#334532", fontSize: 14 }}>Histórico de consultas desta sessão ({historico.length})</h3>
         {historico.length > 0 && <button onClick={() => setHistorico([])} style={{ background: "#fee2e2", color: "#991b1b", border: "none", borderRadius: 7, padding: "4px 12px", cursor: "pointer", fontSize: 11 }}>Limpar</button>}
       </div>
       {historico.length === 0 ? (
@@ -391,14 +391,14 @@ export default function RegularidadePage() {
   return (
     <div>
       <div style={{ marginBottom: 18 }}>
-        <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Regularidade Fiscal — Sintegra / CND</h1>
+        <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Regularidade Fiscal — Sintegra / CND</h1>
         <p style={{ color: "#6b7280", fontSize: 13 }}>Consulta automatizada de situação cadastral, regularidade fiscal e links para certidões oficiais</p>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         {ABAS.map(a => (
           <button key={a.id} onClick={() => setAba(a.id)}
-            style={{ background: aba === a.id ? "#0f5233" : "transparent", color: aba === a.id ? "#fff" : "#374151", border: `1px solid ${aba === a.id ? "#0f5233" : "#d1d5db"}`, padding: "7px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: aba === a.id ? 700 : 400 }}>
+            style={{ background: aba === a.id ? "#334532" : "transparent", color: aba === a.id ? "#fff" : "#374151", border: `1px solid ${aba === a.id ? "#334532" : "#d1d5db"}`, padding: "7px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: aba === a.id ? 700 : 400 }}>
             {a.l}
           </button>
         ))}

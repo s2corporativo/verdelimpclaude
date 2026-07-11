@@ -11,21 +11,21 @@ function renderDocsHtml(d: any, contrato: any): string {
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;color:#1a1a1a;font-size:11pt;line-height:1.5}
-.toolbar{position:sticky;top:0;background:#0f5233;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:100}
+.toolbar{position:sticky;top:0;background:#334532;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:100}
 .toolbar h1{font-size:14pt}
-.toolbar button{background:#fff;color:#0f5233;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:700}
+.toolbar button{background:#fff;color:#334532;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:700}
 .page{max-width:21cm;margin:14pt auto;padding:1.5cm;background:#fff;box-shadow:0 0 8px rgba(0,0,0,0.1);page-break-after:always}
 .page:last-child{page-break-after:auto}
-h1{color:#0f5233;font-size:16pt;border-bottom:2px solid #1a7a4a;padding-bottom:6pt;margin-bottom:14pt}
-h2{color:#0f5233;font-size:13pt;margin:14pt 0 8pt}
+h1{color:#334532;font-size:16pt;border-bottom:2px solid #4a9410;padding-bottom:6pt;margin-bottom:14pt}
+h2{color:#334532;font-size:13pt;margin:14pt 0 8pt}
 h3{color:#374151;font-size:11pt;margin:10pt 0 5pt}
-.header-empresa{text-align:center;border-bottom:1px solid #1a7a4a;padding-bottom:9pt;margin-bottom:14pt}
-.header-empresa h2{color:#0f5233;font-size:13pt}
+.header-empresa{text-align:center;border-bottom:1px solid #4a9410;padding-bottom:9pt;margin-bottom:14pt}
+.header-empresa h2{color:#334532;font-size:13pt}
 .header-empresa p{font-size:9pt;color:#6b7280;margin:2pt 0}
 table{width:100%;border-collapse:collapse;margin:8pt 0}
-th{background:#e8f5ee;color:#0f5233;padding:6pt 8pt;text-align:left;font-size:9pt;font-weight:700;border:1px solid #d1d5db}
+th{background:#e8f5ee;color:#334532;padding:6pt 8pt;text-align:left;font-size:9pt;font-weight:700;border:1px solid #d1d5db}
 td{padding:5pt 8pt;border:1px solid #e5e7eb;font-size:10pt}
-.checklist{background:#f9fafb;padding:9pt;border-radius:5pt;margin-bottom:6pt;border-left:3px solid #1a7a4a}
+.checklist{background:#f9fafb;padding:9pt;border-radius:5pt;margin-bottom:6pt;border-left:3px solid #4a9410}
 .assinatura{margin-top:30pt;text-align:center}
 .assinatura .linha{border-top:1px solid #1a1a1a;width:60%;margin:0 auto;padding-top:4pt}
 .box{border:1px solid #e5e7eb;border-radius:5pt;padding:10pt;margin:8pt 0;background:#f9fafb}

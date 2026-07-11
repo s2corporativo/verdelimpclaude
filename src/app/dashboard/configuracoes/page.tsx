@@ -44,13 +44,13 @@ export default function ConfiguracoesPage() {
 
   return (
     <div>
-      <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, marginBottom: 14 }}>Configurações</h1>
+      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 14 }}>Configurações</h1>
       <div style={{ background: "#1e1b4b", color: "#a5b4fc", padding: "10px 16px", borderRadius: 8, marginBottom: 16, fontSize: 11 }}>
         🔐 Credenciais sensíveis (chaves de API, senha do banco, certificados) ficam exclusivamente no arquivo <code>.env.production</code> da VPS — nunca neste formulário.
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>Dados da Empresa</h3>
+          <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 12 }}>Dados da Empresa</h3>
           {campo("razaoSocial", "Razão Social*")}
           {campo("nomeFantasia", "Nome Fantasia")}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -77,13 +77,13 @@ export default function ConfiguracoesPage() {
           </div>
           {msg && <p style={{ color: msg.startsWith("✓") ? "#059669" : "#dc2626", fontSize: 12, margin: "6px 0" }}>{msg}</p>}
           <button onClick={salvar} disabled={salvando || !form.razaoSocial || !form.cnpj}
-            style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 24px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>
+            style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 24px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>
             {salvando ? "Salvando…" : "💾 Salvar Configurações"}
           </button>
         </div>
         <div>
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 14 }}>
-            <h3 style={{ color: "#0f5233", fontSize: 13, marginBottom: 12 }}>Alíquotas Fiscais (Gerencial)</h3>
+            <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 12 }}>Alíquotas Fiscais (Gerencial)</h3>
             <div style={{ background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 7, padding: "7px 11px", marginBottom: 10, fontSize: 10, color: "#92400e" }}>
               Apoio gerencial — validar com contador. Estes percentuais alimentam a apuração automática e a folha.
             </div>

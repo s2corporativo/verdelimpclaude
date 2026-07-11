@@ -44,31 +44,31 @@ export function gerarHtmlProposta(p: PropostaData): string {
   }
   .page{max-width:210mm;margin:0 auto;padding:12mm 14mm;background:#fff}
   /* HEADER */
-  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #1a7a4a;margin-bottom:18px}
-  .logo-area h1{font-size:22px;font-weight:900;color:#0f5233;letter-spacing:-0.5px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #4a9410;margin-bottom:18px}
+  .logo-area h1{font-size:22px;font-weight:900;color:#334532;letter-spacing:-0.5px}
   .logo-area p{font-size:10px;color:#6b7280;margin-top:2px}
   .header-right{text-align:right}
-  .header-right .prop-num{font-size:20px;font-weight:700;color:#1a7a4a}
+  .header-right .prop-num{font-size:20px;font-weight:700;color:#4a9410}
   .header-right .prop-data{font-size:10px;color:#6b7280;margin-top:3px}
   /* SEÇÃO */
   .section{margin-bottom:16px}
-  .section-title{font-size:10px;font-weight:700;color:#0f5233;text-transform:uppercase;letter-spacing:.8px;border-bottom:1.5px solid #e8f5ee;padding-bottom:4px;margin-bottom:9px}
+  .section-title{font-size:10px;font-weight:700;color:#334532;text-transform:uppercase;letter-spacing:.8px;border-bottom:1.5px solid #e8f5ee;padding-bottom:4px;margin-bottom:9px}
   /* GRID DADOS */
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-  .campo{background:#f9fafb;border-radius:5px;padding:7px 9px;border-left:2px solid #1a7a4a}
+  .campo{background:#f9fafb;border-radius:5px;padding:7px 9px;border-left:2px solid #4a9410}
   .campo label{font-size:9px;color:#9ca3af;font-weight:600;display:block;margin-bottom:2px;text-transform:uppercase}
   .campo span{font-size:12px;font-weight:600;color:#111}
   /* TABELA BDI */
   table{width:100%;border-collapse:collapse}
-  th{background:#0f5233;color:#fff;font-size:10px;font-weight:600;padding:7px 10px;text-align:left}
+  th{background:#334532;color:#fff;font-size:10px;font-weight:600;padding:7px 10px;text-align:left}
   td{padding:7px 10px;font-size:11px;border-bottom:1px solid #f3f4f6}
   tr:nth-child(even) td{background:#f9fafb}
   .td-right{text-align:right;font-family:monospace}
   .td-bold{font-weight:700}
-  .td-green{color:#0f5233;font-weight:700}
+  .td-green{color:#334532;font-weight:700}
   /* TOTAL BOX */
-  .total-box{background:linear-gradient(135deg,#0f5233,#1a7a4a);color:#fff;border-radius:10px;padding:16px 20px;margin:16px 0;display:flex;justify-content:space-between;align-items:center}
+  .total-box{background:linear-gradient(135deg,#334532,#4a9410);color:#fff;border-radius:10px;padding:16px 20px;margin:16px 0;display:flex;justify-content:space-between;align-items:center}
   .total-box .label{font-size:11px;opacity:.85}
   .total-box .valor{font-size:28px;font-weight:900;letter-spacing:-1px}
   .total-box .bdi{font-size:11px;opacity:.75;margin-top:2px}
@@ -77,7 +77,7 @@ export function gerarHtmlProposta(p: PropostaData): string {
   .cond-item{display:flex;gap:8px;align-items:flex-start;padding:6px 9px;background:#f9fafb;border-radius:5px}
   .cond-item .icon{font-size:13px;flex-shrink:0;margin-top:1px}
   .cond-item .text{font-size:11px;color:#374151}
-  .cond-item .text strong{display:block;font-size:10px;color:#0f5233;font-weight:700;text-transform:uppercase;margin-bottom:2px}
+  .cond-item .text strong{display:block;font-size:10px;color:#334532;font-weight:700;text-transform:uppercase;margin-bottom:2px}
   /* AVISO FISCAL */
   .aviso{background:#fef9c3;border:1px solid #fde68a;border-radius:6px;padding:8px 11px;font-size:10px;color:#92400e;margin-top:12px}
   /* ASSINATURA */
@@ -89,10 +89,10 @@ export function gerarHtmlProposta(p: PropostaData): string {
   /* FOOTER */
   .footer{margin-top:20px;padding-top:10px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af}
   /* BUTTON PRINT */
-  .btn-print{background:#1a7a4a;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-right:10px}
+  .btn-print{background:#4a9410;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-right:10px}
   .btn-close{background:#f3f4f6;color:#374151;border:none;padding:12px 20px;border-radius:8px;font-size:14px;cursor:pointer}
   .print-bar{background:#fff;border-bottom:1px solid #e5e7eb;padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-  .print-bar h2{font-size:14px;font-weight:700;color:#0f5233;flex:1}
+  .print-bar h2{font-size:14px;font-weight:700;color:#334532;flex:1}
 </style>
 </head>
 <body>
@@ -118,7 +118,7 @@ export function gerarHtmlProposta(p: PropostaData): string {
       <div class="prop-num">PROPOSTA Nº ${p.numero}</div>
       <div class="prop-data">Data: ${p.data}</div>
       <div class="prop-data">Validade: ${p.validade}</div>
-      <div style="margin-top:6px;background:#e8f5ee;color:#0f5233;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;display:inline-block">PROPOSTA COMERCIAL</div>
+      <div style="margin-top:6px;background:#e8f5ee;color:#334532;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;display:inline-block">PROPOSTA COMERCIAL</div>
     </div>
   </div>
 
@@ -191,16 +191,16 @@ export function gerarHtmlProposta(p: PropostaData): string {
         </tr>
         <tr>
           <td class="td-bold td-green">Margem / Lucro Bruto</td>
-          <td style="text-align:center;font-weight:700;color:#0f5233">${pct(p.valores.marginRate)}</td>
+          <td style="text-align:center;font-weight:700;color:#334532">${pct(p.valores.marginRate)}</td>
           <td class="td-right td-green">${fmtR(p.valores.margem)}</td>
           <td class="td-right td-green">${pct(totalBDI > 0 ? p.valores.margem / totalBDI * 100 : 0)}</td>
         </tr>
       </tbody>
       <tfoot>
         <tr style="background:#e8f5ee">
-          <td colspan="2" style="font-weight:700;color:#0f5233;padding:9px 10px">VALOR TOTAL DA PROPOSTA</td>
-          <td class="td-right" style="font-weight:700;color:#0f5233;font-size:14px">${fmtR(totalBDI)}</td>
-          <td class="td-right" style="font-weight:700;color:#0f5233">100%</td>
+          <td colspan="2" style="font-weight:700;color:#334532;padding:9px 10px">VALOR TOTAL DA PROPOSTA</td>
+          <td class="td-right" style="font-weight:700;color:#334532;font-size:14px">${fmtR(totalBDI)}</td>
+          <td class="td-right" style="font-weight:700;color:#334532">100%</td>
         </tr>
       </tfoot>
     </table>

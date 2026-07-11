@@ -49,7 +49,7 @@ export default function RentabilidadePage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#0f5233", marginBottom: 4 }}>💹 Rentabilidade por Contrato</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>💹 Rentabilidade por Contrato</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>
         Receita = medições aprovadas/faturadas. Custos = lançamentos manuais + combustível vinculado ao contrato. Clique num contrato para lançar custos.
       </p>
@@ -64,7 +64,7 @@ export default function RentabilidadePage() {
             </div>
             <div style={{ flex: 1, minWidth: 110 }}>
               <p style={{ margin: 0, fontSize: 10, color: "#6b7280", fontWeight: 700 }}>RECEITA MEDIDA</p>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: "#0f5233" }}>{brl(l.receita)}</p>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: "#334532" }}>{brl(l.receita)}</p>
             </div>
             <div style={{ flex: 1, minWidth: 110 }}>
               <p style={{ margin: 0, fontSize: 10, color: "#6b7280", fontWeight: 700 }}>CUSTOS</p>
@@ -98,7 +98,7 @@ export default function RentabilidadePage() {
                   <input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}
                     style={{ padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, width: 120 }} /></div>
                 <button onClick={salvarCusto} disabled={!form.description || !form.amount}
-                  style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.description || !form.amount ? 0.5 : 1 }}>
+                  style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.description || !form.amount ? 0.5 : 1 }}>
                   + Lançar custo
                 </button>
                 {msg && <span style={{ color: "#991b1b", fontSize: 12 }}>{msg}</span>}

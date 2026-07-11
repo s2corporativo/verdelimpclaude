@@ -120,44 +120,44 @@ export function gerarHtmlPropostaCompleta(p: PropostaCompletaData): string {
   .page{width:210mm;min-height:280mm;margin:10px auto;padding:14mm 16mm 18mm;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);position:relative}
   /* faixa superior */
   .brandbar{display:flex;margin:-14mm -16mm 0;height:34px}
-  .brandbar .b1{flex:1;background:#2e7d32;color:#fff;display:flex;align-items:center;padding:0 16px;font-weight:800;font-size:13px;letter-spacing:.3px}
+  .brandbar .b1{flex:1;background:#3f830c;color:#fff;display:flex;align-items:center;padding:0 16px;font-weight:800;font-size:13px;letter-spacing:.3px}
   .brandbar .b1 span{font-weight:400;font-size:10px;margin-left:5px;opacity:.9}
-  .brandbar .b2{flex:1;background:#e8621a;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;font-size:9px}
+  .brandbar .b2{flex:1;background:#e05008;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;font-size:9px}
   .tricolor{display:flex;margin:14px -16mm 0;height:14px}
-  .tricolor div:nth-child(1){flex:1;background:#2e7d32}
+  .tricolor div:nth-child(1){flex:1;background:#3f830c}
   .tricolor div:nth-child(2){flex:1;background:#5db54c}
-  .tricolor div:nth-child(3){flex:1;background:#e8621a}
+  .tricolor div:nth-child(3){flex:1;background:#e05008}
   .running{font-size:8.5px;color:#9ca3af;margin-bottom:8px}
   /* capa */
-  .capa-titulo{text-align:center;margin:34px 0 6px;font-size:30px;font-weight:800;color:#2e7d32;letter-spacing:.5px}
+  .capa-titulo{text-align:center;margin:34px 0 6px;font-size:30px;font-weight:800;color:#3f830c;letter-spacing:.5px}
   .capa-sub{text-align:center;font-size:16px;font-weight:700;color:#333}
-  .capa-sub2{text-align:center;font-size:12px;color:#e8621a;font-style:italic;margin-top:3px}
-  .bloco-partes{background:#fdf0e7;border-left:4px solid #e8621a;padding:16px 20px;margin:26px 0}
+  .capa-sub2{text-align:center;font-size:12px;color:#e05008;font-style:italic;margin-top:3px}
+  .bloco-partes{background:#fdf0e7;border-left:4px solid #e05008;padding:16px 20px;margin:26px 0}
   .bloco-partes .rotulo{font-size:10px;font-weight:800;letter-spacing:.5px}
-  .bloco-partes .rotulo.ct{color:#e8621a}
-  .bloco-partes .rotulo.pp{color:#2e7d32;margin-top:14px}
+  .bloco-partes .rotulo.ct{color:#e05008}
+  .bloco-partes .rotulo.pp{color:#3f830c;margin-top:14px}
   .bloco-partes .nome{font-size:14px;font-weight:800;color:#111;margin-top:2px}
   .bloco-partes .det{font-size:10px;color:#4b5563;margin-top:2px;line-height:1.5}
   /* tabelas */
   table{width:100%;border-collapse:collapse;margin:6px 0 14px}
-  th{background:#2e7d32;color:#fff;font-size:9.5px;font-weight:700;padding:7px 9px;text-align:left;text-transform:uppercase;letter-spacing:.3px}
+  th{background:#3f830c;color:#fff;font-size:9.5px;font-weight:700;padding:7px 9px;text-align:left;text-transform:uppercase;letter-spacing:.3px}
   th.c,td.c{text-align:center}
   th.r,td.r{text-align:right}
   td{padding:6px 9px;font-size:10.5px;border:1px solid #e5e7eb;vertical-align:top}
   tbody tr:nth-child(even) td{background:#f7f9f7}
   td.small{font-size:9.5px;color:#6b7280}
-  .grupo-row td{background:#2e7d32!important;color:#fff;font-weight:800;font-size:10.5px;letter-spacing:.3px}
-  .subtotal-row td{background:#e8f3e8!important;font-weight:800;color:#2e7d32}
+  .grupo-row td{background:#3f830c!important;color:#fff;font-weight:800;font-size:10.5px;letter-spacing:.3px}
+  .subtotal-row td{background:#e8f3e8!important;font-weight:800;color:#3f830c}
   .bdi-row td{background:#eef7ee!important;font-weight:700}
-  .total-row td{background:#2e7d32!important;color:#fff;font-weight:800}
+  .total-row td{background:#3f830c!important;color:#fff;font-weight:800}
   .global-row td{background:#1a1a1a!important;color:#fff;font-weight:800;font-size:12px}
   /* seções */
-  h2.sec{font-size:14px;font-weight:800;color:#2e7d32;margin:16px 0 8px}
+  h2.sec{font-size:14px;font-weight:800;color:#3f830c;margin:16px 0 8px}
   h3.sub{font-size:11.5px;font-weight:800;color:#333;margin:14px 0 4px}
   p.texto{font-size:10.5px;color:#374151;text-align:justify;margin-bottom:8px}
   /* premissas numeradas */
   .premissa{display:flex;gap:0;border:1px solid #e5e7eb;margin-bottom:4px}
-  .premissa .num{width:26px;background:#2e7d32;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;flex-shrink:0}
+  .premissa .num{width:26px;background:#3f830c;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;flex-shrink:0}
   .premissa .txt{padding:6px 9px;font-size:10px;color:#374151}
   /* declaração */
   .decl li{font-size:10.5px;color:#374151;margin-bottom:6px;margin-left:16px;text-align:justify}
@@ -168,8 +168,8 @@ export function gerarHtmlPropostaCompleta(p: PropostaCompletaData): string {
   .assinatura .det{font-size:9.5px;color:#6b7280;line-height:1.5}
   .rodape{position:absolute;bottom:8mm;left:16mm;right:16mm;text-align:center;font-size:8.5px;color:#b0b6bd}
   /* barra imprimir */
-  .printbar{position:sticky;top:0;background:#0f5233;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:9}
-  .printbar button{background:#e8621a;border:none;color:#fff;font-weight:700;padding:8px 22px;border-radius:6px;cursor:pointer;font-size:13px}
+  .printbar{position:sticky;top:0;background:#334532;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:9}
+  .printbar button{background:#e05008;border:none;color:#fff;font-weight:700;padding:8px 22px;border-radius:6px;cursor:pointer;font-size:13px}
 </style>
 </head>
 <body>

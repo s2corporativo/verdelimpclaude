@@ -73,7 +73,7 @@ export default function CampoPage() {
     setTimeout(()=>setFotoSalva(false),3000);
   };
 
-  const cor = "#0f5233";
+  const cor = "#334532";
   const btnStyle: any = {width:"100%",background:cor,color:"#fff",border:"none",padding:"16px",borderRadius:12,cursor:"pointer",fontWeight:700,fontSize:18,marginBottom:10};
   const cardStyle: any = {background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:10};
 
@@ -146,7 +146,7 @@ export default function CampoPage() {
                   <div style={{fontSize:12,color:"#374151",marginBottom:8}}>📍 {o.municipio}/{o.uf}</div>
                   {o.observacoes&&<div style={{fontSize:11,color:"#92400e",background:"#fef9c3",borderRadius:7,padding:"6px 8px",marginBottom:8}}>{o.observacoes}</div>}
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                    <button style={{background:"#1a7a4a",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontWeight:600,fontSize:12}}>▶ Iniciar</button>
+                    <button style={{background:"#4a9410",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontWeight:600,fontSize:12}}>▶ Iniciar</button>
                     <button style={{background:"#dcfce7",color:"#15803d",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontWeight:600,fontSize:12}}>✅ Concluir</button>
                   </div>
                 </div>

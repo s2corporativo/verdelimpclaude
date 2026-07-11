@@ -26,7 +26,7 @@ function AbaCalculadora() {
   return(
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
       <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16}}>
-        <h3 style={{color:"#0f5233",fontSize:13,marginBottom:12}}>📋 Parâmetros do serviço</h3>
+        <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>📋 Parâmetros do serviço</h3>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           <div style={{gridColumn:"1/-1"}}><label style={LS}>Tipo de serviço</label>
             <select style={IS} value={form.servico} onChange={e=>setForm(p=>({...p,servico:e.target.value}))}>
@@ -52,13 +52,13 @@ function AbaCalculadora() {
       </div>
       <div>
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:10}}>
-          <h3 style={{color:"#0f5233",fontSize:13,marginBottom:12}}>📊 Resultado</h3>
+          <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>📊 Resultado</h3>
           {[[`Custo direto (${form.unit})`,fmt(custo),"#374151"],[`Encargos (${form.encargos}%)`,fmt(enc),"#6b7280"],[`Admin (${form.admin}%)`,fmt(adm),"#6b7280"],[`Risco (${form.risco}%)`,fmt(ris),"#6b7280"],[`Impostos (${form.impostos}%)`,fmt(imp),"#dc2626"],[`Margem (${form.margem}%)`,fmt(mar),"#15803d"]].map(([l,v,c])=>(
             <div key={l as string} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid #f3f4f6",fontSize:11}}>
               <span style={{color:c as string}}>{l}</span><span style={{fontWeight:600,color:c as string}}>R$ {v}</span>
             </div>
           ))}
-          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0 4px",fontSize:14,fontWeight:700,color:"#0f5233"}}>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0 4px",fontSize:14,fontWeight:700,color:"#334532"}}>
             <span>Preço unitário (R$/{form.unit})</span><span>R$ {fmt(unit)}</span>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#6b7280"}}>
@@ -66,7 +66,7 @@ function AbaCalculadora() {
           </div>
           <div style={{background:"#e8f5ee",borderRadius:8,padding:"10px 12px",marginTop:10}}>
             <div style={{fontSize:11,color:"#6b7280"}}>Valor total da proposta ({Number(form.area).toLocaleString("pt-BR")} {form.unit})</div>
-            <div style={{fontSize:22,fontWeight:700,color:"#0f5233"}}>R$ {fmt(total)}</div>
+            <div style={{fontSize:22,fontWeight:700,color:"#334532"}}>R$ {fmt(total)}</div>
           </div>
         </div>
         <button onClick={analisar} disabled={!!loadingIA} style={{width:"100%",background:loadingIA?"#6b7280":"#7c3aed",color:"#fff",border:"none",padding:"11px",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:13}}>
@@ -91,7 +91,7 @@ function AbaTabelaReferencia() {
       <div style={{background:"#fef9c3",border:"1px solid #fde68a",borderRadius:8,padding:"8px 13px",marginBottom:14,fontSize:11,color:"#92400e"}}>⚠️ Valores de referência de mercado MG — ajuste conforme contratos reais da Verdelimp.</div>
       <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
         <table style={{borderCollapse:"collapse",width:"100%"}}>
-          <thead><tr style={{background:"#e8f5ee"}}>{["Serviço","Un","Custo/Un","Margem","Mín Mercado","Máx Mercado","Referência","Ação"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:h==="Serviço"?"left":"right",fontSize:11,fontWeight:700,color:"#0f5233"}}>{h}</th>)}</tr></thead>
+          <thead><tr style={{background:"#e8f5ee"}}>{["Serviço","Un","Custo/Un","Margem","Mín Mercado","Máx Mercado","Referência","Ação"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:h==="Serviço"?"left":"right",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
           <tbody>{data.map((r:any,i:number)=>(
             <tr key={i} style={{borderBottom:"1px solid #f3f4f6"}}>
               <td style={{padding:"8px 12px",fontWeight:600,fontSize:12}}>{r.serviceType}</td>
@@ -102,9 +102,9 @@ function AbaTabelaReferencia() {
                 <td style={{padding:"4px 8px"}}><input type="number" step="0.01" value={editando.minPrice||0} onChange={e=>setEditando((p:any)=>({...p,minPrice:Number(e.target.value)}))} style={IS}/></td>
                 <td style={{padding:"4px 8px"}}><input type="number" step="0.01" value={editando.maxPrice||0} onChange={e=>setEditando((p:any)=>({...p,maxPrice:Number(e.target.value)}))} style={IS}/></td>
                 <td style={{padding:"4px 8px"}}><input value={editando.marketReference||""} onChange={e=>setEditando((p:any)=>({...p,marketReference:e.target.value}))} style={IS}/></td>
-                <td style={{padding:"4px 8px"}}><button onClick={salvar} style={{background:"#0f5233",color:"#fff",border:"none",padding:"4px 10px",borderRadius:6,cursor:"pointer",fontSize:11}}>✓</button>{" "}<button onClick={()=>setEditando(null)} style={{background:"#f3f4f6",border:"none",padding:"4px 8px",borderRadius:6,cursor:"pointer",fontSize:11}}>✕</button></td>
+                <td style={{padding:"4px 8px"}}><button onClick={salvar} style={{background:"#334532",color:"#fff",border:"none",padding:"4px 10px",borderRadius:6,cursor:"pointer",fontSize:11}}>✓</button>{" "}<button onClick={()=>setEditando(null)} style={{background:"#f3f4f6",border:"none",padding:"4px 8px",borderRadius:6,cursor:"pointer",fontSize:11}}>✕</button></td>
               </>:<>
-                <td style={{padding:"8px 12px",textAlign:"right",fontWeight:700,color:"#1a7a4a"}}>R${fmt(r.costPerM2)}</td>
+                <td style={{padding:"8px 12px",textAlign:"right",fontWeight:700,color:"#4a9410"}}>R${fmt(r.costPerM2)}</td>
                 <td style={{padding:"8px 12px",textAlign:"right",fontWeight:700,color:"#7c3aed"}}>{r.profitMargin}%</td>
                 <td style={{padding:"8px 12px",textAlign:"right",color:"#6b7280",fontSize:11}}>R${fmt(r.minPrice||0)}</td>
                 <td style={{padding:"8px 12px",textAlign:"right",color:"#6b7280",fontSize:11}}>R${fmt(r.maxPrice||0)}</td>
@@ -141,7 +141,7 @@ function AbaBDI() {
     <div>
       <div style={{display:"grid",gridTemplateColumns:"260px 1fr",gap:14,marginBottom:14}}>
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:14}}>
-          <h4 style={{color:"#0f5233",fontSize:12,fontWeight:700,marginBottom:10}}>BDI — Fórmula TCU Acórdão 2369/2011</h4>
+          <h4 style={{color:"#334532",fontSize:12,fontWeight:700,marginBottom:10}}>BDI — Fórmula TCU Acórdão 2369/2011</h4>
           <div style={{fontSize:9,color:"#6b7280",marginBottom:10}}>[(1+AC+S+R+G+DF)×(1+L)] / (1-I) - 1</div>
           {[["ac","Adm. Central (AC)","8"],["s","Seguro (S)","0.5"],["r","Riscos (R)","1.5"],["g","Garantia (G)","1"],["df","Desp. Financeiras","1.5"],["l","Lucro (L)","8"],["i","Impostos (I)","6.72"]].map(([k,l])=>(
             <div key={k} style={{marginBottom:7}}>
@@ -156,13 +156,13 @@ function AbaBDI() {
           ))}
           {resultado&&<div style={{background:"#e8f5ee",borderRadius:8,padding:"8px 10px",marginTop:10,textAlign:"center"}}>
             <div style={{fontSize:10,color:"#6b7280"}}>BDI calculado</div>
-            <div style={{fontSize:20,fontWeight:700,color:"#0f5233"}}>{resultado.bdi.bdiFinal}%</div>
+            <div style={{fontSize:20,fontWeight:700,color:"#334532"}}>{resultado.bdi.bdiFinal}%</div>
           </div>}
         </div>
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:14}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
-            <h4 style={{color:"#0f5233",fontSize:12,fontWeight:700,margin:0}}>Planilha de composição</h4>
-            <button onClick={addItem} style={{background:"#e8f5ee",color:"#0f5233",border:"none",padding:"4px 10px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700}}>+ Item</button>
+            <h4 style={{color:"#334532",fontSize:12,fontWeight:700,margin:0}}>Planilha de composição</h4>
+            <button onClick={addItem} style={{background:"#e8f5ee",color:"#334532",border:"none",padding:"4px 10px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700}}>+ Item</button>
           </div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
@@ -176,7 +176,7 @@ function AbaBDI() {
                   <td><input type="number" step="0.01" style={{...IS,width:56}} value={item.custoMO} onChange={e=>setItens(p=>p.map(i=>i.id===item.id?{...i,custoMO:Number(e.target.value)}:i))}/></td>
                   <td><input type="number" step="0.01" style={{...IS,width:56}} value={item.custoMat} onChange={e=>setItens(p=>p.map(i=>i.id===item.id?{...i,custoMat:Number(e.target.value)}:i))}/></td>
                   <td><input type="number" step="0.01" style={{...IS,width:56}} value={item.custoEq} onChange={e=>setItens(p=>p.map(i=>i.id===item.id?{...i,custoEq:Number(e.target.value)}:i))}/></td>
-                  {resultado&&<td style={{fontWeight:700,color:"#0f5233",padding:"0 6px",fontSize:11}}>{res?fmt(res.precoUnitario):"—"}</td>}
+                  {resultado&&<td style={{fontWeight:700,color:"#334532",padding:"0 6px",fontSize:11}}>{res?fmt(res.precoUnitario):"—"}</td>}
                   <td><button onClick={()=>setItens(p=>p.filter(i=>i.id!==item.id))} style={{background:"none",border:"none",cursor:"pointer",color:"#dc2626",fontSize:12}}>✕</button></td>
                 </tr>);
               })}</tbody>
@@ -184,13 +184,13 @@ function AbaBDI() {
           </div>
         </div>
       </div>
-      <button onClick={calcular} disabled={calculando} style={{background:calculando?"#6b7280":"#0f5233",color:"#fff",border:"none",padding:"11px 32px",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:13,marginBottom:14}}>
+      <button onClick={calcular} disabled={calculando} style={{background:calculando?"#6b7280":"#334532",color:"#fff",border:"none",padding:"11px 32px",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:13,marginBottom:14}}>
         {calculando?"⟳ Calculando...":"🧮 Calcular BDI e Preço Unitário"}
       </button>
       {resultado&&(
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:14,overflowX:"auto"}}>
           <div style={{display:"flex",gap:10,marginBottom:12,flexWrap:"wrap"}}>
-            {[["Custo direto",resultado.totais.custoDirectoTotal,"#1d4ed8"],["BDI total",resultado.totais.bdiValorTotal,"#d97706"],["VALOR GLOBAL",resultado.totais.totalGeral,"#0f5233"],["Margem real",`R$ ${fmt(resultado.totais.margemReal)} (${resultado.totais.margemPct}%)`, "#15803d"]].map(([l,v,c])=>(
+            {[["Custo direto",resultado.totais.custoDirectoTotal,"#1d4ed8"],["BDI total",resultado.totais.bdiValorTotal,"#d97706"],["VALOR GLOBAL",resultado.totais.totalGeral,"#334532"],["Margem real",`R$ ${fmt(resultado.totais.margemReal)} (${resultado.totais.margemPct}%)`, "#15803d"]].map(([l,v,c])=>(
               <div key={l as string} style={{background:"#f9fafb",borderRadius:8,padding:"8px 12px",borderLeft:`3px solid ${c}`}}>
                 <div style={{fontSize:9,color:"#6b7280",textTransform:"uppercase"}}>{l}</div>
                 <div style={{fontSize:l==="VALOR GLOBAL"?16:13,fontWeight:700,color:c as string,marginTop:2}}>R$ {typeof v==="number"?fmt(v):v}</div>
@@ -198,7 +198,7 @@ function AbaBDI() {
             ))}
           </div>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-            <thead><tr style={{background:"#e8f5ee"}}>{["Descrição","Un","Qtd","Custo Dir.","BDI","P.Unit (R$)","Total (R$)"].map(h=><th key={h} style={{padding:"6px 8px",textAlign:h==="Descrição"?"left":"right",color:"#0f5233",fontSize:10,fontWeight:700}}>{h}</th>)}</tr></thead>
+            <thead><tr style={{background:"#e8f5ee"}}>{["Descrição","Un","Qtd","Custo Dir.","BDI","P.Unit (R$)","Total (R$)"].map(h=><th key={h} style={{padding:"6px 8px",textAlign:h==="Descrição"?"left":"right",color:"#334532",fontSize:10,fontWeight:700}}>{h}</th>)}</tr></thead>
             <tbody>{resultado.itens.map((i:any,idx:number)=>(
               <tr key={idx} style={{borderBottom:"1px solid #f3f4f6"}}>
                 <td style={{padding:"6px 8px",fontWeight:600}}>{i.descricao}</td>
@@ -206,8 +206,8 @@ function AbaBDI() {
                 <td style={{padding:"6px 8px",textAlign:"right"}}>{Number(i.quantidade).toLocaleString("pt-BR")}</td>
                 <td style={{padding:"6px 8px",textAlign:"right",color:"#1d4ed8"}}>{fmt(i.custoDirecto)}</td>
                 <td style={{padding:"6px 8px",textAlign:"right",color:"#d97706"}}>{fmt(i.valorBdi)}</td>
-                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:700,color:"#0f5233"}}>{fmt(i.precoUnitario)}</td>
-                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:700,color:"#0f5233"}}>{fmt(i.totalItem)}</td>
+                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:700,color:"#334532"}}>{fmt(i.precoUnitario)}</td>
+                <td style={{padding:"6px 8px",textAlign:"right",fontWeight:700,color:"#334532"}}>{fmt(i.totalItem)}</td>
               </tr>
             ))}</tbody>
           </table>
@@ -222,12 +222,12 @@ export default function PrecificacaoCentralPage() {
   const [aba,setAba]=useState<"calc"|"tabela"|"bdi">("calc");
   return(
     <div>
-      <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:"0 0 4px"}}>🧮 Precificação</h1>
+      <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:"0 0 4px"}}>🧮 Precificação</h1>
       <p style={{color:"#6b7280",fontSize:12,margin:"0 0 14px"}}>Calculadora com IA · Tabela de referência de mercado · BDI para licitações públicas (TCU)</p>
       <div style={{display:"flex",gap:8,marginBottom:16,borderBottom:"2px solid #e5e7eb",paddingBottom:8}}>
         {[["calc","⚡ Calculadora + IA"],["tabela","📋 Tabela de Referência"],["bdi","🏛️ BDI / TCU (licitações)"]].map(([id,l])=>(
           <button key={id} onClick={()=>setAba(id as any)}
-            style={{background:aba===id?"#0f5233":"transparent",color:aba===id?"#fff":"#6b7280",border:`1px solid ${aba===id?"#0f5233":"transparent"}`,padding:"8px 16px",borderRadius:8,cursor:"pointer",fontWeight:aba===id?700:500,fontSize:13}}>
+            style={{background:aba===id?"#334532":"transparent",color:aba===id?"#fff":"#6b7280",border:`1px solid ${aba===id?"#334532":"transparent"}`,padding:"8px 16px",borderRadius:8,cursor:"pointer",fontWeight:aba===id?700:500,fontSize:13}}>
             {l}
           </button>
         ))}

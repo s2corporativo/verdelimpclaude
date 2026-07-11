@@ -22,14 +22,14 @@ export default function IntegracoesPage() {
     {nome:"GROQ llama-3.3-70b",url:"api.groq.com",status:"ativa",uso:"IA: chat, análise de editais, precificação, cronogramas",modulos:"Ajuda · Licitações · Precificação · Logística",auth:"Server-side"},
   ];
   return (<div>
-    <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,marginBottom:14}}>Central de Integrações</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Central de Integrações</h1>
     <div style={{background:"#1e1b4b",color:"#a5b4fc",padding:"10px 16px",borderRadius:8,marginBottom:16,fontSize:11}}>
       🔐 Todas as credenciais em variáveis de ambiente. APIs públicas funcionam sem token. Certificado digital somente com cofre seguro (SEFAZ_CERTIFICATE_ENABLED=false).
     </div>
     {ibge&&<div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"8px 13px",marginBottom:12,fontSize:12,color:"#1e40af"}}>
       IBGE: <strong>{ibge.nome}</strong> — Código: {ibge.id} — Mesorregião: {ibge.microrregiao?.mesorregiao?.nome}/{ibge.microrregiao?.mesorregiao?.UF?.sigla}
     </div>}
-    {APIS.map(a=><div key={a.nome} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 16px",marginBottom:8,borderLeft:"4px solid "+(a.status==="ativa"?"#1a7a4a":"#d97706")}}>
+    {APIS.map(a=><div key={a.nome} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 16px",marginBottom:8,borderLeft:"4px solid "+(a.status==="ativa"?"#4a9410":"#d97706")}}>
       <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
         <div>
           <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:3}}>
@@ -39,18 +39,18 @@ export default function IntegracoesPage() {
             {a.auth==="Cert. A1"&&<span style={{background:"#fce7f3",color:"#9d174d",padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>🔐 Certificado</span>}
           </div>
           <div style={{fontSize:11,color:"#6b7280"}}>{a.url} · {a.uso}</div>
-          <div style={{fontSize:10,color:"#1a7a4a",marginTop:2}}>Módulos: {a.modulos}</div>
+          <div style={{fontSize:10,color:"#4a9410",marginTop:2}}>Módulos: {a.modulos}</div>
         </div>
       </div>
     </div>)}
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:16,marginTop:16}}>
-      <h3 style={{color:"#0f5233",fontSize:13,marginBottom:10}}>Log de chamadas ({logs.length})</h3>
+      <h3 style={{color:"#334532",fontSize:13,marginBottom:10}}>Log de chamadas ({logs.length})</h3>
       <div style={{background:"#f9fafb",borderRadius:8,padding:10,maxHeight:200,overflowY:"auto"}}>
         {logs.length===0?<p style={{fontSize:11,color:"#9ca3af"}}>Aguardando chamadas...</p>:logs.map((l,i)=><div key={i} style={{fontSize:11,padding:"3px 0",borderBottom:"1px solid #f3f4f6",color:l.includes("✓")?"#15803d":l.includes("✗")?"#dc2626":"#374151"}}>{l}</div>)}
       </div>
     </div>
     {feriados.length>0&&(<div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:16,marginTop:12}}>
-      <h3 style={{color:"#0f5233",fontSize:13,marginBottom:10}}>Feriados 2026 ({feriados.length} datas)</h3>
+      <h3 style={{color:"#334532",fontSize:13,marginBottom:10}}>Feriados 2026 ({feriados.length} datas)</h3>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,maxHeight:180,overflowY:"auto"}}>
         {feriados.map((f:any,i:number)=><div key={i} style={{background:"#f9fafb",borderRadius:7,padding:"6px 9px"}}><div style={{fontSize:10,color:"#9ca3af"}}>{f.date?.split("-").reverse().join("/")}</div><div style={{fontSize:11,fontWeight:500}}>{f.name}</div></div>)}
       </div>

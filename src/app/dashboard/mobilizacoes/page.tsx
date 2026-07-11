@@ -35,7 +35,7 @@ export default function MobilizacoesPage() {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, margin: 0 }}>
+        <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, margin: 0 }}>
           🦺 Mobilização de Equipe
           {demo && <span style={{ fontSize: 11, background: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: 8, marginLeft: 8 }}>Demo</span>}
         </h1>
@@ -47,7 +47,7 @@ export default function MobilizacoesPage() {
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
         {[
-          ["Total mobilizações", stats.total || 0, "📋", "#1a7a4a"],
+          ["Total mobilizações", stats.total || 0, "📋", "#4a9410"],
           ["Mobilizações ativas", stats.ativas || 0, "✅", "#15803d"],
           ["Custo mensal total", "R$ " + fmt(stats.custoMensal || 0), "💰", "#dc2626"],
           ["Contratos com equipe", Object.keys(porContrato).length, "🤝", "#1d4ed8"],
@@ -66,7 +66,7 @@ export default function MobilizacoesPage() {
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         {(["ativa","encerrada","todas"] as const).map(f => (
           <button key={f} onClick={() => setFiltro(f)}
-            style={{ background: filtro === f ? "#0f5233" : "transparent", color: filtro === f ? "#fff" : "#374151", border: `1px solid ${filtro === f ? "#0f5233" : "#d1d5db"}`, padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: filtro === f ? 700 : 400 }}>
+            style={{ background: filtro === f ? "#334532" : "transparent", color: filtro === f ? "#fff" : "#374151", border: `1px solid ${filtro === f ? "#334532" : "#d1d5db"}`, padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: filtro === f ? 700 : 400 }}>
             {f === "ativa" ? "✅ Ativas" : f === "encerrada" ? "Encerradas" : "Todas"}
           </button>
         ))}
@@ -78,7 +78,7 @@ export default function MobilizacoesPage() {
           <div key={key} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
             <div style={{ background: "#e8f5ee", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
               <div>
-                <div style={{ fontWeight: 700, color: "#0f5233", fontSize: 13 }}>
+                <div style={{ fontWeight: 700, color: "#334532", fontSize: 13 }}>
                   📋 {info.contrato?.number} <span style={{ color: "#6b7280", fontWeight: 400 }}>— {info.contrato?.object}</span>
                 </div>
                 <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>

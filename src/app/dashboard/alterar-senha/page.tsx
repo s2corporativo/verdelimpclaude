@@ -34,7 +34,7 @@ export default function AlterarSenhaPage() {
       <div style={{ background: "#fff", borderRadius: 14, padding: 32, width: 400, boxShadow: "0 4px 24px rgba(0,0,0,.08)" }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ fontSize: 36 }}>🔐</div>
-          <h1 style={{ color: "#0f5233", fontSize: 20, fontWeight: 700, marginTop: 8 }}>Alterar Senha</h1>
+          <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginTop: 8 }}>Alterar Senha</h1>
           <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4 }}>Por segurança, defina uma nova senha antes de continuar.</p>
         </div>
         {erro && <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "9px 12px", marginBottom: 14, color: "#991b1b", fontSize: 13 }}>{erro}</div>}
@@ -45,7 +45,7 @@ export default function AlterarSenhaPage() {
         <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Confirmar nova senha</label>
         <input type="password" style={IS} value={form.confirma} onChange={e => setForm(p => ({ ...p, confirma: e.target.value }))} />
         <button onClick={salvar} disabled={loading || !form.atual || !form.nova || !form.confirma}
-          style={{ width: "100%", background: "#0f5233", color: "#fff", border: "none", padding: "11px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 14, marginTop: 4 }}>
+          style={{ width: "100%", background: "#334532", color: "#fff", border: "none", padding: "11px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 14, marginTop: 4 }}>
           {loading ? "Salvando..." : "Confirmar nova senha"}
         </button>
       </div>

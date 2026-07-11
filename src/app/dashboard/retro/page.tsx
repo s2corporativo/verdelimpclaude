@@ -59,19 +59,19 @@ export default function RetroPage() {
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,margin:0}}>
+          <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🚜 Retroescavadeira
             {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>Gestão de serviços, despesas operacionais e viabilidade por job</p>
         </div>
-        <button onClick={()=>setMostrarForm(f=>!f)} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>+ Novo Serviço</button>
+        <button onClick={()=>setMostrarForm(f=>!f)} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>+ Novo Serviço</button>
       </div>
 
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginBottom:16}}>
         {[
-          ["Total jobs",jobs.length,"🚜","#1a7a4a"],
+          ["Total jobs",jobs.length,"🚜","#4a9410"],
           ["Faturado",`R$ ${fmt(faturado)}`,"💰","#15803d"],
           ["Custo operacional",`R$ ${fmt(custo)}`,"⛽","#dc2626"],
           ["Margem",custo>0?`${(((faturado-custo)/faturado)*100).toFixed(0)}%`:"—","📊","#7c3aed"],
@@ -88,16 +88,16 @@ export default function RetroPage() {
       <div style={{display:"flex",gap:8,marginBottom:14}}>
         {[["jobs","🚜 Serviços"],["viabilidade","🧮 Calculadora"],["config","⚙️ Custos Hora"]].map(([id,l])=>(
           <button key={id} onClick={()=>setAba(id as any)}
-            style={{background:aba===id?"#0f5233":"transparent",color:aba===id?"#fff":"#374151",border:`1px solid ${aba===id?"#0f5233":"#d1d5db"}`,padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===id?700:400}}>{l}</button>
+            style={{background:aba===id?"#334532":"transparent",color:aba===id?"#fff":"#374151",border:`1px solid ${aba===id?"#334532":"#d1d5db"}`,padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===id?700:400}}>{l}</button>
         ))}
       </div>
 
       {/* FORM novo serviço */}
       {mostrarForm&&(
-        <div style={{background:"#fff",border:"2px solid #0f5233",borderRadius:12,padding:18,marginBottom:14}}>
-          <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:12}}>+ Novo Serviço de Retroescavadeira</h3>
+        <div style={{background:"#fff",border:"2px solid #334532",borderRadius:12,padding:18,marginBottom:14}}>
+          <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:12}}>+ Novo Serviço de Retroescavadeira</h3>
           {calc&&(
-            <div style={{background:"#e8f5ee",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#0f5233"}}>
+            <div style={{background:"#e8f5ee",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#334532"}}>
               ✅ Dados pré-preenchidos pela calculadora — custo estimado: R$ {fmt(calc.custoTotal)} · Preço ideal: R$ {fmt(calc.precoIdeal)}
             </div>
           )}
@@ -116,7 +116,7 @@ export default function RetroPage() {
           </div>
           <div style={{marginBottom:12}}><label style={LS}>Observações / ART</label><textarea style={{...IS,height:50}} value={novoJob.observacoes||""} onChange={e=>setNovoJob((p:any)=>({...p,observacoes:e.target.value}))}/></div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={salvarJob} disabled={salvando||!novoJob.clienteNome} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>💾 Salvar</button>
+            <button onClick={salvarJob} disabled={salvando||!novoJob.clienteNome} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:700}}>💾 Salvar</button>
             <button onClick={()=>setMostrarForm(false)} style={{background:"#f3f4f6",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer"}}>Cancelar</button>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function RetroPage() {
                       <span style={{background:sbg,color:sco,padding:"1px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{stxt}</span>
                       {!j.viavel&&j.status==="orcamento"&&<span style={{background:"#fee2e2",color:"#991b1b",padding:"1px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>⛔ INVIÁVEL</span>}
                     </div>
-                    <h3 style={{fontWeight:700,fontSize:14,color:"#0f5233",margin:"0 0 4px"}}>{j.clienteNome}</h3>
+                    <h3 style={{fontWeight:700,fontSize:14,color:"#334532",margin:"0 0 4px"}}>{j.clienteNome}</h3>
                     <div style={{display:"flex",gap:12,fontSize:11,color:"#6b7280",flexWrap:"wrap"}}>
                       <span>🚜 {j.tipoServico}</span>
                       {j.municipio&&<span>📍 {j.municipio}/{j.uf}</span>}
@@ -147,7 +147,7 @@ export default function RetroPage() {
                     </div>
                   </div>
                   <div style={{textAlign:"right"}}>
-                    {j.valorCobrado&&<div style={{fontSize:16,fontWeight:700,color:"#0f5233"}}>R$ {fmt(j.valorCobrado)}</div>}
+                    {j.valorCobrado&&<div style={{fontSize:16,fontWeight:700,color:"#334532"}}>R$ {fmt(j.valorCobrado)}</div>}
                     {j.precoMinimo&&<div style={{fontSize:10,color:"#6b7280"}}>Mínimo: R$ {fmt(j.precoMinimo)} · Ideal: R$ {fmt(j.precoIdeal)}</div>}
                     {margem&&<div style={{fontSize:11,fontWeight:700,color:Number(margem)>=20?"#15803d":Number(margem)>=0?"#d97706":"#dc2626"}}>Margem: {margem}%</div>}
                   </div>
@@ -176,21 +176,21 @@ export default function RetroPage() {
       {aba==="viabilidade"&&(
         <div>
           <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:18,marginBottom:14}}>
-            <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:14}}>🧮 Calculadora de Viabilidade — Retroescavadeira</h3>
+            <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:14}}>🧮 Calculadora de Viabilidade — Retroescavadeira</h3>
             <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:10,marginBottom:12}}>
               <div><label style={LS}>Tipo de serviço</label><select style={IS} value={calcInput.tipo} onChange={e=>setCalcInput(p=>({...p,tipo:e.target.value}))}>{TIPOS.map(t=><option key={t}>{t}</option>)}</select></div>
               <div><label style={LS}>Quantidade (m³/m²/m)</label><input type="number" style={IS} value={calcInput.qtd} onChange={e=>setCalcInput(p=>({...p,qtd:e.target.value}))}/></div>
               <div><label style={LS}>Distância da base (km)</label><input type="number" style={IS} value={calcInput.dist} onChange={e=>setCalcInput(p=>({...p,dist:e.target.value}))}/></div>
               <div><label style={LS}>Valor proposto (R$)</label><input type="number" step="0.01" style={IS} value={calcInput.valor} onChange={e=>setCalcInput(p=>({...p,valor:e.target.value}))} placeholder="Deixe 0 para ver custo"/></div>
             </div>
-            <button onClick={calcularViab} style={{background:"#0f5233",color:"#fff",border:"none",padding:"10px 28px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:14}}>
+            <button onClick={calcularViab} style={{background:"#334532",color:"#fff",border:"none",padding:"10px 28px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:14}}>
               ⚡ Calcular Viabilidade
             </button>
           </div>
 
           {calc&&(
             <div>
-              <div style={{background:calc.recomendacao.startsWith("✅")?"linear-gradient(135deg,#0f5233,#1a7a4a)":calc.recomendacao.startsWith("⚠️")?"linear-gradient(135deg,#d97706,#f59e0b)":"linear-gradient(135deg,#dc2626,#ef4444)",color:"#fff",borderRadius:12,padding:18,marginBottom:14}}>
+              <div style={{background:calc.recomendacao.startsWith("✅")?"linear-gradient(135deg,#334532,#4a9410)":calc.recomendacao.startsWith("⚠️")?"linear-gradient(135deg,#d97706,#f59e0b)":"linear-gradient(135deg,#dc2626,#ef4444)",color:"#fff",borderRadius:12,padding:18,marginBottom:14}}>
                 <div style={{fontSize:24,fontWeight:700,marginBottom:4}}>{calc.recomendacao}</div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8}}>
                   {[["Horas necessárias",calc.horas+"h"],["Custo total","R$ "+fmt(calc.custoTotal)],["Preço mínimo","R$ "+fmt(calc.precoMinimo)],["Preço ideal","R$ "+fmt(calc.precoIdeal)],calc.valorProposto>0&&["Sua margem",calc.margemReal+"%"]].filter(Boolean).map((item:any)=>(
@@ -203,7 +203,7 @@ export default function RetroPage() {
               </div>
 
               <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16}}>
-                <h4 style={{color:"#0f5233",fontSize:13,fontWeight:700,marginBottom:10}}>📋 Detalhamento das Despesas Operacionais</h4>
+                <h4 style={{color:"#334532",fontSize:13,fontWeight:700,marginBottom:10}}>📋 Detalhamento das Despesas Operacionais</h4>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                   <tbody>
                     {[
@@ -221,14 +221,14 @@ export default function RetroPage() {
                       </tr>
                     ))}
                     <tr style={{background:"#e8f5ee"}}>
-                      <td style={{padding:"8px 10px",fontWeight:700,color:"#0f5233"}}>TOTAL</td>
-                      <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,color:"#0f5233",fontSize:14}}>R$ {fmt(calc.custoTotal)}</td>
-                      <td style={{padding:"8px 10px",textAlign:"right",fontSize:10,color:"#0f5233"}}>100%</td>
+                      <td style={{padding:"8px 10px",fontWeight:700,color:"#334532"}}>TOTAL</td>
+                      <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,color:"#334532",fontSize:14}}>R$ {fmt(calc.custoTotal)}</td>
+                      <td style={{padding:"8px 10px",textAlign:"right",fontSize:10,color:"#334532"}}>100%</td>
                     </tr>
                   </tbody>
                 </table>
                 <div style={{marginTop:12,display:"flex",gap:8}}>
-                  <button onClick={()=>{setMostrarForm(true);setAba("jobs");}} style={{background:"#0f5233",color:"#fff",border:"none",padding:"8px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:12}}>📋 Criar serviço com estes dados</button>
+                  <button onClick={()=>{setMostrarForm(true);setAba("jobs");}} style={{background:"#334532",color:"#fff",border:"none",padding:"8px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:12}}>📋 Criar serviço com estes dados</button>
                 </div>
               </div>
             </div>
@@ -239,7 +239,7 @@ export default function RetroPage() {
       {/* ABA CONFIG */}
       {aba==="config"&&(
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:18}}>
-          <h3 style={{color:"#0f5233",fontSize:14,fontWeight:700,marginBottom:4}}>⚙️ Parâmetros de Custo por Hora</h3>
+          <h3 style={{color:"#334532",fontSize:14,fontWeight:700,marginBottom:4}}>⚙️ Parâmetros de Custo por Hora</h3>
           <p style={{fontSize:12,color:"#6b7280",marginBottom:16}}>Configure os custos reais da sua retroescavadeira para cálculos precisos de viabilidade</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             {[
@@ -258,7 +258,7 @@ export default function RetroPage() {
               </div>
             ))}
           </div>
-          <button onClick={salvarConfig} style={{marginTop:16,background:"#0f5233",color:"#fff",border:"none",padding:"10px 28px",borderRadius:8,cursor:"pointer",fontWeight:700}}>💾 Salvar Configurações</button>
+          <button onClick={salvarConfig} style={{marginTop:16,background:"#334532",color:"#fff",border:"none",padding:"10px 28px",borderRadius:8,cursor:"pointer",fontWeight:700}}>💾 Salvar Configurações</button>
         </div>
       )}
     </div>

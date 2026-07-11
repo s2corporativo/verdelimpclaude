@@ -19,19 +19,19 @@ export default function RelatorioContadorPage() {
     if(!w||!dados)return;
     const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório Contador ${dados.competencia}</title>
     <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;padding:20px;color:#1a1a1a;font-size:12px}
-    h1{color:#0f5233;font-size:18px;margin-bottom:4px}.sub{color:#6b7280;font-size:11px;margin-bottom:16px}
-    h2{color:#0f5233;font-size:13px;border-bottom:1.5px solid #e8f5ee;padding-bottom:4px;margin:14px 0 9px}
-    table{width:100%;border-collapse:collapse;margin-bottom:14px}th{background:#e8f5ee;color:#0f5233;padding:6px 9px;text-align:left;font-size:10px;font-weight:700}
+    h1{color:#334532;font-size:18px;margin-bottom:4px}.sub{color:#6b7280;font-size:11px;margin-bottom:16px}
+    h2{color:#334532;font-size:13px;border-bottom:1.5px solid #e8f5ee;padding-bottom:4px;margin:14px 0 9px}
+    table{width:100%;border-collapse:collapse;margin-bottom:14px}th{background:#e8f5ee;color:#334532;padding:6px 9px;text-align:left;font-size:10px;font-weight:700}
     td{padding:6px 9px;border-bottom:1px solid #f3f4f6;font-size:11px}.total{background:#f0fdf4;font-weight:700}
     .kpi{display:inline-block;background:#f9fafb;border:1px solid #e5e7eb;border-radius:7px;padding:8px 14px;margin:0 8px 8px 0;text-align:center}
-    .kv{font-size:16px;font-weight:700;color:#0f5233}.kl{font-size:9px;color:#9ca3af;text-transform:uppercase;display:block;margin-bottom:3px}
+    .kv{font-size:16px;font-weight:700;color:#334532}.kl{font-size:9px;color:#9ca3af;text-transform:uppercase;display:block;margin-bottom:3px}
     .aviso{background:#fef9c3;border:1px solid #fde68a;border-radius:6px;padding:7px 10px;font-size:10px;color:#92400e;margin-bottom:14px}
     .footer{margin-top:20px;padding-top:10px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between}
     @media print{.no-print{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head>
     <body>
-    <div class="no-print" style="background:#0f5233;color:#fff;padding:10px 16px;margin:-20px -20px 20px;display:flex;justify-content:space-between;align-items:center">
+    <div class="no-print" style="background:#334532;color:#fff;padding:10px 16px;margin:-20px -20px 20px;display:flex;justify-content:space-between;align-items:center">
       <strong>🌿 Verdelimp ERP — Relatório para Contador</strong>
-      <button onclick="window.print()" style="background:#fff;color:#0f5233;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:700">🖨️ Imprimir / PDF</button>
+      <button onclick="window.print()" style="background:#fff;color:#334532;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:700">🖨️ Imprimir / PDF</button>
     </div>
     <h1>🌿 Verdelimp — Relatório Mensal para Contador</h1>
     <div class="sub">Competência: <strong>${dados.competencia}</strong> · CNPJ: 30.198.776/0001-29 · Simples Nacional · Emitido em: ${new Date().toLocaleDateString("pt-BR")}</div>
@@ -59,13 +59,13 @@ export default function RelatorioContadorPage() {
     w.document.write(html);w.document.close();
   };
   return(<div>
-    <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,marginBottom:14}}>Relatório para o Contador</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Relatório para o Contador</h1>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:16}}>
       <div style={{display:"flex",gap:10,alignItems:"flex-end"}}>
         <div style={{flex:1}}><label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3}}>Competência (AAAA-MM)</label>
           <input style={{width:"100%",padding:"8px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13}} value={comp} onChange={e=>setComp(e.target.value)}/></div>
-        <button onClick={carregar} disabled={loading} style={{background:"#1a7a4a",color:"#fff",border:"none",padding:"9px 20px",borderRadius:8,cursor:"pointer",fontWeight:700}}>{loading?"⟳ Carregando...":"🔄 Gerar"}</button>
-        {dados&&<button onClick={imprimir} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 20px",borderRadius:8,cursor:"pointer",fontWeight:700}}>🖨️ Imprimir / PDF</button>}
+        <button onClick={carregar} disabled={loading} style={{background:"#4a9410",color:"#fff",border:"none",padding:"9px 20px",borderRadius:8,cursor:"pointer",fontWeight:700}}>{loading?"⟳ Carregando...":"🔄 Gerar"}</button>
+        {dados&&<button onClick={imprimir} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 20px",borderRadius:8,cursor:"pointer",fontWeight:700}}>🖨️ Imprimir / PDF</button>}
         {dados&&<button onClick={enviarEmail} disabled={enviando} style={{background:"#1d4ed8",color:"#fff",border:"none",padding:"9px 16px",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:700}}>{enviando?"Enviando…":"📧 Enviar ao contador"}</button>}
       </div>
       {emailMsg&&<p style={{color:emailMsg.startsWith("✓")?"#059669":"#dc2626",fontSize:12,margin:"8px 0 0"}}>{emailMsg}</p>}
@@ -73,7 +73,7 @@ export default function RelatorioContadorPage() {
     {dados&&<div>
       <div style={{background:"#fef9c3",border:"1px solid #fde68a",borderRadius:8,padding:"8px 13px",marginBottom:12,fontSize:11,color:"#92400e"}}>⚠️ Apoio gerencial — validar com contador antes de qualquer recolhimento</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:16}}>
-        {[["Faturamento","R$"+fmt(dados.faturamento),"📈","#1a7a4a"],["Tributos","R$"+fmt(dados.totalTributos),"💸","#d97706"],["Folha","R$"+fmt(dados.totalFolha),"👷","#7c3aed"],["Despesas","R$"+fmt(dados.totalDesp),"📉","#dc2626"],["Margem","R$"+fmt(dados.margem),"💵","#1a7a4a"]].map(([l,v,i,c])=>(
+        {[["Faturamento","R$"+fmt(dados.faturamento),"📈","#4a9410"],["Tributos","R$"+fmt(dados.totalTributos),"💸","#d97706"],["Folha","R$"+fmt(dados.totalFolha),"👷","#7c3aed"],["Despesas","R$"+fmt(dados.totalDesp),"📉","#dc2626"],["Margem","R$"+fmt(dados.margem),"💵","#4a9410"]].map(([l,v,i,c])=>(
           <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:`3px solid ${c}`}}>
             <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase"}}>{l}</span><span>{i}</span></div>
             <div style={{fontSize:17,fontWeight:700,color:c as string,marginTop:4}}>{v}</div>
@@ -82,17 +82,17 @@ export default function RelatorioContadorPage() {
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-          <div style={{background:"#e8f5ee",padding:"9px 14px",fontWeight:700,color:"#0f5233",fontSize:12}}>NFS-e Emitidas ({dados.nfses?.length})</div>
+          <div style={{background:"#e8f5ee",padding:"9px 14px",fontWeight:700,color:"#334532",fontSize:12}}>NFS-e Emitidas ({dados.nfses?.length})</div>
           <table style={{borderCollapse:"collapse",width:"100%"}}>
             <tbody>{(dados.nfses||[]).map((n:any,i:number)=><tr key={i} style={{borderBottom:"1px solid #f3f4f6"}}>
-              <td style={{padding:"7px 12px",fontSize:11,fontFamily:"monospace",color:"#0f5233"}}>{n.number}</td>
+              <td style={{padding:"7px 12px",fontSize:11,fontFamily:"monospace",color:"#334532"}}>{n.number}</td>
               <td style={{padding:"7px 12px",fontSize:11}}>{n.receiverName||n.client?.name||"—"}</td>
-              <td style={{padding:"7px 12px",fontWeight:700,color:"#1a7a4a"}}>R${fmt(Number(n.serviceValue))}</td>
+              <td style={{padding:"7px 12px",fontWeight:700,color:"#4a9410"}}>R${fmt(Number(n.serviceValue))}</td>
             </tr>)}</tbody>
           </table>
         </div>
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-          <div style={{background:"#e8f5ee",padding:"9px 14px",fontWeight:700,color:"#0f5233",fontSize:12}}>Tributos Apurados</div>
+          <div style={{background:"#e8f5ee",padding:"9px 14px",fontWeight:700,color:"#334532",fontSize:12}}>Tributos Apurados</div>
           <table style={{borderCollapse:"collapse",width:"100%"}}>
             <tbody>{(dados.tributos||[]).map((t:any,i:number)=><tr key={i} style={{borderBottom:"1px solid #f3f4f6"}}>
               <td style={{padding:"7px 12px",fontSize:11,fontWeight:700}}>{t.taxType}</td>

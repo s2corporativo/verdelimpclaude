@@ -42,7 +42,7 @@ export default function NfeImportPage() {
   };
 
   return (<div>
-    <h1 style={{color:"#0f5233",fontSize:20,fontWeight:700,marginBottom:4}}>Importação de XML — NF-e</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Importação de XML — NF-e</h1>
     <p style={{color:"#6b7280",fontSize:13,marginBottom:16}}>Importe o arquivo XML da NF-e e o sistema preenche automaticamente fornecedor, produtos, quantidades, impostos e sugere vinculação com o almoxarifado.</p>
 
     <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"9px 13px",marginBottom:16,fontSize:11,color:"#1e40af"}}>
@@ -53,12 +53,12 @@ export default function NfeImportPage() {
     <div
       onDragOver={e=>{e.preventDefault();setArrastar(true);}} onDragLeave={()=>setArrastar(false)} onDrop={onDrop}
       onClick={()=>fileRef.current?.click()}
-      style={{border:`2px dashed ${arrastar?"#1a7a4a":"#d1d5db"}`,borderRadius:12,padding:"40px 24px",textAlign:"center",cursor:"pointer",background:arrastar?"#f0fdf4":"#fafafa",transition:"all .2s",marginBottom:16}}>
+      style={{border:`2px dashed ${arrastar?"#4a9410":"#d1d5db"}`,borderRadius:12,padding:"40px 24px",textAlign:"center",cursor:"pointer",background:arrastar?"#f0fdf4":"#fafafa",transition:"all .2s",marginBottom:16}}>
       <input ref={fileRef} type="file" accept=".xml" style={{display:"none"}} onChange={e=>{ if(e.target.files?.[0]) onFile(e.target.files[0]); }}/>
       <div style={{fontSize:48,marginBottom:8}}>📁</div>
       <p style={{fontSize:15,fontWeight:600,color:"#374151",margin:0}}>Arraste o arquivo XML da NF-e aqui</p>
       <p style={{fontSize:12,color:"#9ca3af",marginTop:4}}>ou clique para selecionar · Padrão NF-e 4.00</p>
-      {loading&&<p style={{fontSize:13,color:"#1a7a4a",marginTop:8,fontWeight:600}}>⟳ Processando XML...</p>}
+      {loading&&<p style={{fontSize:13,color:"#4a9410",marginTop:8,fontWeight:600}}>⟳ Processando XML...</p>}
     </div>
 
     {/* RESULTADO */}
@@ -71,7 +71,7 @@ export default function NfeImportPage() {
       <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:18,marginBottom:14}}>
         <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:14}}>
           <div>
-            <h3 style={{color:"#0f5233",fontSize:15,fontWeight:700,margin:0}}>NF-e nº {resultado.parsed.numero} — Série {resultado.parsed.serie}</h3>
+            <h3 style={{color:"#334532",fontSize:15,fontWeight:700,margin:0}}>NF-e nº {resultado.parsed.numero} — Série {resultado.parsed.serie}</h3>
             <p style={{color:"#6b7280",fontSize:11,margin:"4px 0 0",fontFamily:"monospace"}}>Chave: {resultado.parsed.chaveAcesso.substring(0,22)}...{resultado.parsed.chaveAcesso.slice(-4)}</p>
           </div>
           <div style={{textAlign:"right"}}>
@@ -103,11 +103,11 @@ export default function NfeImportPage() {
       {/* ITENS */}
       <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden",marginBottom:14}}>
         <div style={{padding:"12px 16px",borderBottom:"1px solid #f3f4f6",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <h3 style={{color:"#0f5233",fontSize:14,margin:0}}>Itens da Nota ({resultado.parsed.itens.length})</h3>
+          <h3 style={{color:"#334532",fontSize:14,margin:0}}>Itens da Nota ({resultado.parsed.itens.length})</h3>
         </div>
         <div style={{overflowX:"auto"}}>
           <table style={{borderCollapse:"collapse",width:"100%"}}>
-            <thead><tr style={{background:"#e8f5ee"}}>{["#","Cód.","Descrição","NCM","CFOP","Qtd","Un","V.Unit","V.Total","Almox."].map(h=><th key={h} style={{padding:"8px 10px",textAlign:"left",fontSize:10,fontWeight:700,color:"#0f5233",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+            <thead><tr style={{background:"#e8f5ee"}}>{["#","Cód.","Descrição","NCM","CFOP","Qtd","Un","V.Unit","V.Total","Almox."].map(h=><th key={h} style={{padding:"8px 10px",textAlign:"left",fontSize:10,fontWeight:700,color:"#334532",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
             <tbody>
               {resultado.parsed.itens.map((item:any,i:number)=>{
                 const sug = resultado.sugestoesAlmoxarifado?.[i];
@@ -117,7 +117,7 @@ export default function NfeImportPage() {
                   <td style={{padding:"7px 10px",fontSize:12,fontWeight:500,maxWidth:200}}>{item.xProd}</td>
                   <td style={{padding:"7px 10px",fontFamily:"monospace",fontSize:10}}>{item.NCM}</td>
                   <td style={{padding:"7px 10px",fontFamily:"monospace",fontSize:10}}>{item.CFOP}</td>
-                  <td style={{padding:"7px 10px",fontWeight:700,color:"#1a7a4a"}}>{item.qCom.toLocaleString("pt-BR",{maximumFractionDigits:4})}</td>
+                  <td style={{padding:"7px 10px",fontWeight:700,color:"#4a9410"}}>{item.qCom.toLocaleString("pt-BR",{maximumFractionDigits:4})}</td>
                   <td style={{padding:"7px 10px",fontSize:11}}>{item.uCom}</td>
                   <td style={{padding:"7px 10px",fontFamily:"monospace",fontSize:11}}>R${fmt(item.vUnCom)}</td>
                   <td style={{padding:"7px 10px",fontWeight:700,fontFamily:"monospace"}}>R${fmt(item.vProd)}</td>
@@ -140,15 +140,15 @@ export default function NfeImportPage() {
       {/* TOTAIS */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16}}>
-          <h3 style={{color:"#0f5233",fontSize:13,marginBottom:10}}>Totais da NF-e</h3>
+          <h3 style={{color:"#334532",fontSize:13,marginBottom:10}}>Totais da NF-e</h3>
           {[["Produtos",resultado.parsed.totais.vProd],["Frete",resultado.parsed.totais.vFrete||0],["Desconto",resultado.parsed.totais.vDesc||0],["IPI",resultado.parsed.totais.vIPI||0],["ICMS",resultado.parsed.totais.vICMS||0],["PIS",resultado.parsed.totais.vPIS||0],["COFINS",resultado.parsed.totais.vCOFINS||0]].map(([l,v])=>(
             <div key={l as string} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #f3f4f6",fontSize:12}}>
               <span style={{color:"#6b7280"}}>{l}</span><span>R${fmt(Number(v))}</span>
             </div>
           ))}
           <div style={{display:"flex",justifyContent:"space-between",padding:"9px 0 0",fontSize:15,fontWeight:700}}>
-            <span style={{color:"#0f5233"}}>TOTAL NF-e</span>
-            <span style={{color:"#0f5233"}}>R${fmt(resultado.parsed.totais.vNF)}</span>
+            <span style={{color:"#334532"}}>TOTAL NF-e</span>
+            <span style={{color:"#334532"}}>R${fmt(resultado.parsed.totais.vNF)}</span>
           </div>
         </div>
         <div style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:12,padding:16}}>
@@ -158,7 +158,7 @@ export default function NfeImportPage() {
               <span style={{color:"#15803d",fontWeight:700,flexShrink:0}}>{i+1}.</span><span>{p}</span>
             </div>
           ))}
-          <button onClick={confirmarEntrada} style={{width:"100%",marginTop:14,background:confirmado?"#059669":"#1a7a4a",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
+          <button onClick={confirmarEntrada} style={{width:"100%",marginTop:14,background:confirmado?"#059669":"#4a9410",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
             {confirmado ? "✅ Registrado com sucesso!" : "✅ Confirmar Entrada no Almoxarifado"}
           </button>
         </div>

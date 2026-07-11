@@ -44,7 +44,7 @@ export function NotificacoesWidget() {
       {open && (
         <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", width: 360, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 999 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid #f3f4f6" }}>
-            <span style={{ fontWeight: 700, fontSize: 13, color: "#0f5233" }}>🔔 Notificações ({naoLidas} novas)</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#334532" }}>🔔 Notificações ({naoLidas} novas)</span>
             <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#9ca3af" }}>✕</button>
           </div>
           <div style={{ maxHeight: 400, overflowY: "auto" }}>

@@ -316,12 +316,12 @@ export function gerarPacoteDocs(params: {
   }
   .page{width:210mm;min-height:280mm;margin:10px auto;padding:16mm 18mm;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);position:relative}
   .cab{border-bottom:3px solid #2e7d32;padding-bottom:10px;margin-bottom:14px}
-  .marca{font-size:15px;color:#0f5233}
+  .marca{font-size:15px;color:#334532}
   .cab-emp{font-size:9px;color:#6b7280;margin-top:3px;line-height:1.5}
   .cab h1{font-size:15px;font-weight:800;color:#2e7d32;margin-top:10px}
   .cab-sub{font-size:10px;color:#6b7280;margin-top:2px}
   .info{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 11px;font-size:10.5px;color:#166534;margin-bottom:12px}
-  h2{font-size:11.5px;font-weight:800;color:#0f5233;margin:12px 0 5px;text-transform:uppercase}
+  h2{font-size:11.5px;font-weight:800;color:#334532;margin:12px 0 5px;text-transform:uppercase}
   ul{margin:0 0 4px 18px}
   li{margin:3px 0;font-size:11px}
   table{width:100%;border-collapse:collapse;margin:6px 0 12px}
@@ -334,7 +334,7 @@ export function gerarPacoteDocs(params: {
   .assin>div{flex:1}
   .assin .linha{border-top:1.4px solid #333;margin-bottom:5px}
   .data-doc{text-align:center;font-size:10.5px;color:#6b7280;margin-top:18px}
-  .printbar{position:sticky;top:0;background:#0f5233;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:9}
+  .printbar{position:sticky;top:0;background:#334532;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:9}
   .printbar button{background:#e8621a;border:none;color:#fff;font-weight:700;padding:8px 22px;border-radius:6px;cursor:pointer;font-size:13px}
 </style>
 </head>
