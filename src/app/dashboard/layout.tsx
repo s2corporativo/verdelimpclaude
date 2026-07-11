@@ -2,7 +2,7 @@
 import { NotificacoesWidget } from "@/components/NotificacoesWidget";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const MENU = [
   { s: "VISÃO GERAL" },
@@ -66,6 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [semLogo, setSemLogo] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -84,8 +85,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       <aside style={{ width: 220, background: "#0f5233", color: "#fff", display: "flex", flexDirection: "column", flexShrink: 0 }}>
         <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid rgba(255,255,255,.12)" }}>
-          <p style={{ margin: 0, fontWeight: 900, fontSize: 13 }}>🌿 VERDELIMP ERP</p>
-          <p style={{ margin: "2px 0 0", fontSize: 9, color: "rgba(255,255,255,.4)" }}>v2.2 · Betim/MG</p>
+          {!semLogo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/logo.png" alt="Verdelimp" onError={() => setSemLogo(true)}
+              style={{ maxWidth: 180, maxHeight: 48, objectFit: "contain", display: "block", margin: "0 auto 6px", background: "#fff", borderRadius: 6, padding: 4 }} />
+          )}
+          <p style={{ margin: 0, fontWeight: 900, fontSize: 13, textAlign: semLogo ? "left" : "center" }}>{semLogo ? "🌿 " : ""}VERDELIMP ERP</p>
+          <p style={{ margin: "2px 0 0", fontSize: 9, color: "rgba(255,255,255,.4)", textAlign: semLogo ? "left" : "center" }}>v2.2 · Betim/MG</p>
         </div>
         <nav style={{ flex: 1, padding: "5px 4px", overflowY: "auto" }}>
           {MENU.map((m, i) => {
