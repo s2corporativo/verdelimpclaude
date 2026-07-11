@@ -19,8 +19,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        NEXTAUTH_URL: ${NEXTAUTH_URL}
     container_name: verdelimp-erp
     restart: unless-stopped
     depends_on:
