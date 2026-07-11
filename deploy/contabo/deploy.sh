@@ -23,25 +23,20 @@ git fetch origin
 git checkout "$BRANCH"
 git pull origin "$BRANCH"
 
+echo "==> Build da nova imagem"
+docker compose build app
+
 echo "==> Subindo banco"
 docker compose up -d db
 
-echo "==> Build e subida da aplicação"
-docker compose up -d --build app
+echo "==> Aplicando migrations (antes de trocar a aplicação)"
+docker compose run --rm app npx prisma migrate deploy
 
-echo "==> Prisma generate"
-docker compose exec app npx prisma generate
-
-echo "==> Aplicando schema Prisma"
-docker compose exec app npx prisma db push
-
-echo "==> Rodando seed"
-docker compose exec app npm run prisma:seed || true
-
-echo "==> Reiniciando aplicação"
-docker compose restart app
+echo "==> Subindo aplicação"
+docker compose up -d app
 
 echo "==> Status"
 docker compose ps
 
 echo "Deploy finalizado. Verifique os logs com: docker compose logs -f app"
+echo "Observação: o seed (npm run prisma:seed) deve ser executado APENAS na primeira instalação."

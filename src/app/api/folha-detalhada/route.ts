@@ -4,6 +4,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Sempre executar no servidor — nunca pré-renderizar com dados demo no build
+export const dynamic = "force-dynamic";
+
 // Tabela INSS 2026 (simplificada)
 function calcINSS(salario: number): number {
   if (salario <= 1412.00)  return salario * 0.075;

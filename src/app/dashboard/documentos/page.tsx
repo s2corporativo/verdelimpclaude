@@ -60,10 +60,27 @@ export default function DocumentosPage() {
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const arquivoRef = useRef<HTMLInputElement>(null);
+  const [enviandoArquivo, setEnviandoArquivo] = useState(false);
 
   const [form, setForm] = useState<any>({
     categoria:"contrato", estrategia:"url", confidencial:false, versao:1
   });
+
+  // Upload real para o servidor (grava em /uploads, servido por /api/arquivos)
+  const onArquivoServidor = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) { setErro("Arquivo acima de 25MB"); return; }
+    setEnviandoArquivo(true); setErro("");
+    const fd = new FormData();
+    fd.append("file", file);
+    const r = await fetch("/api/upload", { method: "POST", body: fd });
+    const d = await r.json();
+    setEnviandoArquivo(false);
+    if (!d.success) { setErro(d.error || "Falha no upload"); return; }
+    setForm((p:any) => ({ ...p, urlArquivo: d.url, mimeType: d.mimeType, tamanhoKb: d.tamanhoKb, nome: p.nome || d.nome, base64Data: undefined }));
+  };
 
   const load = (cat?: string|null, q?: string) => {
     const params = new URLSearchParams();
@@ -102,6 +119,7 @@ export default function DocumentosPage() {
   const salvar = async () => {
     if(!form.nome||!form.categoria) { setErro("Nome e categoria obrigatórios"); return; }
     if(form.estrategia==="url"&&!form.urlArquivo) { setErro("Informe a URL do documento"); return; }
+    if(form.estrategia==="arquivo"&&!form.urlArquivo) { setErro("Envie um arquivo para o servidor"); return; }
     if(form.estrategia==="base64"&&!form.base64Data) { setErro("Selecione um arquivo"); return; }
     setSalvando(true); setErro("");
     const r = await fetch("/api/documentos",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
@@ -199,7 +217,7 @@ export default function DocumentosPage() {
 
           {/* Estratégia */}
           <div style={{display:"flex",gap:8,marginBottom:14}}>
-            {[["url","🔗 Link externo (Google Drive, OneDrive, etc.)"],["base64","📤 Upload direto (até 2MB)"]].map(([v,l])=>(
+            {[["arquivo","🗄️ Enviar arquivo ao servidor (até 25MB)"],["url","🔗 Link externo (Google Drive, OneDrive, etc.)"],["base64","📤 Embutido no banco (até 2MB)"]].map(([v,l])=>(
               <button key={v} onClick={()=>setForm((p:any)=>({...p,estrategia:v,base64Data:undefined,urlArquivo:undefined}))}
                 style={{flex:1,background:form.estrategia===v?"#0f5233":"#f9fafb",color:form.estrategia===v?"#fff":"#374151",border:`1px solid ${form.estrategia===v?"#0f5233":"#e5e7eb"}`,padding:"9px",borderRadius:9,cursor:"pointer",fontSize:12,fontWeight:600}}>
                 {l}
@@ -222,7 +240,19 @@ export default function DocumentosPage() {
             </div>
           </div>
 
-          {form.estrategia==="url"?(
+          {form.estrategia==="arquivo"?(
+            <div style={{marginBottom:10}}>
+              <label style={LS}>Arquivo (PDF, imagem, Word, Excel — até 25MB)</label>
+              <input ref={arquivoRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.csv,.xml,.zip" onChange={onArquivoServidor} style={{display:"none"}}/>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <button onClick={()=>arquivoRef.current?.click()} disabled={enviandoArquivo} style={{background:"#f3f4f6",border:"1px solid #d1d5db",padding:"8px 16px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:600}}>
+                  {enviandoArquivo?"⏳ Enviando…":"📎 Selecionar e enviar arquivo"}
+                </button>
+                {form.urlArquivo&&form.estrategia==="arquivo"&&<span style={{fontSize:11,color:"#15803d",fontWeight:600}}>✅ Enviado ({form.tamanhoKb}kb)</span>}
+              </div>
+              <p style={{fontSize:10,color:"#9ca3af",margin:"4px 0 0"}}>O arquivo fica no servidor da VPS (volume de uploads, coberto pelo backup).</p>
+            </div>
+          ):form.estrategia==="url"?(
             <div style={{marginBottom:10}}>
               <label style={LS}>URL do documento *</label>
               <input style={IS} value={form.urlArquivo||""} onChange={e=>setForm((p:any)=>({...p,urlArquivo:e.target.value}))} placeholder="https://drive.google.com/file/d/... ou qualquer link"/>

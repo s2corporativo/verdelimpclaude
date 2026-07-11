@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { gerarHtmlProposta, type PropostaData } from "@/lib/pdf-proposta";
+import { gerarHtmlPropostaCompleta, type PropostaCompletaData } from "@/lib/pdf-proposta-completa";
 
 export async function GET(
   _req: NextRequest,
@@ -12,6 +13,8 @@ export async function GET(
       where: { id: params.id },
       include: {
         client: { select: { name: true, cnpjCpf: true, municipio: true, uf: true, email: true } },
+        items: { orderBy: { ordem: "asc" } },
+        teams: { orderBy: { ordem: "asc" } },
       },
     });
 
@@ -20,6 +23,49 @@ export async function GET(
     }
 
     const config = await prisma.companyConfig.findFirst();
+
+    // Proposta completa (modelo Vallourec): planilha de preços por grupos,
+    // BDI por tipo, detalhamento de equipes, condições e declaração
+    if (proposta.modelo === "completa" || proposta.items.length > 0) {
+      const hoje = new Date();
+      const dataExtenso = hoje.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+      const dados: PropostaCompletaData = {
+        numero: proposta.number,
+        titulo: proposta.serviceType || proposta.object || "Prestação de Serviços",
+        subtitulo: proposta.client?.name || undefined,
+        contratante: proposta.client?.name || "Cliente não vinculado",
+        objeto: proposta.object || "Prestação de serviços especializados",
+        local: proposta.location || undefined,
+        vigenciaMeses: proposta.vigenciaMeses || undefined,
+        dataProposta: `${config?.municipio || "Betim"}/${config?.uf || "MG"}, ${dataExtenso}`,
+        validadeDias: proposta.validityDays || 30,
+        empresa: {
+          razaoSocial: config?.razaoSocial || "VERDELIMP Servicos e Terceirizacao Ltda",
+          cnpj: config?.cnpj || "30.198.776/0001-29",
+          porte: config?.porte || "EPP",
+          cnae: config?.cnaePrincipal ? `${config.cnaePrincipal} Paisagismo` : "81.30-3-00 Paisagismo",
+          endereco: `${config?.logradouro || "R. Primeiro de Janeiro, 415"} – ${config?.bairro || "Amazonas"}, ${config?.municipio || "Betim"}/${config?.uf || "MG"} – CEP ${config?.cep || "32.685-066"}`,
+          telefone: config?.telefone || "(31) 3591-4546",
+          email: config?.email?.toLowerCase() || "adm@verdelimp.com.br",
+        },
+        premissas: Array.isArray(proposta.premissas) ? (proposta.premissas as string[]) : [],
+        itens: proposta.items.map((i) => ({
+          grupo: i.grupo, codigo: i.codigo, descricao: i.descricao, unidade: i.unidade,
+          quantidade: Number(i.quantidade), valorUnitario: Number(i.valorUnitario),
+        })),
+        bdiEquipes: (proposta.bdiEquipes as any) || undefined,
+        bdiSpot: (proposta.bdiSpot as any) || undefined,
+        equipes: proposta.teams.map((t) => ({
+          nome: t.nome, colaboradores: t.colaboradores, meses: t.meses,
+          bdiRate: Number(t.bdiRate), componentes: (t.componentes as any) || [],
+        })),
+        condicoes: Array.isArray(proposta.condicoesComerciais) ? (proposta.condicoesComerciais as any) : [],
+      };
+      return new NextResponse(gerarHtmlPropostaCompleta(dados), {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    }
 
     const hoje = new Date();
     const validade = new Date(hoje);

@@ -24,6 +24,7 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 - Combustível
 - Almoxarifado
 - Controle de EPI
+- Documentação SSO (dossiê mensal por funcionário — checklist de 19 requisitos)
 - Financeiro
 - Central Fiscal
 - DRE
@@ -35,6 +36,7 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 - Treinamentos e NRs
 - Integrações
 - WhatsApp alertas
+- Administração (usuários, papéis, permissões e auditoria)
 - Configurações
 
 ## Stack técnica
@@ -81,7 +83,7 @@ erp.verdelimp.com.br
 ```bash
 npm install
 npx prisma generate
-npx prisma db push
+npx prisma migrate deploy   # produção (ou `npx prisma db push` só em dev)
 npm run prisma:seed
 npm run build
 npm run start
@@ -93,9 +95,11 @@ npm run start
 cd /opt/verdelimp-erp
 cp .env.vps.example .env.production
 nano .env.production
-docker compose up -d --build
-docker compose exec app npx prisma db push
-docker compose exec app npm run prisma:seed
+docker compose build app
+docker compose up -d db
+docker compose run --rm app npx prisma migrate deploy
+docker compose up -d app
+docker compose exec app npm run prisma:seed   # apenas na primeira instalação
 ```
 
 Para atualização posterior:
@@ -116,7 +120,8 @@ Variáveis essenciais:
 POSTGRES_PASSWORD=
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=https://erp.verdelimp.com.br
-ANTHROPIC_API_KEY=
+GROQ_API_KEY=
+SEED_ADMIN_PASSWORD=
 FISCAL_ENVIRONMENT=homologacao
 ```
 
