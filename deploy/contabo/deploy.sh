@@ -18,6 +18,9 @@ if [ ! -f ".env.production" ]; then
   exit 1
 fi
 
+# Interpolação do docker compose (${POSTGRES_PASSWORD} etc.) só lê o arquivo .env
+ln -sf .env.production .env
+
 echo "==> Atualizando código"
 git fetch origin
 git checkout "$BRANCH"

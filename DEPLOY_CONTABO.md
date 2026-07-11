@@ -145,6 +145,7 @@ Se o repositório for privado, use autenticação do GitHub via token ou SSH dep
 ```bash
 cp .env.vps.example .env.production
 nano .env.production
+ln -sf .env.production .env   # o docker compose lê ${VARIÁVEIS} apenas do arquivo .env
 ```
 
 Preencha pelo menos:
