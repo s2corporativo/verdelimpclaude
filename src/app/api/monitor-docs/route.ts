@@ -3,7 +3,7 @@
 // ASO, Treinamentos e EPI quando não há registro manual.
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { MODELO_SADA, statusPorValidade } from "@/lib/monitor-docs";
+import { MODELOS, statusPorValidade } from "@/lib/monitor-docs";
 
 export const dynamic = "force-dynamic";
 
@@ -117,9 +117,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (body.action === "aplicarModelo") {
+      const modelo = MODELOS[body.modelo || "SST"];
+      if (!modelo) return NextResponse.json({ error: "Modelo desconhecido" }, { status: 400 });
       const existentes = await prisma.contractDocRequirement.findMany({ where: { contractId: body.contractId }, select: { name: true } });
       const nomes = new Set(existentes.map((e) => e.name));
-      const novos = MODELO_SADA.filter((m) => !nomes.has(m.name));
+      const novos = modelo.itens.filter((m) => !nomes.has(m.name));
       await prisma.contractDocRequirement.createMany({
         data: novos.map((m) => ({
           contractId: body.contractId, name: m.name, scope: m.scope, itemRef: m.itemRef ?? null,
