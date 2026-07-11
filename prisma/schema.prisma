@@ -184,6 +184,8 @@ model Employee {
   trainings      Training[]
   epiDeliveries  InventoryEpiDelivery[]
   mobilizations  Mobilization[]
+  asoExams       AsoExam[]
+  docRecords     ContractDocRecord[]
 }
 
 model EmployeeDoc {
@@ -538,6 +540,10 @@ model Contract {
   fuelLogs      FuelLog[]
   photos        ServicePhoto[]
   mobilizations  Mobilization[]
+  docRequirements ContractDocRequirement[]
+  scheduleItems   ScheduleItem[]
+  costs           ContractCost[]
+  environmental   EnvironmentalRecord[]
 }
 
 // ═══ COMBUSTÍVEL ═════════════════════════════════════════════════
@@ -936,4 +942,131 @@ model Document {
   @@index([contratoId])
   @@index([clienteId])
   @@index([validade])
+}
+
+// ═══ MONITOR DE DOCUMENTAÇÃO POR CONTRATO ════════════════════════
+// Núcleo: cada contratante (SADA, Vallourec…) exige uma relação de
+// documentos por funcionário; aqui ficam os requisitos do contrato e
+// os registros (com validade) que alimentam a matriz de monitoramento.
+model ContractDocRequirement {
+  id           String   @id @default(cuid())
+  contractId   String
+  contract     Contract @relation(fields: [contractId], references: [id])
+  name         String            // "ASO", "Certificado NR-12", "Ficha de EPI"…
+  scope        String   @default("FUNCIONARIO") // FUNCIONARIO | EMPRESA
+  itemRef      String?           // referência na relação da contratante ("item 5")
+  validityDays Int?              // null = sem vencimento (documento estático)
+  required     Boolean  @default(true)
+  autoSource   String?           // ASO | TREINAMENTO | EPI — busca automática em outros módulos
+  sourceHint   String?           // ex.: "NR-12" para casar com Training.trainingType
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  records      ContractDocRecord[]
+
+  @@index([contractId])
+}
+
+model ContractDocRecord {
+  id            String   @id @default(cuid())
+  requirementId String
+  requirement   ContractDocRequirement @relation(fields: [requirementId], references: [id])
+  employeeId    String?           // null quando scope = EMPRESA
+  employee      Employee? @relation(fields: [employeeId], references: [id])
+  issuedAt      DateTime?
+  expiresAt     DateTime?
+  filePath      String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([requirementId, employeeId])
+}
+
+// ═══ ASO — ATESTADO DE SAÚDE OCUPACIONAL ═════════════════════════
+model AsoExam {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  examType   String   @default("periodico") // admissional | periodico | retorno_trabalho | mudanca_risco | demissional
+  examDate   DateTime
+  expiresAt  DateTime?
+  result     String   @default("apto")      // apto | apto_restricoes | inapto
+  doctor     String?
+  crm        String?
+  filePath   String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([employeeId])
+}
+
+// ═══ CRONOGRAMA DE SERVIÇOS ══════════════════════════════════════
+model ScheduleItem {
+  id         String   @id @default(cuid())
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id])
+  date       DateTime
+  activity   String            // "Roçada área norte", "Poda alameda"…
+  location   String?
+  team       String?           // nomes ou função da equipe
+  status     String   @default("planejado") // planejado | em_execucao | concluido | cancelado
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([contractId, date])
+}
+
+// ═══ RENTABILIDADE — CUSTOS POR CONTRATO ═════════════════════════
+model ContractCost {
+  id          String   @id @default(cuid())
+  contractId  String
+  contract    Contract @relation(fields: [contractId], references: [id])
+  date        DateTime @default(now())
+  category    String   // mao_obra | material | equipamento | combustivel | terceiros | administrativo | outros
+  description String
+  amount      Decimal  @db.Decimal(15,2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([contractId, date])
+}
+
+// ═══ REGISTROS AMBIENTAIS ════════════════════════════════════════
+model EnvironmentalRecord {
+  id         String    @id @default(cuid())
+  type       String    // licenca | dof | autorizacao_poda | descarte | condicionante | outros
+  number     String?
+  agency     String?   // órgão emissor (prefeitura, IEF, IBAMA…)
+  contractId String?
+  contract   Contract? @relation(fields: [contractId], references: [id])
+  issuedAt   DateTime?
+  expiresAt  DateTime?
+  filePath   String?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([expiresAt])
+}
+
+// ═══ CRM — OPORTUNIDADES (CLIENTES PRIVADOS) ═════════════════════
+model Opportunity {
+  id             String    @id @default(cuid())
+  prospectName   String
+  contactName    String?
+  phone          String?
+  email          String?
+  origin         String?   // indicação | site | licitação | visita | outro
+  serviceType    String?
+  estimatedValue Decimal?  @db.Decimal(15,2)
+  stage          String    @default("lead") // lead | qualificado | proposta | negociacao | ganho | perdido
+  nextAction     String?
+  nextActionDate DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([stage])
 }
