@@ -13,6 +13,24 @@ export default function CampoPage() {
   const [gps, setGps] = useState<{lat?:number;lng?:number;ok?:boolean}>({});
   const [foto, setFoto] = useState<{tipo:string;url:string;desc:string}>({tipo:"antes",url:"",desc:""});
   const [fotoSalva, setFotoSalva] = useState(false);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
+  const [erroFoto, setErroFoto] = useState("");
+
+  // Tira/seleciona a foto no celular e envia direto ao servidor
+  const capturarFoto = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEnviandoFoto(true); setErroFoto("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch("/api/upload", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!d.success) throw new Error(d.error || "Falha no envio");
+      setFoto(p => ({ ...p, url: d.url }));
+    } catch (err: any) { setErroFoto(err.message); }
+    setEnviandoFoto(false);
+  };
   const [nomeUser, setNomeUser] = useState("Equipe");
 
   useEffect(() => {
@@ -194,11 +212,15 @@ export default function CampoPage() {
                 </div>
               </div>
               <div style={{marginBottom:12}}>
-                <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:6}}>URL ou link da foto</label>
+                <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:6}}>Foto</label>
+                <label style={{display:"block",background:foto.url?"#dcfce7":cor,color:foto.url?"#15803d":"#fff",border:foto.url?"1px solid #86efac":"none",padding:"14px",borderRadius:10,textAlign:"center",fontWeight:700,fontSize:14,cursor:"pointer"}}>
+                  {enviandoFoto?"⏳ Enviando foto…":foto.url?"✅ Foto anexada — tocar para trocar":"📷 Tirar / escolher foto"}
+                  <input type="file" accept="image/*" capture="environment" onChange={capturarFoto} style={{display:"none"}}/>
+                </label>
+                {erroFoto&&<div style={{fontSize:11,color:"#dc2626",marginTop:4}}>{erroFoto}</div>}
                 <input value={foto.url} onChange={e=>setFoto(p=>({...p,url:e.target.value}))}
-                  placeholder="Cole o link do Google Drive, Fotos, WhatsApp Web..."
-                  style={{width:"100%",padding:"10px 12px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13}}/>
-                <div style={{fontSize:10,color:"#9ca3af",marginTop:4}}>Tire a foto pelo celular → compartilhe → copie o link aqui</div>
+                  placeholder="…ou cole um link (Google Drive, Fotos)"
+                  style={{width:"100%",padding:"8px 12px",border:"1px solid #d1d5db",borderRadius:8,fontSize:12,marginTop:8}}/>
               </div>
               <div style={{marginBottom:16}}>
                 <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:6}}>Descrição (opcional)</label>

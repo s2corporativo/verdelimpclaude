@@ -3,8 +3,16 @@
 import { useEffect, useState } from "react";
 export default function RelatorioContadorPage() {
   const [dados,setDados]=useState<any>(null);const [comp,setComp]=useState("2026-04");const [loading,setLoading]=useState(false);
+  const [emailMsg,setEmailMsg]=useState("");const [enviando,setEnviando]=useState(false);
   const carregar=async()=>{ setLoading(true); const r=await fetch(`/api/relatorio?competencia=${comp}`); const d=await r.json(); setDados(d); setLoading(false); };
   useEffect(()=>{carregar();},[]);
+  const enviarEmail=async()=>{
+    setEnviando(true);setEmailMsg("");
+    const r=await fetch("/api/relatorio/email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({competencia:comp})});
+    const d=await r.json();
+    setEmailMsg(d.error?"✗ "+d.error:`✓ Relatório enviado para ${d.para}`);
+    setEnviando(false);
+  };
   const fmt=(v:number)=>v.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const imprimir=()=>{
     const w=window.open("","_blank","width=900,height=700");
@@ -58,8 +66,9 @@ export default function RelatorioContadorPage() {
           <input style={{width:"100%",padding:"8px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13}} value={comp} onChange={e=>setComp(e.target.value)}/></div>
         <button onClick={carregar} disabled={loading} style={{background:"#1a7a4a",color:"#fff",border:"none",padding:"9px 20px",borderRadius:8,cursor:"pointer",fontWeight:700}}>{loading?"⟳ Carregando...":"🔄 Gerar"}</button>
         {dados&&<button onClick={imprimir} style={{background:"#0f5233",color:"#fff",border:"none",padding:"9px 20px",borderRadius:8,cursor:"pointer",fontWeight:700}}>🖨️ Imprimir / PDF</button>}
-        {dados&&<a href={`mailto:${dados._email||"contador@demo.com.br"}?subject=Relatório ${comp}&body=Segue relatório do mês ${comp}.`} style={{background:"#1d4ed8",color:"#fff",padding:"9px 16px",borderRadius:8,textDecoration:"none",fontSize:13,fontWeight:700}}>📧 Enviar por e-mail</a>}
+        {dados&&<button onClick={enviarEmail} disabled={enviando} style={{background:"#1d4ed8",color:"#fff",border:"none",padding:"9px 16px",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:700}}>{enviando?"Enviando…":"📧 Enviar ao contador"}</button>}
       </div>
+      {emailMsg&&<p style={{color:emailMsg.startsWith("✓")?"#059669":"#dc2626",fontSize:12,margin:"8px 0 0"}}>{emailMsg}</p>}
     </div>
     {dados&&<div>
       <div style={{background:"#fef9c3",border:"1px solid #fde68a",borderRadius:8,padding:"8px 13px",marginBottom:12,fontSize:11,color:"#92400e"}}>⚠️ Apoio gerencial — validar com contador antes de qualquer recolhimento</div>

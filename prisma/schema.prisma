@@ -891,6 +891,19 @@ model DedetProdutoCatalogo {
   createdAt      DateTime @default(now())
 }
 
+// ═══ PRECIFICAÇÃO — TABELA DE REFERÊNCIA ════════════════════════
+model PricingRule {
+  id              String   @id @default(cuid())
+  serviceType     String   @unique
+  unit            String   @default("m²")
+  costPerM2       Decimal  @db.Decimal(15,2) @default(0)
+  profitMargin    Decimal  @db.Decimal(5,2)  @default(30)
+  minPrice        Decimal  @db.Decimal(15,2) @default(0)
+  maxPrice        Decimal  @db.Decimal(15,2) @default(0)
+  marketReference Decimal  @db.Decimal(15,2) @default(0)
+  updatedAt       DateTime @updatedAt @default(now())
+}
+
 // ═══ GED — GERENCIADOR DE DOCUMENTOS ════════════════════════════
 model Document {
   id            String    @id @default(cuid())

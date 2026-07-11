@@ -4,6 +4,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchWithCache } from "@/lib/api-cache";
 
+// Sempre executar no servidor — nunca pré-renderizar com dados demo no build
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     // Buscar todos os clientes e fornecedores com CNPJ

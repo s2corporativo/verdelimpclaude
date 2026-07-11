@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Sempre executar no servidor — nunca pré-renderizar com dados demo no build
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const hoje = new Date();
