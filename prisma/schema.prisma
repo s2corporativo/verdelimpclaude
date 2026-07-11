@@ -186,6 +186,8 @@ model Employee {
   mobilizations  Mobilization[]
   asoExams       AsoExam[]
   docRecords     ContractDocRecord[]
+  vacations      Vacation[]
+  disciplinary   DisciplinaryAction[]
 }
 
 model EmployeeDoc {
@@ -1069,4 +1071,39 @@ model Opportunity {
   updatedAt      DateTime  @updatedAt
 
   @@index([stage])
+}
+
+// ═══ RH — FÉRIAS E OCORRÊNCIAS DISCIPLINARES ═════════════════════
+model Vacation {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  acqStart    DateTime // início do período aquisitivo
+  acqEnd      DateTime // fim do período aquisitivo
+  startDate   DateTime? // gozo — início
+  endDate     DateTime? // gozo — fim
+  days        Int      @default(30)
+  soldDays    Int      @default(0) // abono pecuniário
+  status      String   @default("prevista") // prevista | agendada | em_gozo | concluida | vencida
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([employeeId])
+}
+
+model DisciplinaryAction {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  type        String   // advertencia_verbal | advertencia_escrita | suspensao
+  date        DateTime
+  reason      String
+  suspensionDays Int?
+  docPath     String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([employeeId])
 }
