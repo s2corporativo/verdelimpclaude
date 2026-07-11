@@ -421,7 +421,7 @@ const analisarEquipe = async () => {
             <div style={{ background: "#fff", border: "1px solid #fde68a", borderRadius: 12, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
                 <h4 style={{ color: "#92400e", fontSize: 13, fontWeight: 700, margin: 0 }}>💸 Tributário</h4>
-                <span style={{ background: "#fef9c3", color: "#92400e", padding: "1px 7px", borderRadius: 8, fontSize: 9, fontWeight: 700 }}>+{c.vigenciaMeses * 2} lançamentos</span>
+                <span style={{ background: "#fef9c3", color: "#92400e", padding: "1px 7px", borderRadius: 8, fontSize: 9, fontWeight: 700 }}>+{Number(c.vigenciaMeses) * 2} lançamentos</span>
               </div>
               <table style={{ width: "100%", fontSize: 11 }}>
                 <tbody>
@@ -526,7 +526,7 @@ const analisarEquipe = async () => {
             <div style={{ background: "#fff", border: "1px solid #86efac", borderRadius: 12, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
                 <h4 style={{ color: "#15803d", fontSize: 13, fontWeight: 700, margin: 0 }}>💰 Financeiro</h4>
-                <span style={{ background: "#dcfce7", color: "#15803d", padding: "1px 7px", borderRadius: 8, fontSize: 9, fontWeight: 700 }}>+{Math.min(c.vigenciaMeses, 24)} receitas</span>
+                <span style={{ background: "#dcfce7", color: "#15803d", padding: "1px 7px", borderRadius: 8, fontSize: 9, fontWeight: 700 }}>+{Math.min(Number(c.vigenciaMeses), 24)} receitas</span>
               </div>
               <table style={{ width: "100%", fontSize: 11 }}>
                 <tbody>

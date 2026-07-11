@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 // ── Aba 1: Calculadora rápida com IA ─────────────────────────────
 function AbaCalculadora() {
   const [form,setForm]=useState({servico:"Roçada Manual",area:"10000",unit:"m²",dias:"10",workers:"3",custoMO:"1.20",custoMat:"0.15",custoEquip:"0.25",encargos:"70",admin:"10",risco:"5",impostos:"8",margem:"30"});
-  const [analiseIA,setAnaliseIA]=useState("");const [loadingIA,setLoadingIA]=useState(false);
+  const [analiseIA,setAnaliseIA]=useState("");const [loadingIA,setLoadingIA]=useState("");
   const c={mo:Number(form.custoMO),mat:Number(form.custoMat),eq:Number(form.custoEquip)};
   const custo=c.mo+c.mat+c.eq;const enc=custo*(Number(form.encargos)/100);
   const adm=(custo+enc)*(Number(form.admin)/100);const ris=(custo+enc)*(Number(form.risco)/100);

@@ -20,12 +20,12 @@ const STATUS_STYLE: any = {
   substituido: ["#f3f4f6","#6b7280","📦 Substituído"],
   arquivado:   ["#f3f4f6","#9ca3af","🗄️ Arquivado"],
 };
-const MIME_ICON: any = {
+const MIME_ICON: Record<string, string> = {
   "application/pdf":"📄", "image/jpeg":"🖼️", "image/png":"🖼️",
   "application/msword":"📝", "application/vnd.openxmlformats-officedocument":"📝",
   "application/vnd.ms-excel":"📊", "application/zip":"🗜️",
 };
-const mimeIcon = (m: string) => {
+const mimeIcon = (m: string): string => {
   if(!m) return "📁";
   for(const [k,v] of Object.entries(MIME_ICON)) if(m.startsWith(k)) return v;
   return "📁";

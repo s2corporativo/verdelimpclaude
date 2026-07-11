@@ -35,7 +35,7 @@ export default function DiarioPage() {
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:10,flexWrap:"wrap",gap:8}}>
           <div>
             <div style={{fontWeight:700,fontSize:14,color:"#334532"}}>{d.location}</div>
-            <div style={{fontSize:11,color:"#6b7280"}}>📅 {d.date?new Date(d.date).toLocaleDateString("pt-BR",""):""} · 👷 {d.supervisor} · 👥 {d.teamSize} pessoas</div>
+            <div style={{fontSize:11,color:"#6b7280"}}>📅 {d.date?new Date(d.date).toLocaleDateString("pt-BR"):""} · 👷 {d.supervisor} · 👥 {d.teamSize} pessoas</div>
           </div>
           <span style={{background:wbg,color:wco,padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:700}}>{wic} {d.weather}</span>
         </div>

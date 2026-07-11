@@ -51,9 +51,16 @@ export default function LogisticaPage() {
 
   useEffect(() => {
     fetch("/api/logistica").then(r=>r.json()).then(d=>{
-      setOs(d.os||[]); setFuncs(d.funcionarios||[]); setDemo(!!d._demo);
+      // OS editadas localmente têm prioridade (persistidas no navegador até existir API própria)
+      let locais: OS[] | null = null;
+      try { const raw = localStorage.getItem("verdelimp_os"); if (raw) locais = JSON.parse(raw); } catch {}
+      setOs(locais && locais.length ? locais : (d.os||[])); setFuncs(d.funcionarios||[]); setDemo(!!d._demo);
     });
   }, []);
+
+  useEffect(() => {
+    if (os.length) try { localStorage.setItem("verdelimp_os", JSON.stringify(os)); } catch {}
+  }, [os]);
 
   const gerarPlano = async () => {
     const pendentes = os.filter(o => o.status === "pendente" || o.status === "agendado");

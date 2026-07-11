@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const data = await prisma.training.findMany({ orderBy: { expiresAt: "asc" }, include: { employee: { select: { name: true, role: true } } } });

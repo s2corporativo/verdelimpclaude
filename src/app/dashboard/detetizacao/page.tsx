@@ -2,8 +2,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
-const TIPOS = ["Desinsetizacao","Desratizacao","Descupinizacao","Geral","Controle Formigas","Fumigacao"];
-const TIPO_ICON: any = { "Desinsetizacao":"🪲","Desratizacao":"🐀","Descupinizacao":"🐛","Geral":"🦟","Controle Formigas":"🐜","Fumigacao":"💨" };
+const TIPOS = ["Desinsetização","Desratização","Descupinização","Geral","Controle Formigas","Fumigação"];
+const TIPO_ICON: any = { "Desinsetização":"🪲","Desratização":"🐀","Descupinização":"🐛","Geral":"🦟","Controle Formigas":"🐜","Fumigação":"💨" };
 const INFESTACAO_STYLE: any = { leve:["#dcfce7","#15803d","Leve"], moderado:["#fef9c3","#92400e","Moderado"], grave:["#fee2e2","#dc2626","⚠️ Grave"] };
 const STATUS_STYLE: any = {
   orcamento:   ["#f3f4f6","#6b7280","📝 Orçamento"],
@@ -18,10 +18,10 @@ export default function DetetizacaoPage() {
   const [catalogo, setCatalogo] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
   const [aba, setAba] = useState<"jobs"|"viabilidade"|"catalogo"|"docs">("jobs");
-  const [novoJob, setNovoJob] = useState<any>({ tipoServico:"Desinsetizacao", infestacaoNivel:"leve", status:"orcamento" });
+  const [novoJob, setNovoJob] = useState<any>({ tipoServico:"Desinsetização", infestacaoNivel:"leve", status:"orcamento" });
   const [mostrarForm, setMostrarForm] = useState(false);
   const [calc, setCalc] = useState<any>(null);
-  const [calcInput, setCalcInput] = useState({ tipo:"Desinsetizacao", area:"500", valor:"" });
+  const [calcInput, setCalcInput] = useState({ tipo:"Desinsetização", area:"500", valor:"" });
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function DetetizacaoPage() {
     setSalvando(true);
     const r = await fetch("/api/detetizacao",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(novoJob) });
     const d = await r.json();
-    if(d.success){ setJobs(p=>[d.job,...p]); setMostrarForm(false); setNovoJob({ tipoServico:"Desinsetizacao", infestacaoNivel:"leve", status:"orcamento" }); }
+    if(d.success){ setJobs(p=>[d.job,...p]); setMostrarForm(false); setNovoJob({ tipoServico:"Desinsetização", infestacaoNivel:"leve", status:"orcamento" }); }
     setSalvando(false);
   };
 

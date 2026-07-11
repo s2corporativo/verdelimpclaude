@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       include: { category: { select: { name: true, icon: true } } },
     });
     const criticosList = items.filter(i => Number(i.currentQuantity) <= Number(i.minimumStock));
-    if (items.length === 0) return NextResponse.json({ data: DEMO_ITEMS, criticos: [], _demo: true });
+    if (items.length === 0) return NextResponse.json({ data: DEMO_ITEMS, total: 5, criticos: 2, valorEstoque: 12500, _demo: true });
     return NextResponse.json({
       data: criticos ? criticosList : items,
       total: items.length,

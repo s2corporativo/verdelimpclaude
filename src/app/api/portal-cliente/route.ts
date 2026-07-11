@@ -40,11 +40,15 @@ export async function GET(req: NextRequest) {
     const cId = portalToken.clientId;
 
     // Buscar dados do cliente
-    const [contratos, medicoes, diarios] = await Promise.all([
-      prisma.contract.findMany({ where: { clientId: cId }, orderBy: { createdAt: "desc" }, take: 20 }),
+    const contratos = await prisma.contract.findMany({ where: { clientId: cId }, orderBy: { createdAt: "desc" }, take: 20 });
+    const idsContratos = contratos.map((c) => c.id);
+    const numeroPorContrato = new Map(contratos.map((c) => [c.id, c.number]));
+    const [medicoes, diariosBrutos] = await Promise.all([
       prisma.measurement.findMany({ where: { contract: { clientId: cId } }, orderBy: { createdAt: "desc" }, take: 20, include: { contract: { select: { number: true } } } }),
-      prisma.workDiary.findMany({ where: { contract: { clientId: cId } }, orderBy: { date: "desc" }, take: 30, include: { contract: { select: { number: true } } } }),
+      // WorkDiary não tem relação com Contract no schema — filtra pelos IDs e anexa o número manualmente
+      prisma.workDiary.findMany({ where: { contractId: { in: idsContratos } }, orderBy: { date: "desc" }, take: 30 }),
     ]);
+    const diarios = diariosBrutos.map((d) => ({ ...d, contract: { number: d.contractId ? numeroPorContrato.get(d.contractId) ?? null : null } }));
 
     return NextResponse.json({
       cliente: portalToken.client,

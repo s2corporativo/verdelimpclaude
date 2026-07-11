@@ -142,7 +142,7 @@ export default function MedicaoPage() {
                 </>
               )}
               {m.status === "aprovada" && (
-                <button
+                <button onClick={()=>{ if(confirm("A emissão oficial de NFS-e exige certificado digital e homologação com o contador. Abrir a Central Fiscal para registrar a nota?")) window.location.href="/dashboard/fiscal"; }}
                   style={{ background:"#f3e8ff", color:"#6d28d9", border:"1px solid #c4b5fd", padding:"7px 14px", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700 }}>
                   🧾 Emitir NFS-e
                 </button>

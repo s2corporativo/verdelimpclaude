@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const b = await req.json();
-    const d = await prisma.workDiary.create({ data: { contractId: b.contractId || null, date: b.serviceDate ? new Date(b.serviceDate) : new Date(), location: b.location || "", supervisor: b.supervisor || "", teamSize: Number(b.teamSize || 1), weather: b.weather || "Bom", activitiesDone: `[${b.serviceType}] ${b.description || ""}`, areasWorked: b.area ? `${b.area} m²` : null, notes: `Receita: R$${b.revenue || 0} | Custo: R$${b.cost || 0}` } });
+    const d = await prisma.workDiary.create({ data: { contractId: b.contractId || null, date: b.serviceDate ? new Date(b.serviceDate) : new Date(), location: b.location || "", supervisor: b.supervisor || "", teamSize: Number(b.teamSize || 1), weather: b.weather || "Bom", activitiesDone: `[${b.serviceType}] ${b.description || ""}`, areasWorked: b.area ? `${b.area} m²` : null, occurrences: `Receita: R$${b.revenue || 0} | Custo: R$${b.cost || 0}` } });
     return NextResponse.json(d, { status: 201 });
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
 }

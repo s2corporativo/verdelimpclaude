@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { custoHoraHomem, calcularServico, PARAMETROS_PADRAO, type ParametrosHH } from "@/lib/hora-homem";
 
 const IS: any = { width: "100%", padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 };
@@ -108,7 +108,7 @@ export default function HoraHomemPage() {
             {["Função", "Pessoas", "Salário médio", "Encargos", "Custo/mês", "HH paga", "HH PRODUTIVA ⭐", ""].map((h) => <th key={h} style={TH}>{h}</th>)}
           </tr></thead>
           <tbody>{funcoes.map((f: any) => (
-            <>
+            <React.Fragment key={f.funcao}>
               <tr key={f.funcao} style={{ borderBottom: "1px solid #f3f4f6" }}>
                 <td style={{ ...TD, fontWeight: 700 }}>{f.funcao}</td>
                 <td style={TD}>{f.pessoas}</td>
@@ -133,7 +133,7 @@ export default function HoraHomemPage() {
                   </p>
                 </td></tr>
               )}
-            </>
+            </React.Fragment>
           ))}</tbody>
         </table>
       </div>

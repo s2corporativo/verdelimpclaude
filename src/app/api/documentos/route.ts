@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // Categorias e subcategorias do GED
-export const CATEGORIAS: Record<string, { label: string; icon: string; subs: string[] }> = {
+const CATEGORIAS: Record<string, { label: string; icon: string; subs: string[] }> = {
   contrato:   { label: "Contratos",          icon: "📋", subs: ["Contrato Assinado","Aditivo","Ata de Reunião","Ordem de Serviço","Medição","Proposta"] },
   fiscal:     { label: "Fiscal & Tributário", icon: "💸", subs: ["NFS-e","DAS","Certidão CND","Certidão FGTS","Certidão INSS","Certidão Municipal","Certidão Trabalhista"] },
   rh:         { label: "RH & Funcionários",   icon: "👷", subs: ["Contrato de Trabalho","ASO","CTPS","Ficha EPI","Certificado NR","Holerite","Afastamento"] },

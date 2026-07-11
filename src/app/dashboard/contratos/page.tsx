@@ -2,10 +2,10 @@
 "use client";
 import { useEffect, useState } from "react";
 export default function ContratosPage() {
-  const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);
+  const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);const [clientes,setClientes]=useState<any[]>([]);
   const [form,setForm]=useState({clientId:"",object:"",value:"",monthlyValue:"",startDate:"",endDate:"",notes:""});
   const load=()=>fetch("/api/contratos").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);});
-  useEffect(()=>{load();},[]);
+  useEffect(()=>{load();fetch("/api/clientes").then(r=>r.json()).then(d=>setClientes(d.data||[])).catch(()=>{});},[]);
   const salvar=async()=>{
     await fetch("/api/contratos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
     setForm({clientId:"",object:"",value:"",monthlyValue:"",startDate:"",endDate:"",notes:""});load();
@@ -31,6 +31,7 @@ export default function ContratosPage() {
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:14}}>
       <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>+ Novo Contrato</h3>
       <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr",gap:9,marginBottom:9}}>
+        <div><label style={LS}>Cliente</label><select style={IS} value={form.clientId} onChange={e=>setForm(p=>({...p,clientId:e.target.value}))}><option value="">— sem vínculo —</option>{clientes.map((c:any)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         <div><label style={LS}>Objeto do Contrato*</label><input style={IS} value={form.object} onChange={e=>setForm(p=>({...p,object:e.target.value}))} placeholder="Ex: Roçada Canteiros Norte — PBH"/></div>
         <div><label style={LS}>Valor Total (R$)</label><input type="number" style={IS} value={form.value} onChange={e=>setForm(p=>({...p,value:e.target.value}))}/></div>
         <div><label style={LS}>Valor Mensal (R$)</label><input type="number" style={IS} value={form.monthlyValue} onChange={e=>setForm(p=>({...p,monthlyValue:e.target.value}))}/></div>

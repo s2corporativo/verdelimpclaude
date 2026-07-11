@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { enviarWhatsApp, verificarAlertas } from "@/lib/whatsapp";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 // GET — listar alertas pendentes
 export async function GET() {
   try {

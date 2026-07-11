@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const ENCARGOS_PCT = 0.70;
 
 export async function GET() {

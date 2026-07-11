@@ -2,10 +2,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const logs = await prisma.fuelLog.findMany({ orderBy: { date: "desc" }, take: 100, include: { vehicle: { select: { plate: true, model: true } } } });
-    if (!logs.length) return NextResponse.json({ data: DEMO_LOGS, veiculos: DEMO_VEIC, _demo: true });
+    if (!logs.length) return NextResponse.json({ data: DEMO_LOGS, veiculos: DEMO_VEIC, totalMes: 1842, totalLitros: 293, _demo: true });
     const veiculos = await prisma.vehicle.findMany({ where: { active: true } });
     const totalMes = logs.filter(l => new Date(l.date).getMonth() === new Date().getMonth()).reduce((s, l) => s + Number(l.totalCost), 0);
     const totalLitros = logs.reduce((s, l) => s + Number(l.liters), 0);

@@ -45,7 +45,7 @@ export async function groqTranscribe(
 
   const form = new FormData();
   const ext = mimeType.includes("mp4") ? "mp4" : mimeType.includes("mp3") ? "mp3" : "webm";
-  form.append("file", new Blob([audioBuffer], { type: mimeType }), `audio.${ext}`);
+  form.append("file", new Blob([new Uint8Array(audioBuffer)], { type: mimeType }), `audio.${ext}`);
   form.append("model", "whisper-large-v3-turbo");
   form.append("language", "pt");
 
