@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [semLogo, setSemLogo] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +28,13 @@ export default function LoginPage() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f3f4f6" }}>
       <div style={{ background: "#fff", borderRadius: 14, padding: 32, width: "100%", maxWidth: 400, boxShadow: "0 4px 24px rgba(0,0,0,.08)" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ fontSize: 44, marginBottom: 8 }}>🌿</div>
+          {semLogo ? (
+            <div style={{ fontSize: 44, marginBottom: 8 }}>🌿</div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/logo.png" alt="Verdelimp" onError={() => setSemLogo(true)}
+              style={{ maxWidth: 220, maxHeight: 90, objectFit: "contain", marginBottom: 8 }} />
+          )}
           <h1 style={{ color: "#0f5233", fontSize: 22, fontWeight: 900 }}>VERDELIMP ERP</h1>
           <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4 }}>Sistema Integrado de Gestão</p>
         </div>
