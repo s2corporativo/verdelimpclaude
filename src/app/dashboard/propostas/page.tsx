@@ -5,7 +5,21 @@ export default function PropostasPage() {
   const [data, setData] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
   const [gerando, setGerando] = useState<string|null>(null);
-  useEffect(()=>{ fetch("/api/propostas").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);}); },[]);
+  const [convertendo, setConvertendo] = useState<string|null>(null);
+  const [msg, setMsg] = useState("");
+  const carregar = () => fetch("/api/propostas").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);});
+  useEffect(()=>{ carregar(); },[]);
+
+  const gerarContrato = async (p:any) => {
+    if (!confirm(`Aprovar a proposta ${p.number} e gerar o contrato automaticamente?\n\nIsso cria: contrato + 19 requisitos de documentação (SST) + 1º item do cronograma + centro de custos.`)) return;
+    setConvertendo(p.id); setMsg("");
+    const r = await fetch("/api/proposta-contrato",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({proposalId:p.id})});
+    const j = await r.json();
+    setConvertendo(null);
+    if (j.error) { setMsg(`Erro: ${j.error}`); return; }
+    setMsg(`✅ Contrato ${j.numero} criado com ${j.gerado.requisitosDocs} requisitos de docs e cronograma inicial. Próximos passos: ${j.proximosPassos[0].toLowerCase()}.`);
+    carregar();
+  };
   const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const STATUS_COLORS:any = {Aprovada:["#dcfce7","#15803d"],Aberta:["#fef9c3","#92400e"],Rejeitada:["#fee2e2","#991b1b"],Expirada:["#f3f4f6","#6b7280"]};
 
@@ -29,6 +43,8 @@ export default function PropostasPage() {
       📄 <strong>PDF disponível:</strong> Clique em "Gerar PDF" em qualquer proposta. O sistema abre a proposta formatada — use <strong>Ctrl+P → Salvar como PDF</strong> para exportar. Inclui: dados do cliente, objeto, composição de BDI, condições comerciais e espaço para assinatura.
     </div>
 
+    {msg && <div style={{background:msg.startsWith("Erro")?"#fee2e2":"#dcfce7",color:msg.startsWith("Erro")?"#991b1b":"#15803d",borderRadius:8,padding:"10px 13px",marginBottom:14,fontSize:12,fontWeight:600}}>{msg}</div>}
+
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
       {[["Total",data.length,"📄","#1a7a4a"],["Aprovadas",data.filter((p:any)=>p.status==="Aprovada").length,"✅","#15803d"],["Em Aberto",data.filter((p:any)=>p.status==="Aberta").length,"⏳","#d97706"]].map(([l,v,i,c])=>(
         <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:"3px solid "+c}}>
@@ -46,7 +62,7 @@ export default function PropostasPage() {
 
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
       <table style={{borderCollapse:"collapse",width:"100%"}}>
-        <thead><tr style={{background:"#e8f5ee"}}>{["Número","Objeto","Cliente","Valor Total","Data","Status","PDF"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#0f5233"}}>{h}</th>)}</tr></thead>
+        <thead><tr style={{background:"#e8f5ee"}}>{["Número","Objeto","Cliente","Valor Total","Data","Status","Ações"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#0f5233"}}>{h}</th>)}</tr></thead>
         <tbody>{data.map((p:any)=>{
           const [bg,co]=STATUS_COLORS[p.status]||["#f3f4f6","#6b7280"];
           return(<tr key={p.id} style={{borderBottom:"1px solid #f3f4f6"}}>
@@ -57,10 +73,19 @@ export default function PropostasPage() {
             <td style={{padding:"8px 12px",fontSize:11,color:"#6b7280"}}>{p.createdAt?new Date(p.createdAt).toLocaleDateString("pt-BR"):"—"}</td>
             <td style={{padding:"8px 12px"}}><span style={{background:bg,color:co,padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{p.status}</span></td>
             <td style={{padding:"8px 12px"}}>
-              <button onClick={()=>abrirPDF(p.id,p.number)} disabled={gerando===p.id}
-                style={{background:gerando===p.id?"#6b7280":"#0f5233",color:"#fff",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
-                {gerando===p.id?"⟳...":"📄 PDF"}
-              </button>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>abrirPDF(p.id,p.number)} disabled={gerando===p.id}
+                  style={{background:gerando===p.id?"#6b7280":"#0f5233",color:"#fff",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>
+                  {gerando===p.id?"⟳...":"📄 PDF"}
+                </button>
+                {!demo && p.status==="Aberta" && (
+                  <button onClick={()=>gerarContrato(p)} disabled={convertendo===p.id}
+                    title="Aprova a proposta e gera contrato + requisitos de docs + cronograma"
+                    style={{background:convertendo===p.id?"#6b7280":"#1a7a4a",color:"#fff",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>
+                    {convertendo===p.id?"⟳...":"✅ → Contrato"}
+                  </button>
+                )}
+              </div>
             </td>
           </tr>);
         })}</tbody>

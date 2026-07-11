@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 const MENU = [
   { s: "VISÃO GERAL" },
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/dashboard/alertas", label: "Central de Alertas", icon: "🚨" },
   { href: "/dashboard/ajuda", label: "Ajuda com IA", icon: "🤖" },
 
   { s: "COMERCIAL" },
@@ -55,6 +56,7 @@ const MENU = [
 
   { s: "RH" },
   { href: "/dashboard/rh", label: "RH & Folha", icon: "👷" },
+  { href: "/dashboard/rh-ocorrencias", label: "Férias & Ocorrências", icon: "🏖️" },
   { href: "/dashboard/mobilizacoes", label: "Mobilizações", icon: "📋" },
   { href: "/dashboard/treinamentos", label: "NRs e Treinamentos", icon: "🎓" },
   { href: "/dashboard/folha-detalhada", label: "Folha INSS/IRRF", icon: "📑" },
