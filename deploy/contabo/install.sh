@@ -123,6 +123,10 @@ else
   echo "  Criado com segredos gerados automaticamente (POSTGRES_PASSWORD e NEXTAUTH_SECRET)."
 fi
 
+# O docker compose só lê variáveis de interpolação (ex.: ${POSTGRES_PASSWORD})
+# de um arquivo chamado .env — aponte-o para o .env.production
+ln -sf .env.production .env
+
 # ── 5. Build e subida (banco → migrations → app) ────────────────────
 say "Build da aplicação (pode levar alguns minutos)"
 docker compose build app
