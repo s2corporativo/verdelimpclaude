@@ -82,11 +82,19 @@ export default function MonitorDocsPage() {
           <option value="">Selecione o contrato…</option>
           {contratos.map((c) => <option key={c.id} value={c.id}>{c.number} — {c.client?.name || c.object}</option>)}
         </select>
-        {contractId && dados && (dados.requisitosFuncionario?.length || 0) + (dados.requisitosEmpresa?.length || 0) === 0 && (
-          <button onClick={() => post({ action: "aplicarModelo", contractId })}
-            style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-            ✨ Aplicar modelo SADA (19 itens)
-          </button>
+        {contractId && (
+          <>
+            <button onClick={() => post({ action: "aplicarModelo", modelo: "SST", contractId })}
+              title="Relação de documentos de SST do Grupo SADA (19 itens) — só adiciona o que ainda não existe"
+              style={{ background: "#1a7a4a", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              ✨ Modelo SST (19 itens)
+            </button>
+            <button onClick={() => post({ action: "aplicarModelo", modelo: "CONTRATUAL", contractId })}
+              title="Condições Gerais do Grupo SADA, cláusula 6.12 — folha, ponto, FGTS, INSS, GFIP, balanço, seguros… — só adiciona o que ainda não existe"
+              style={{ background: "#0f5233", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              📋 Modelo Contratual SADA (cl. 6.12)
+            </button>
+          </>
         )}
         {contractId && (
           <button onClick={() => setMostrarNovoReq(!mostrarNovoReq)}
