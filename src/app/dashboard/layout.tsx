@@ -15,6 +15,7 @@ const MENU = [
   { href: "/dashboard/propostas", label: "Propostas + PDF", icon: "📄" },
   { href: "/dashboard/proposta-edital", label: "Proposta por Edital IA", icon: "📋" },
   { href: "/dashboard/precificacao-central", label: "Precificação", icon: "🧮" },
+  { href: "/dashboard/hora-homem", label: "Custo Hora-Homem", icon: "👷" },
 
   { s: "CONTRATOS" },
   { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato", icon: "📋" },

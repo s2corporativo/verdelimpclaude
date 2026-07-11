@@ -1,3 +1,6 @@
+# Projeto nomeado para não colidir com outros compose da mesma VPS (EJC, S2, site)
+name: verdelimp
+
 services:
   db:
     image: postgres:16-alpine
@@ -32,7 +35,9 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     ports:
-      - "127.0.0.1:3000:3000"
+      # VPS compartilhada: a porta 3000 costuma estar ocupada por outros apps.
+      # APP_PORT define a porta no host (padrão 3010); dentro do container segue 3000.
+      - "127.0.0.1:${APP_PORT:-3010}:3000"
     volumes:
       - verdelimp_uploads:/app/uploads
     healthcheck:
