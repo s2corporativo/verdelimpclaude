@@ -10,6 +10,12 @@ export default function PropostasPage() {
   const carregar = () => fetch("/api/propostas").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);});
   useEffect(()=>{ carregar(); },[]);
 
+  const excluir = async (p:any) => {
+    if (!confirm(`Excluir a proposta ${p.number}?`)) return;
+    const r = await fetch(`/api/propostas?id=${p.id}`,{method:"DELETE"});
+    if (!r.ok) { const j=await r.json().catch(()=>({})); setMsg(j.error||"Não foi possível excluir."); return; }
+    setMsg("✓ Proposta excluída."); carregar();
+  };
   const gerarContrato = async (p:any) => {
     if (!confirm(`Aprovar a proposta ${p.number} e gerar o contrato automaticamente?\n\nIsso cria: contrato + 19 requisitos de documentação (SST) + 1º item do cronograma + centro de custos.`)) return;
     setConvertendo(p.id); setMsg("");
@@ -84,6 +90,10 @@ export default function PropostasPage() {
                     style={{background:convertendo===p.id?"#6b7280":"#4a9410",color:"#fff",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>
                     {convertendo===p.id?"⟳...":"✅ → Contrato"}
                   </button>
+                )}
+                {!demo && (
+                  <button onClick={()=>excluir(p)} title="Excluir proposta"
+                    style={{background:"#fff",color:"#991b1b",border:"1px solid #fca5a5",padding:"5px 10px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>🗑️</button>
                 )}
               </div>
             </td>

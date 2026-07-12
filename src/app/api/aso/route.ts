@@ -1,8 +1,11 @@
 // ASO — Atestados de Saúde Ocupacional com controle de vencimento.
 // O exame mais recente de cada funcionário alimenta o Monitor de Documentação.
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { statusPorValidade } from "@/lib/monitor-docs";
+import { registrarAuditoria } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +52,8 @@ export async function POST(req: NextRequest) {
         notes: b.notes || null,
       },
     });
+    const session = await getServerSession(authOptions);
+    await registrarAuditoria({ userId: (session?.user as any)?.id || null, action: "CRIAR", module: "sst", entityType: "AsoExam", entityId: exame.id, newValues: { employeeId: b.employeeId, examType: b.examType, result: b.result } });
     return NextResponse.json({ ok: true, id: exame.id });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

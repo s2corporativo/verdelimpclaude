@@ -82,6 +82,19 @@ export async function POST(req: NextRequest) {
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
 }
 
+// Excluir proposta (exclusão lógica via deletedAt)
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    await prisma.proposal.update({ where: { id }, data: { deletedAt: new Date() } });
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    if (e.code === "P2025") return NextResponse.json({ error: "Proposta não encontrada" }, { status: 404 });
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
 const DEMO_PROP = [
   { id: "p1", number: "PROP-2026-001", object: "Roçada Geral Canteiros Norte", status: "Aprovada", totalValue: 38500, client: { name: "Prefeitura de BH" }, createdAt: "2026-03-15" },
   { id: "p2", number: "PROP-2026-002", object: "PRADA Linhas de Transmissão", status: "Aberta", totalValue: 42000, client: { name: "CEMIG" }, createdAt: "2026-04-01" },
