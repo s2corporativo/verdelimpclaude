@@ -41,6 +41,7 @@ const MENU = [
   { href: "/dashboard/rentabilidade", label: "Rentabilidade", icon: "💹" },
   { href: "/dashboard/fiscal", label: "Fiscal & Contábil", icon: "💼", grupo: "fiscal" },
   { href: "/dashboard/tributario", label: "Inteligência Tributária", icon: "🧾" },
+  { href: "/dashboard/nfse", label: "NFS-e Nacional", icon: "🧾" },
 
   { s: "RH" },
   { href: "/dashboard/rh", label: "RH & Pessoas", icon: "👷", grupo: "rh" },
