@@ -14,8 +14,13 @@ export default function FornecedoresPage() {
     if(d.razao_social){setForm(p=>({...p,nome:d.razao_social,municipio:d.municipio||p.municipio,uf:d.uf||p.uf}));setMsg("✓ Dados preenchidos via Receita Federal");}
   };
   const salvar = async() => {
-    await fetch("/api/fornecedores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:form.nome,cnpj:form.cnpj,type:form.tipo,phone:form.contato,email:form.email,municipio:form.municipio,uf:form.uf})});
-    setForm({nome:"",cnpj:"",tipo:"Material",contato:"",email:"",municipio:"",uf:""});setMsg("✓ Salvo!");load();
+    if(!form.nome.trim()){ setMsg("⛔ Informe o nome do fornecedor."); return; }
+    setMsg("");
+    try{
+      const r = await fetch("/api/fornecedores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:form.nome,cnpj:form.cnpj,type:form.tipo,phone:form.contato,email:form.email,municipio:form.municipio,uf:form.uf})});
+      if(!r.ok){ const j=await r.json().catch(()=>({})); setMsg("⛔ "+(j.error||"Não foi possível salvar. Confira os dados.")); return; }
+      setForm({nome:"",cnpj:"",tipo:"Material",contato:"",email:"",municipio:"",uf:""}); setMsg("✓ Salvo!"); load();
+    }catch(e:any){ setMsg("⛔ "+(e.message||"Erro de rede.")); }
   };
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
   const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};

@@ -20,9 +20,14 @@ export default function ClientesPage() {
     if(d.localidade){setForm(p=>({...p,municipio:d.localidade,uf:d.uf}));setMsg("✓ CEP preenchido via ViaCEP");}
   };
   const salvar = async() => {
-    setLoading(true);
-    await fetch("/api/clientes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:form.nome,cnpjCpf:form.cnpj,category:form.tipo,phone:form.contato,email:form.email,municipio:form.municipio,uf:form.uf,cep:form.cep})});
-    setForm({nome:"",cnpj:"",tipo:"Público",contato:"",email:"",municipio:"",uf:"",cep:""});setMsg("✓ Salvo!");load();setLoading(false);
+    if(!form.nome.trim()){ setMsg("⛔ Informe a razão social."); return; }
+    setLoading(true); setMsg("");
+    try{
+      const r = await fetch("/api/clientes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:form.nome,cnpjCpf:form.cnpj,category:form.tipo,phone:form.contato,email:form.email,municipio:form.municipio,uf:form.uf,cep:form.cep})});
+      if(!r.ok){ const j=await r.json().catch(()=>({})); setMsg("⛔ "+(j.error||"Não foi possível salvar. Confira os dados.")); return; }
+      setForm({nome:"",cnpj:"",tipo:"Público",contato:"",email:"",municipio:"",uf:"",cep:""}); setMsg("✓ Salvo!"); load();
+    }catch(e:any){ setMsg("⛔ "+(e.message||"Erro de rede.")); }
+    finally{ setLoading(false); }
   };
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
   const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};

@@ -6,10 +6,17 @@ function AbaCalculadora() {
   const [form,setForm]=useState({servico:"Roçada Manual",area:"10000",unit:"m²",dias:"10",workers:"3",custoMO:"1.20",custoMat:"0.15",custoEquip:"0.25",encargos:"70",admin:"10",risco:"5",impostos:"8",margem:"30"});
   const [analiseIA,setAnaliseIA]=useState("");const [loadingIA,setLoadingIA]=useState("");
   const c={mo:Number(form.custoMO),mat:Number(form.custoMat),eq:Number(form.custoEquip)};
-  const custo=c.mo+c.mat+c.eq;const enc=custo*(Number(form.encargos)/100);
+  const custo=c.mo+c.mat+c.eq;
+  // Encargos trabalhistas incidem só sobre a MÃO DE OBRA (não sobre material/equip.)
+  const enc=c.mo*(Number(form.encargos)/100);
   const adm=(custo+enc)*(Number(form.admin)/100);const ris=(custo+enc)*(Number(form.risco)/100);
-  const imp=(custo+enc+adm+ris)*(Number(form.impostos)/100);const mar=(custo+enc+adm+ris)*(Number(form.margem)/100);
-  const unit=custo+enc+adm+ris+imp+mar;const total=unit*Number(form.area);
+  const base=custo+enc+adm+ris;
+  // Imposto e margem "por dentro": incidem sobre o PREÇO (receita), não sobre o custo.
+  // preço = base / (1 − imposto% − margem%). Consistente com lib/hora-homem.ts.
+  const divisor=Math.max(0.01,1-(Number(form.impostos)+Number(form.margem))/100);
+  const unit=base/divisor;
+  const imp=unit*(Number(form.impostos)/100);const mar=unit*(Number(form.margem)/100);
+  const total=unit*Number(form.area);
   const bdi=(custo>0?((unit/custo-1)*100):0).toFixed(1);
   const fmt=(v:number)=>v.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:12};

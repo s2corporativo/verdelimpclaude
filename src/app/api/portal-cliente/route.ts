@@ -1,6 +1,18 @@
 // src/app/api/portal-cliente/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+// Sessão interna com permissão para emitir/gerenciar acessos do portal.
+async function exigirInterno() {
+  const session = await getServerSession(authOptions);
+  const roles = ((session?.user as any)?.roles || []) as string[];
+  return roles.some((r) => ["ADMIN", "COMERCIAL"].includes(r));
+}
 
 // GET — valida token e retorna dados do cliente
 export async function GET(req: NextRequest) {
@@ -8,12 +20,17 @@ export async function GET(req: NextRequest) {
   const token = searchParams.get("token");
   const clientId = searchParams.get("clientId");
 
-  // Gerar token para um cliente
+  // Gerar token para um cliente — SOMENTE usuário interno (ADMIN/COMERCIAL).
   if (clientId && !token) {
+    if (!(await exigirInterno())) {
+      return NextResponse.json({ error: "Emissão de acesso restrita à equipe interna" }, { status: 403 });
+    }
     try {
       const expires = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 dias
+      // Token = segredo aleatório (não previsível como o cuid padrão do schema)
+      const segredo = randomBytes(32).toString("hex");
       const pt = await prisma.clientPortalToken.create({
-        data: { clientId, expiresAt: expires },
+        data: { clientId, token: segredo, expiresAt: expires },
       });
       return NextResponse.json({ success: true, token: pt.token, expiresAt: pt.expiresAt });
     } catch (e: any) {
@@ -74,6 +91,16 @@ export async function POST(req: NextRequest) {
     const pt = await prisma.clientPortalToken.findUnique({ where: { token } });
     if (!pt?.active || new Date(pt.expiresAt) < new Date()) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    // Ownership: a medição precisa pertencer a um contrato do cliente do token
+    // (impede um cliente de aprovar/contestar medição de outro — IDOR).
+    const alvo = await prisma.measurement.findUnique({
+      where: { id: medicaoId },
+      select: { contract: { select: { clientId: true } } },
+    });
+    if (!alvo || alvo.contract?.clientId !== pt.clientId) {
+      return NextResponse.json({ error: "Medição não encontrada para este cliente" }, { status: 404 });
     }
 
     const novoStatus = acao === "aprovar" ? "aprovada" : "contestada";

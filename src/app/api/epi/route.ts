@@ -14,14 +14,26 @@ export async function GET() {
       include: { category: { select: { name: true } } },
     });
 
-    const entregas = await prisma.inventoryEpiDelivery.findMany({
-      where: { status: { in: ["ativo", "a_vencer", "vencido"] } },
+    const entregasBrutas = await prisma.inventoryEpiDelivery.findMany({
       include: {
         employee: { select: { name: true, role: true } },
         item: { select: { description: true, internalCode: true } },
       },
       orderBy: { deliveryDate: "desc" },
       take: 50,
+    });
+
+    // Status calculado dinamicamente pela MENOR data entre troca prevista e
+    // validade do CA. Antes o status ficava gravado "ativo" e nunca vencia —
+    // um EPI com CA vencido (inválido, NR-06) aparecia como ativo para sempre.
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const em30 = new Date(hoje); em30.setDate(em30.getDate() + 30);
+    const entregas = entregasBrutas.map((e) => {
+      const datas = [e.expectedReplacementDate, e.caExpirationDate].filter(Boolean).map((d) => new Date(d as Date));
+      const proxima = datas.length ? new Date(Math.min(...datas.map((d) => d.getTime()))) : null;
+      let status: string = "ativo";
+      if (proxima) status = proxima < hoje ? "vencido" : proxima <= em30 ? "a_vencer" : "ativo";
+      return { ...e, status };
     });
 
     if (!epis.length) return NextResponse.json({ epis: DEMO_EPI, entregas: DEMO_ENTREGA, _demo: true });

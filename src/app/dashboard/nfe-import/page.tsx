@@ -35,10 +35,24 @@ export default function NfeImportPage() {
   const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
 
   const [confirmado, setConfirmado] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [confMsg, setConfMsg] = useState("");
   const confirmarEntrada = async() => {
     if(!resultado?.parsed) return;
-    setConfirmado(true);
-    setTimeout(() => setConfirmado(false), 5000);
+    if(!resultado?.persistida){ setConfMsg("A NF-e não foi gravada — corrija a importação antes de dar entrada."); return; }
+    setConfirmando(true); setConfMsg("");
+    // Itens da NF-e que casaram com o almoxarifado entram no estoque com a qtd da nota
+    const itens = (resultado.sugestoesAlmoxarifado||[])
+      .filter((s:any)=>s.itemAlmox)
+      .map((s:any)=>({ itemAlmoxId:s.itemAlmox.id, quantidade:s.itemNFe.qCom, custoUnit:s.itemNFe.vUnCom }));
+    try{
+      const r = await fetch("/api/nfe/entrada",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ accessKey:resultado.parsed.chaveAcesso, itens, lancarFinanceiro:true })});
+      const d = await r.json();
+      if(!r.ok){ setConfMsg(d.error||"Falha ao confirmar entrada."); }
+      else { setConfirmado(true); setConfMsg(d.mensagem||"Entrada confirmada."); }
+    }catch(e:any){ setConfMsg(e.message); }
+    setConfirmando(false);
   };
 
   return (<div>
@@ -158,9 +172,10 @@ export default function NfeImportPage() {
               <span style={{color:"#15803d",fontWeight:700,flexShrink:0}}>{i+1}.</span><span>{p}</span>
             </div>
           ))}
-          <button onClick={confirmarEntrada} style={{width:"100%",marginTop:14,background:confirmado?"#059669":"#4a9410",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>
-            {confirmado ? "✅ Registrado com sucesso!" : "✅ Confirmar Entrada no Almoxarifado"}
+          <button onClick={confirmarEntrada} disabled={confirmando||confirmado} style={{width:"100%",marginTop:14,background:confirmado?"#059669":"#4a9410",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:confirmando||confirmado?"default":"pointer",fontWeight:700,fontSize:13,opacity:confirmando?.7:1}}>
+            {confirmado ? "✅ Entrada registrada!" : confirmando ? "⟳ Registrando..." : "✅ Confirmar Entrada no Almoxarifado"}
           </button>
+          {confMsg&&<p style={{margin:"8px 0 0",fontSize:11.5,color:confirmado?"#15803d":"#991b1b"}}>{confMsg}</p>}
         </div>
       </div>
     </div>)}

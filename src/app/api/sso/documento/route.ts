@@ -6,7 +6,7 @@ import { gerarHtmlSso, type SsoDocData, type FuncionarioSso } from "@/lib/sso-do
 const fmtData = (d?: Date | null) => (d ? new Date(d).toLocaleDateString("pt-BR") : undefined);
 
 function statusValidade(expiresAt?: Date | null): "valido" | "a_vencer" | "vencido" {
-  if (!expiresAt) return "vencido";
+  if (!expiresAt) return "valido"; // sem vencimento = permanente (antes marcava "vencido" indevidamente)
   const dias = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000);
   if (dias < 0) return "vencido";
   if (dias <= 30) return "a_vencer";
@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
         trainings: { orderBy: { expiresAt: "desc" } },
         docs: { orderBy: { expiresAt: "desc" } },
         epiDeliveries: { orderBy: { deliveryDate: "desc" }, take: 20, include: { item: { select: { description: true } } } },
+        asoExams: { orderBy: { examDate: "desc" } },
       },
     });
 
@@ -85,6 +86,12 @@ export async function GET(req: NextRequest) {
           tipo: doc.docType,
           validade: fmtData(doc.expiresAt),
           status: statusValidade(doc.expiresAt),
+        })),
+        aso: f.asoExams.map((a) => ({
+          tipo: `ASO ${a.examType}`,
+          emissao: fmtData(a.examDate),
+          validade: fmtData(a.expiresAt),
+          status: statusValidade(a.expiresAt),
         })),
         epis: f.epiDeliveries.map((e) => ({
           item: e.item?.description || "EPI",

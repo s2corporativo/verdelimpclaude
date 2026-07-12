@@ -16,6 +16,7 @@ interface TaxResult {
   generatedAuto: boolean;
   notes: string;
   revenueCode?: string;
+  informativo?: boolean; // linha de referência — NÃO soma no total a recolher
 }
 
 function nextMonthDate(competencia: string, day: number): string {
@@ -74,42 +75,52 @@ export async function apurarTributos(competencia: string, faturamento: number): 
       notes: `8% sobre folha bruta de ${employees.length} colaboradores (R$${folha.toFixed(2)})`,
     },
     {
+      // No Simples, a CPP patronal está DENTRO do DAS nos Anexos III e V; no
+      // Anexo IV é recolhida à parte (~20% + RAT + terceiros). Como o módulo não
+      // determina o anexo, esta linha é INFORMATIVA (não soma) — o contador
+      // define o valor correto conforme o enquadramento.
       tipo: "INSS",
-      descricao: `INSS Patronal — ${competencia}`,
+      descricao: `INSS Patronal (informativo) — ${competencia}`,
       competencia,
       vencimento: nextMonthDate(competencia, 20),
-      valor: parseFloat((folha * (aliqINSS / 100)).toFixed(2)),
+      valor: 0,
       base: folha,
-      aliq: aliqINSS,
-      status: "em_aberto",
+      aliq: 0,
+      status: "informativo",
       generatedAuto: true,
+      informativo: true,
       revenueCode: "1007",
-      notes: `${aliqINSS}% contribuição patronal — regime Simples Nacional`,
+      notes: `Anexos III/V: incluso no DAS (não recolher à parte). Anexo IV: CPP ~26,8% sobre a folha (R$${folha.toFixed(2)}) — confirmar com o contador.`,
     },
     {
+      // No Simples o ISS já está embutido no DAS. A guia separada duplicaria o
+      // recolhimento — mantida como referência (retenções abatem no PGDAS-D).
       tipo: "ISS",
-      descricao: `ISS Betim LC 33/2003 — ${competencia}`,
+      descricao: `ISS (informativo — já incluso no DAS) — ${competencia}`,
       competencia,
       vencimento: nextMonthDate(competencia, 10),
-      valor: parseFloat(issARecolher.toFixed(2)),
+      valor: 0,
       base: nfses.reduce((s, n) => s + Number(n.serviceValue), 0),
       aliq: aliqISS,
-      status: "em_aberto",
+      status: "informativo",
       generatedAuto: true,
-      notes: `ISS total R$${issTotal.toFixed(2)} − retido pelos tomadores R$${issRetido.toFixed(2)} = a recolher R$${issARecolher.toFixed(2)}`,
+      informativo: true,
+      notes: `No Simples o ISS é recolhido dentro do DAS. Referência: ISS total R$${issTotal.toFixed(2)}, retido pelos tomadores R$${issRetido.toFixed(2)} (abate no PGDAS-D).`,
     },
     {
+      // Optantes do Simples geralmente NÃO sofrem retenção de CSRF (PIS/COFINS/CSLL).
       tipo: "CSRF",
-      descricao: `CSRF Estimado — ${competencia}`,
+      descricao: `CSRF (informativo) — ${competencia}`,
       competencia,
       vencimento: nextMonthDate(competencia, 20),
-      valor: parseFloat(csrfEstimado.toFixed(2)),
+      valor: 0,
       base: faturamento,
-      aliq: 0.465,
-      status: "em_aberto",
+      aliq: 0,
+      status: "informativo",
       generatedAuto: true,
+      informativo: true,
       revenueCode: "5952",
-      notes: "PIS+COFINS+CSLL retidos por tomadores — validar com contador antes de recolher",
+      notes: `Optante do Simples costuma ser dispensado da retenção de CSRF. Referência estimada R$${csrfEstimado.toFixed(2)} — validar com contador.`,
     },
   ];
 

@@ -69,10 +69,13 @@ export async function POST(req: NextRequest) {
     dataFim.setMonth(dataFim.getMonth() + c.vigenciaMeses);
 
     // ═══ 2. TRIBUTOS PROJETADOS ═══════════════════════════════════
+    // No Simples o ISS já está DENTRO do DAS — por isso os tributos a recolher
+    // usam só o DAS. O ISS abaixo é referência (quanto do DAS corresponde ao ISS),
+    // não uma guia adicional (antes era somado, inflando os tributos em ~5%).
     const dasMensal = c.valorMensal * ALIQ_DAS;
     const dasTotal = valorTotal * ALIQ_DAS;
-    const issMensal = c.valorMensal * ALIQ_ISS_BETIM;
-    const issTotal = valorTotal * ALIQ_ISS_BETIM;
+    const issMensal = c.valorMensal * ALIQ_ISS_BETIM;   // referência (incluso no DAS)
+    const issTotal = valorTotal * ALIQ_ISS_BETIM;       // referência (incluso no DAS)
 
     // ═══ 3. EQUIPE NECESSÁRIA ═════════════════════════════════════
     const prodDiaria = PRODUTIVIDADE[c.tipoServico] || 1000;
@@ -115,7 +118,7 @@ export async function POST(req: NextRequest) {
 
     // ═══ 6. DRE PROJETADO ═════════════════════════════════════════
     const receitaMensal = c.valorMensal;
-    const tributosMensal = dasMensal + issMensal;
+    const tributosMensal = dasMensal; // ISS já incluso no DAS (não somar)
     const custosOperacionaisMensal = custoFolhaTotal + custoKmMes + materialMes + epiMes;
     const margemMensal = receitaMensal - tributosMensal - custosOperacionaisMensal;
     const margemPct = (margemMensal / receitaMensal) * 100;
