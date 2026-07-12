@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { registrarAuditoria } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
+
+async function userId() {
+  const s = await getServerSession(authOptions);
+  return (s?.user as any)?.id || null;
+}
 
 export async function GET() {
   try {
@@ -31,9 +39,43 @@ export async function POST(req: NextRequest) {
     const fornecedor = await prisma.supplier.create({
       data: { name: body.name, cnpj: body.cnpj || null, type: body.type, email: body.email, phone: body.phone, municipio: body.municipio, uf: body.uf, situacao: body.situacao },
     });
+    await registrarAuditoria({ userId: await userId(), action: "CRIAR", module: "fornecedores", entityType: "Supplier", entityId: fornecedor.id, newValues: { name: fornecedor.name } });
     return NextResponse.json(fornecedor, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado" }, { status: 409 });
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+// Editar fornecedor
+export async function PUT(req: NextRequest) {
+  try {
+    const b = await req.json();
+    if (!b.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    if (b.name !== undefined && !String(b.name).trim()) return NextResponse.json({ error: "Nome não pode ficar vazio" }, { status: 400 });
+    const campos = ["name", "cnpj", "type", "email", "phone", "municipio", "uf", "situacao"];
+    const data: any = {};
+    for (const k of campos) if (b[k] !== undefined) data[k] = b[k] || null;
+    const forn = await prisma.supplier.update({ where: { id: b.id }, data });
+    await registrarAuditoria({ userId: await userId(), action: "EDITAR", module: "fornecedores", entityType: "Supplier", entityId: b.id, newValues: data });
+    return NextResponse.json(forn);
+  } catch (e: any) {
+    if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado em outro fornecedor" }, { status: 409 });
+    if (e.code === "P2025") return NextResponse.json({ error: "Fornecedor não encontrado" }, { status: 404 });
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+// Excluir (soft delete)
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    await prisma.supplier.update({ where: { id }, data: { deletedAt: new Date(), active: false } });
+    await registrarAuditoria({ userId: await userId(), action: "EXCLUIR", module: "fornecedores", entityType: "Supplier", entityId: id });
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    if (e.code === "P2025") return NextResponse.json({ error: "Fornecedor não encontrado" }, { status: 404 });
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

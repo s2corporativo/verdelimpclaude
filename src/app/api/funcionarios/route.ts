@@ -1,6 +1,9 @@
 // src/app/api/funcionarios/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { registrarAuditoria } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +22,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Nome, CPF, data de admissão e salário obrigatórios" }, { status: 400 });
     }
     const emp = await prisma.employee.create({
-      data: { name: body.name, role: body.role || "", cpf: body.cpf, admissionDate: new Date(body.admissionDate), salary: Number(body.salary), bank: body.bank, bankAgency: body.bankAgency, bankAccount: body.bankAccount },
+      data: { name: body.name, role: body.role || "", cpf: body.cpf, admissionDate: new Date(body.admissionDate), salary: Number(body.salary), dependentes: Number(body.dependentes || 0), bank: body.bank, bankAgency: body.bankAgency, bankAccount: body.bankAccount },
     });
+    const session = await getServerSession(authOptions);
+    await registrarAuditoria({ userId: (session?.user as any)?.id || null, action: "CRIAR", module: "rh", entityType: "Employee", entityId: emp.id, newValues: { name: emp.name, role: emp.role, salary: Number(emp.salary) } });
     return NextResponse.json(emp, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "CPF já cadastrado" }, { status: 409 });

@@ -19,15 +19,26 @@ export default function ClientesPage() {
     const d = await r.json();
     if(d.localidade){setForm(p=>({...p,municipio:d.localidade,uf:d.uf}));setMsg("✓ CEP preenchido via ViaCEP");}
   };
+  const [editId, setEditId] = useState<string|null>(null);
+  const limpar = () => { setForm({nome:"",cnpj:"",tipo:"Público",contato:"",email:"",municipio:"",uf:"",cep:""}); setEditId(null); };
   const salvar = async() => {
     if(!form.nome.trim()){ setMsg("⛔ Informe a razão social."); return; }
     setLoading(true); setMsg("");
+    const payload:any = {name:form.nome,cnpjCpf:form.cnpj,category:form.tipo,phone:form.contato,email:form.email,municipio:form.municipio,uf:form.uf,cep:form.cep};
+    if(editId) payload.id = editId;
     try{
-      const r = await fetch("/api/clientes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:form.nome,cnpjCpf:form.cnpj,category:form.tipo,phone:form.contato,email:form.email,municipio:form.municipio,uf:form.uf,cep:form.cep})});
+      const r = await fetch("/api/clientes",{method:editId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       if(!r.ok){ const j=await r.json().catch(()=>({})); setMsg("⛔ "+(j.error||"Não foi possível salvar. Confira os dados.")); return; }
-      setForm({nome:"",cnpj:"",tipo:"Público",contato:"",email:"",municipio:"",uf:"",cep:""}); setMsg("✓ Salvo!"); load();
+      limpar(); setMsg(editId?"✓ Alterado!":"✓ Salvo!"); load();
     }catch(e:any){ setMsg("⛔ "+(e.message||"Erro de rede.")); }
     finally{ setLoading(false); }
+  };
+  const editar = (c:any) => { setEditId(c.id); setForm({nome:c.name||"",cnpj:c.cnpjCpf||"",tipo:c.category||"Público",contato:c.phone||"",email:c.email||"",municipio:c.municipio||"",uf:c.uf||"",cep:c.cep||""}); setMsg(""); window.scrollTo({top:0,behavior:"smooth"}); };
+  const excluir = async(c:any) => {
+    if(!confirm(`Excluir o cliente "${c.name}"? O histórico de contratos é preservado.`)) return;
+    const r = await fetch(`/api/clientes?id=${c.id}`,{method:"DELETE"});
+    if(!r.ok){ const j=await r.json().catch(()=>({})); setMsg("⛔ "+(j.error||"Não foi possível excluir.")); return; }
+    setMsg("✓ Excluído."); load();
   };
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
   const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
@@ -48,18 +59,25 @@ export default function ClientesPage() {
         <div><label style={LS}>Município</label><input style={IS} value={form.municipio} onChange={e=>setForm(p=>({...p,municipio:e.target.value}))}/></div>
         <div><label style={LS}>UF</label><input style={IS} value={form.uf} onChange={e=>setForm(p=>({...p,uf:e.target.value}))}/></div>
       </div>
-      {msg&&<p style={{color:"#059669",fontSize:12,marginBottom:8}}>{msg}</p>}
-      <button onClick={salvar} disabled={loading||!form.nome} style={{background:"#4a9410",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:600}}>{loading?"Salvando...":"+ Cadastrar"}</button>
+      {msg&&<p style={{color:msg.startsWith("⛔")?"#991b1b":"#059669",fontSize:12,marginBottom:8}}>{msg}</p>}
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={salvar} disabled={loading||!form.nome} style={{background:"#4a9410",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:600}}>{loading?"Salvando...":editId?"✓ Salvar alterações":"+ Cadastrar"}</button>
+        {editId&&<button onClick={limpar} style={{background:"#fff",color:"#374151",border:"1px solid #d1d5db",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:600}}>Cancelar</button>}
+      </div>
     </div>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
       <table style={{borderCollapse:"collapse",width:"100%"}}>
-        <thead><tr style={{background:"#e8f5ee"}}>{["Nome","CNPJ","Tipo","Município","Status"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
-        <tbody>{data.map((c:any)=><tr key={c.id} style={{borderBottom:"1px solid #f3f4f6"}}>
+        <thead><tr style={{background:"#e8f5ee"}}>{["Nome","CNPJ","Tipo","Município","Status","Ações"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+        <tbody>{data.map((c:any)=><tr key={c.id} style={{borderBottom:"1px solid #f3f4f6",background:editId===c.id?"#f0fdf4":undefined}}>
           <td style={{padding:"8px 12px",fontWeight:600,fontSize:12}}>{c.name}</td>
           <td style={{padding:"8px 12px",fontFamily:"monospace",fontSize:11}}>{c.cnpjCpf||"—"}</td>
           <td style={{padding:"8px 12px"}}><span style={{background:c.category==="Público"?"#e0e7ff":"#fce7f3",color:c.category==="Público"?"#3730a3":"#9d174d",padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{c.category||"—"}</span></td>
           <td style={{padding:"8px 12px",fontSize:11,color:"#6b7280"}}>{c.municipio?`${c.municipio}/${c.uf}`:"—"}</td>
           <td style={{padding:"8px 12px"}}><span style={{background:"#dcfce7",color:"#15803d",padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{c.situacao||"ATIVA"}</span></td>
+          <td style={{padding:"8px 12px",whiteSpace:"nowrap"}}>
+            <button onClick={()=>editar(c)} disabled={demo} title={demo?"Indisponível em modo demo":"Editar"} style={{background:"none",border:"none",cursor:demo?"default":"pointer",fontSize:14,opacity:demo?.4:1}}>✏️</button>
+            <button onClick={()=>excluir(c)} disabled={demo} title={demo?"Indisponível em modo demo":"Excluir"} style={{background:"none",border:"none",cursor:demo?"default":"pointer",fontSize:14,marginLeft:6,opacity:demo?.4:1}}>🗑️</button>
+          </td>
         </tr>)}</tbody>
       </table>
     </div>
