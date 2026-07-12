@@ -40,6 +40,7 @@ const MENU = [
   { href: "/dashboard/financeiro", label: "Financeiro + Aging", icon: "💰" },
   { href: "/dashboard/rentabilidade", label: "Rentabilidade", icon: "💹" },
   { href: "/dashboard/fiscal", label: "Fiscal & Contábil", icon: "💼", grupo: "fiscal" },
+  { href: "/dashboard/tributario", label: "Inteligência Tributária", icon: "🧾" },
 
   { s: "RH" },
   { href: "/dashboard/rh", label: "RH & Pessoas", icon: "👷", grupo: "rh" },
