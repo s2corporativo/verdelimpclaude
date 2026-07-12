@@ -69,48 +69,73 @@ function calcAdicionais(salarioBase: number, insalubridadeGrau: number, periculo
   return Math.max(insal, peric);
 }
 
+const HORAS_MES = 220; // jornada mensal para o valor-hora
+
+interface HorasExtras { he50?: number; he100?: number }
+
+// Calcula a linha de folha de um funcionário. `ex` traz horas extras do mês
+// (50% e 100%), que são variáveis por competência — por isso vêm por requisição,
+// não como campo fixo do cadastro.
+function linhaFolha(f: any, ex?: HorasExtras) {
+  const r2 = (n: number) => Number(n.toFixed(2));
+  const salarioBase = Number(f.salary);
+  const adicionais = calcAdicionais(salarioBase, f.insalubridadeGrau || 0, f.periculosidade || false);
+  const valorHora = salarioBase / HORAS_MES;
+  const horasExtras = valorHora * 1.5 * Number(ex?.he50 || 0) + valorHora * 2.0 * Number(ex?.he100 || 0);
+  const bruto = salarioBase + adicionais + horasExtras; // tudo integra a base de INSS/IRRF/FGTS
+  const inss = calcINSS(bruto);
+  const irrf = calcIRRF(bruto, inss, Number(f.dependentes || 0));
+  const liquido = bruto - inss - irrf;
+  const fgts = bruto * FGTS_RATE;
+  const inssPatronal = bruto * INSS_PATRONAL;
+  const custoTotal = bruto + fgts + inssPatronal;
+  return { id: f.id, nome: f.name, cargo: f.role, salarioBase: r2(salarioBase), adicionais: r2(adicionais), horasExtras: r2(horasExtras), salarioBruto: r2(bruto), inss: r2(inss), irrf: r2(irrf), salarioLiquido: r2(liquido), fgts: r2(fgts), inssPatronal: r2(inssPatronal), custoTotal: r2(custoTotal) };
+}
+
+function totaisDe(folha: any[]) {
+  return folha.reduce((a, f) => ({
+    bruto: a.bruto + f.salarioBruto, inss: a.inss + f.inss, irrf: a.irrf + f.irrf,
+    liquido: a.liquido + f.salarioLiquido, fgts: a.fgts + f.fgts,
+    inssPatronal: a.inssPatronal + f.inssPatronal, custoTotal: a.custoTotal + f.custoTotal,
+  }), { bruto: 0, inss: 0, irrf: 0, liquido: 0, fgts: 0, inssPatronal: 0, custoTotal: 0 });
+}
+
+const AVISO = "INSS/IRRF tabela progressiva 2026, adicionais e horas extras — validar com contador";
+
 export async function GET() {
   try {
     const funcionarios = await prisma.employee.findMany({ where: { active: true }, orderBy: { name: "asc" } });
-    if (!funcionarios.length) return NextResponse.json({ folha: DEMO_FOLHA, totais: DEMO_TOTAIS, _demo: true });
-
-    const folha = funcionarios.map(f => {
-      const salarioBase = Number(f.salary);
-      const adicionais = calcAdicionais(salarioBase, (f as any).insalubridadeGrau || 0, (f as any).periculosidade || false);
-      const bruto = salarioBase + adicionais; // adicionais integram a base de INSS/IRRF/FGTS
-      const inss = calcINSS(bruto);
-      const irrf = calcIRRF(bruto, inss, Number((f as any).dependentes || 0));
-      const liquido = bruto - inss - irrf;
-      const fgts = bruto * FGTS_RATE;
-      const inssPatronal = bruto * INSS_PATRONAL;
-      const custoTotal = bruto + fgts + inssPatronal;
-      return { id: f.id, nome: f.name, cargo: f.role, salarioBase: Number(salarioBase.toFixed(2)), adicionais: Number(adicionais.toFixed(2)), salarioBruto: Number(bruto.toFixed(2)), inss: Number(inss.toFixed(2)), irrf: Number(irrf.toFixed(2)), salarioLiquido: Number(liquido.toFixed(2)), fgts: Number(fgts.toFixed(2)), inssPatronal: Number(inssPatronal.toFixed(2)), custoTotal: Number(custoTotal.toFixed(2)) };
-    });
-
-    const totais = folha.reduce((acc, f) => ({
-      bruto: acc.bruto + f.salarioBruto,
-      inss: acc.inss + f.inss,
-      irrf: acc.irrf + f.irrf,
-      liquido: acc.liquido + f.salarioLiquido,
-      fgts: acc.fgts + f.fgts,
-      inssPatronal: acc.inssPatronal + f.inssPatronal,
-      custoTotal: acc.custoTotal + f.custoTotal,
-    }), { bruto:0, inss:0, irrf:0, liquido:0, fgts:0, inssPatronal:0, custoTotal:0 });
-
-    return NextResponse.json({ folha, totais, aviso:"INSS tabela progressiva 2026 + IRRF tabela progressiva — validar com contador" });
+    if (!funcionarios.length) { const folha = DEMO_EMPLOYEES.map(f => linhaFolha(f)); return NextResponse.json({ folha, totais: totaisDe(folha), _demo: true }); }
+    const folha = funcionarios.map(f => linhaFolha(f));
+    return NextResponse.json({ folha, totais: totaisDe(folha), aviso: AVISO });
   } catch {
-    return NextResponse.json({ folha: DEMO_FOLHA, totais: DEMO_TOTAIS, _demo: true });
+    const folha = DEMO_EMPLOYEES.map(f => linhaFolha(f));
+    return NextResponse.json({ folha, totais: totaisDe(folha), _demo: true });
   }
 }
 
-const DEMO_FOLHA = [
-  { id:"e1", nome:"Abrão Felipe",     cargo:"Op. Roçadeira",    salarioBruto:2500, inss:225.00, irrf:0,     salarioLiquido:2275.00, fgts:200.00, inssPatronal:175.00, custoTotal:2875.00 },
-  { id:"e2", nome:"Ana Luiza Ribeiro", cargo:"Supervisora",      salarioBruto:3500, inss:350.00, irrf:19.96, salarioLiquido:3130.04, fgts:280.00, inssPatronal:245.00, custoTotal:4025.00 },
-  { id:"e3", nome:"Gilberto Ferreira", cargo:"Op. Roçadeira",    salarioBruto:2400, inss:216.00, irrf:0,     salarioLiquido:2184.00, fgts:192.00, inssPatronal:168.00, custoTotal:2760.00 },
-  { id:"e4", nome:"José Antonio",     cargo:"Op. Roçadeira",    salarioBruto:2500, inss:225.00, irrf:0,     salarioLiquido:2275.00, fgts:200.00, inssPatronal:175.00, custoTotal:2875.00 },
-  { id:"e5", nome:"Leomar Souza",     cargo:"Op. Retroescav.",  salarioBruto:3200, inss:288.00, irrf:0,     salarioLiquido:2912.00, fgts:256.00, inssPatronal:224.00, custoTotal:3680.00 },
-  { id:"e6", nome:"Uanderson Nunes",  cargo:"Aux. Jardinagem",  salarioBruto:2200, inss:165.00, irrf:0,     salarioLiquido:2035.00, fgts:176.00, inssPatronal:154.00, custoTotal:2530.00 },
-  { id:"e7", nome:"Leonardo Souza",   cargo:"Motorista",        salarioBruto:2800, inss:252.00, irrf:0,     salarioLiquido:2548.00, fgts:224.00, inssPatronal:196.00, custoTotal:3220.00 },
-  { id:"e8", nome:"Giovanna Cunha",   cargo:"Assistente Adm.",  salarioBruto:2600, inss:234.00, irrf:0,     salarioLiquido:2366.00, fgts:208.00, inssPatronal:182.00, custoTotal:2990.00 },
+// Recalcula a folha aplicando horas extras por funcionário no mês.
+// body: { extras: { [employeeId]: { he50, he100 } } }
+export async function POST(req: Request) {
+  try {
+    const { extras } = await req.json().catch(() => ({ extras: {} }));
+    const funcionarios = await prisma.employee.findMany({ where: { active: true }, orderBy: { name: "asc" } });
+    const base = funcionarios.length ? funcionarios : DEMO_EMPLOYEES;
+    const folha = base.map((f: any) => linhaFolha(f, extras?.[f.id]));
+    return NextResponse.json({ folha, totais: totaisDe(folha), _demo: !funcionarios.length, aviso: AVISO });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+// Demo passa pelos MESMOS cálculos da folha real (antes tinha INSS flat obsoleto).
+const DEMO_EMPLOYEES = [
+  { id:"e1", name:"Abrão Felipe",      role:"Op. Roçadeira",   salary:2500 },
+  { id:"e2", name:"Ana Luiza Ribeiro", role:"Supervisora",     salary:3500 },
+  { id:"e3", name:"Gilberto Ferreira", role:"Op. Roçadeira",   salary:2400 },
+  { id:"e4", name:"José Antonio",      role:"Op. Roçadeira",   salary:2500 },
+  { id:"e5", name:"Leomar Souza",      role:"Op. Retroescav.", salary:3200 },
+  { id:"e6", name:"Uanderson Nunes",   role:"Aux. Jardinagem", salary:2200 },
+  { id:"e7", name:"Leonardo Souza",    role:"Motorista",       salary:2800 },
+  { id:"e8", name:"Giovanna Cunha",    role:"Assistente Adm.", salary:2600 },
 ];
-const DEMO_TOTAIS = { bruto:21700, inss:1955.00, irrf:19.96, liquido:19725.04, fgts:1736.00, inssPatronal:1519.00, custoTotal:24955.00 };
