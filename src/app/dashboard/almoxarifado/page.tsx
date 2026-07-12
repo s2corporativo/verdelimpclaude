@@ -9,7 +9,7 @@ export default function AlmoxarifadoPage() {
   useEffect(()=>{
     fetch("/api/almoxarifado").then(r=>r.json()).then(d=>{setData(d.data||[]);setStats({total:d.total||0,criticos:d.criticos||0,valorEstoque:d.valorEstoque||0});setDemo(!!d._demo);});
   },[]);
-  const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
+  const fmt = (v:number) => (Number.isFinite(v)?v:0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
   const [showMov, setShowMov] = useState(false);
   const [movItem, setMovItem] = useState<any>(null);
   const [movForm, setMovForm] = useState({tipo:"entrada",quantidade:"",motivo:""});
