@@ -4,6 +4,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
+# O postinstall roda `prisma generate`, que precisa do schema — por isso o
+# prisma/ é copiado ANTES do npm ci (senão o build falha com "schema not found").
+COPY prisma ./prisma
 RUN npm ci
 
 FROM node:20-alpine AS builder
