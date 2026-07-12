@@ -28,6 +28,40 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Movimentação de estoque (entrada/saída) — cria o movimento e atualiza o
+    // saldo do item numa transação. Antes este ramo não existia: a movimentação
+    // caía na validação de "criar item", retornava 400 e nada persistia.
+    if (body.action === "movimentar") {
+      const qtd = Number(body.quantidade);
+      if (!body.itemId || !qtd || qtd <= 0) {
+        return NextResponse.json({ error: "Item e quantidade (> 0) obrigatórios" }, { status: 400 });
+      }
+      const item = await prisma.inventoryItem.findUnique({ where: { id: body.itemId } });
+      if (!item) return NextResponse.json({ error: "Item não encontrado" }, { status: 404 });
+
+      const entrada = body.tipo !== "saida";
+      const saldoAtual = Number(item.currentQuantity);
+      const novoSaldo = entrada ? saldoAtual + qtd : saldoAtual - qtd;
+      if (novoSaldo < 0) {
+        return NextResponse.json({ error: `Estoque insuficiente: saldo ${saldoAtual}, saída ${qtd}` }, { status: 400 });
+      }
+
+      const [mov] = await prisma.$transaction([
+        prisma.inventoryMovement.create({
+          data: {
+            itemId: body.itemId,
+            movementType: entrada ? "entrada_manual" : "saida_manual",
+            quantity: qtd,
+            unitCost: Number(item.averageCost),
+            reason: body.motivo || (entrada ? "Entrada manual" : "Saída manual"),
+          },
+        }),
+        prisma.inventoryItem.update({ where: { id: body.itemId }, data: { currentQuantity: novoSaldo } }),
+      ]);
+      return NextResponse.json({ success: true, movimento: mov, novoSaldo }, { status: 201 });
+    }
+
     if (!body.description || !body.unit || !body.categoryId) {
       return NextResponse.json({ error: "Descrição, unidade e categoria obrigatórios" }, { status: 400 });
     }

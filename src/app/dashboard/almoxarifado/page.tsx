@@ -13,11 +13,14 @@ export default function AlmoxarifadoPage() {
   const [showMov, setShowMov] = useState(false);
   const [movItem, setMovItem] = useState<any>(null);
   const [movForm, setMovForm] = useState({tipo:"entrada",quantidade:"",motivo:""});
+  const [movErro, setMovErro] = useState("");
   const registrarMov = async () => {
     if(!movItem||!movForm.quantidade) return;
-    await fetch("/api/almoxarifado",{ method:"POST", headers:{"Content-Type":"application/json"},
+    setMovErro("");
+    const r = await fetch("/api/almoxarifado",{ method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ action:"movimentar", itemId:movItem.id, ...movForm, quantidade:Number(movForm.quantidade) })
     });
+    if(!r.ok){ const j=await r.json().catch(()=>({})); setMovErro(j.error||"Não foi possível registrar a movimentação."); return; }
     setShowMov(false); setMovForm({tipo:"entrada",quantidade:"",motivo:""});
     fetch("/api/almoxarifado").then(r=>r.json()).then(d=>{setData(d.data||[]);setStats({total:d.total||0,criticos:d.criticos||0,valorEstoque:d.valorEstoque||0});setDemo(!!d._demo);});
   };
@@ -56,7 +59,28 @@ export default function AlmoxarifadoPage() {
         </tr>;
       })}</tbody>
     </table>
+
+    {showMov && movItem && (
+      <div onClick={()=>{setShowMov(false);setMovErro("");}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:12,padding:22,width:"100%",maxWidth:380}}>
+          <h3 style={{margin:"0 0 4px",color:"#334532",fontSize:16}}>Movimentar estoque</h3>
+          <p style={{margin:"0 0 14px",fontSize:12,color:"#6b7280"}}>{movItem.internalCode} · {movItem.description} · saldo atual {Number(movItem.currentQuantity).toFixed(0)}</p>
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            {[["entrada","Entrada","#4a9410"],["saida","Saída","#dc2626"]].map(([v,l,c])=>(
+              <button key={v} onClick={()=>setMovForm(p=>({...p,tipo:v}))} style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid #d1d5db",background:movForm.tipo===v?c as string:"#fff",color:movForm.tipo===v?"#fff":"#374151",fontWeight:700,fontSize:13,cursor:"pointer"}}>{l}</button>
+            ))}
+          </div>
+          <label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3}}>Quantidade</label>
+          <input type="number" min="0" step="0.01" value={movForm.quantidade} onChange={e=>setMovForm(p=>({...p,quantidade:e.target.value}))} style={{width:"100%",padding:"8px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13,marginBottom:10}}/>
+          <label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3}}>Motivo</label>
+          <input value={movForm.motivo} onChange={e=>setMovForm(p=>({...p,motivo:e.target.value}))} placeholder="Ex.: compra, consumo em obra…" style={{width:"100%",padding:"8px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13,marginBottom:12}}/>
+          {movErro && <div style={{background:"#fee2e2",color:"#991b1b",padding:"8px 12px",borderRadius:8,fontSize:12,marginBottom:12}}>⛔ {movErro}</div>}
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+            <button onClick={()=>{setShowMov(false);setMovErro("");}} style={{padding:"8px 16px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",cursor:"pointer",fontSize:13}}>Cancelar</button>
+            <button onClick={registrarMov} disabled={!movForm.quantidade} style={{padding:"8px 18px",borderRadius:8,border:"none",background:movForm.quantidade?"#4a9410":"#e5e7eb",color:movForm.quantidade?"#fff":"#9ca3af",fontWeight:700,cursor:movForm.quantidade?"pointer":"not-allowed",fontSize:13}}>Registrar</button>
+          </div>
+        </div>
+      </div>
+    )}
   </div>);
 }
-// Nota: esta versão mostra apenas leitura.
-// Para registrar entradas/saídas, use o módulo de Movimentações abaixo.

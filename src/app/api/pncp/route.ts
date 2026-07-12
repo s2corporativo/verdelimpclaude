@@ -10,13 +10,20 @@ export async function GET(req: NextRequest) {
   const pagina = searchParams.get("pagina") || "1";
 
   try {
-    const url = `https://pncp.gov.br/api/pncp/v1/contratacoes/publicacoes?pagina=${pagina}&tamanhoPagina=20`;
-    const { data, cached } = await fetchWithCache(url, `pncp:pub:${pagina}`, "pncp", 3600000*4) as any;
+    // Termos de busca: usa o que o usuário digitou; se vazio, cai nas palavras
+    // padrão do ramo. Antes o "q" era ignorado (filtro fixo).
+    const termos = q && q.trim() ? q.toLowerCase().split(/\s+/).filter(Boolean) : PALAVRAS_CHAVE;
+    // A API de publicações exige janela de datas — últimos 60 dias (AAAAMMDD).
+    const hoje = new Date();
+    const ini = new Date(hoje); ini.setDate(ini.getDate() - 60);
+    const fmtD = (d: Date) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    const url = `https://pncp.gov.br/api/pncp/v1/contratacoes/publicacoes?dataInicial=${fmtD(ini)}&dataFinal=${fmtD(hoje)}&pagina=${pagina}&tamanhoPagina=50`;
+    const { data, cached } = await fetchWithCache(url, `pncp:pub:${fmtD(ini)}:${pagina}`, "pncp", 3600000*4) as any;
     const itens = (data?.data || []).filter((i: any) => {
       const obj = (i?.objetoCompra || i?.descricaoObjeto || "").toLowerCase();
-      return PALAVRAS_CHAVE.some(p => obj.includes(p));
+      return termos.some(p => obj.includes(p));
     });
-    return NextResponse.json({ itens, total: itens.length, totalGeral: data?.totalRegistros||0, cached, pagina });
+    return NextResponse.json({ itens, total: itens.length, totalGeral: data?.totalRegistros||0, cached, pagina, termos });
   } catch {
     return NextResponse.json({ itens: DEMO_PNCP, total: DEMO_PNCP.length, totalGeral: 0, cached: false, _demo: true });
   }

@@ -21,13 +21,17 @@ export async function GET() {
         trainings: { orderBy: { expiresAt: "desc" } },
         docs: { orderBy: { expiresAt: "desc" } },
         epiDeliveries: { orderBy: { deliveryDate: "desc" }, take: 1 },
+        asoExams: { orderBy: { examDate: "desc" } },
       },
     });
 
     const data = funcionarios.map((f) => {
+      // ASO real vem da tabela AsoExam (módulo ASO). Fallback para treinamento/doc
+      // rotulado "ASO" apenas por compatibilidade com cadastros antigos.
+      const asoExame = f.asoExams[0];
       const asoTraining = f.trainings.find((t) => t.trainingType.toUpperCase().includes("ASO"));
       const asoDoc = f.docs.find((d) => d.docType.toUpperCase().includes("ASO"));
-      const aso = asoTraining?.expiresAt || asoDoc?.expiresAt || null;
+      const aso = asoExame?.expiresAt || asoTraining?.expiresAt || asoDoc?.expiresAt || null;
       const nrs = f.trainings.filter((t) => t.trainingType.toUpperCase().startsWith("NR"));
       const piorNr = nrs.length === 0 ? "ausente"
         : nrs.some((t) => statusValidade(t.expiresAt) === "vencido") ? "vencido"

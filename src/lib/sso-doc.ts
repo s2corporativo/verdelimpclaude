@@ -37,6 +37,7 @@ export interface FuncionarioSso {
   treinamentos: TreinamentoSso[];
   epis: EntregaEpiSso[];
   documentos: DocumentoFuncSso[];
+  aso?: TreinamentoSso[]; // ASOs reais (tabela AsoExam); preferido quando presente
 }
 
 export interface SsoDocData {
@@ -77,8 +78,11 @@ export function gerarHtmlSso(d: SsoDocData): string {
   const rodape = `${esc(d.empresa.razaoSocial)} | CNPJ ${esc(d.empresa.cnpj)} | Documentação SSO – ${esc(d.competencia)}`;
 
   const secaoFuncionario = (f: FuncionarioSso) => {
-    const asos = f.treinamentos.filter((t) => t.tipo.toUpperCase().includes("ASO")).concat(
-      f.documentos.filter((x) => x.tipo.toUpperCase().includes("ASO")).map((x) => ({ tipo: x.tipo, validade: x.validade, status: x.status } as TreinamentoSso)));
+    // ASO real (tabela AsoExam) tem prioridade; só cai no texto de treinamentos/docs
+    // como compatibilidade com cadastros antigos.
+    const asos = (f.aso && f.aso.length) ? f.aso
+      : f.treinamentos.filter((t) => t.tipo.toUpperCase().includes("ASO")).concat(
+        f.documentos.filter((x) => x.tipo.toUpperCase().includes("ASO")).map((x) => ({ tipo: x.tipo, validade: x.validade, status: x.status } as TreinamentoSso)));
     const nrs = f.treinamentos.filter((t) => t.tipo.toUpperCase().startsWith("NR"));
     const nrMaquinas = nrs.filter((t) => ["NR-12", "NR-06"].includes(t.tipo.toUpperCase()));
     const nr35 = nrs.filter((t) => t.tipo.toUpperCase() === "NR-35");

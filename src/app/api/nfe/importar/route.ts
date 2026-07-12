@@ -88,8 +88,10 @@ export async function POST(req: NextRequest) {
       } catch { /* continuar sem fornecedor */ }
     }
 
-    // Salvar NF-e no banco
+    // Salvar NF-e no banco. Antes o erro era engolido e a resposta dizia
+    // success:true com nfe:null — agora a falha de persistência é reportada.
     let nfeSalva: any = null;
+    let erroPersistencia: string | null = null;
     try {
       nfeSalva = await prisma.fiscalNfe.create({
         data: {
@@ -108,7 +110,7 @@ export async function POST(req: NextRequest) {
           notes: nfe.infAdic?.substring(0, 500),
         },
       });
-    } catch { /* continuar sem salvar se banco indisponível */ }
+    } catch (e: any) { erroPersistencia = e?.message || "Falha ao gravar a NF-e."; }
 
     // Sugestões de vinculação com almoxarifado
     const sugestoesAlmoxarifado: any[] = [];
@@ -128,7 +130,9 @@ export async function POST(req: NextRequest) {
     } catch { /* continuar sem sugestões */ }
 
     return NextResponse.json({
-      success: true,
+      success: !!nfeSalva,
+      persistida: !!nfeSalva,
+      erroPersistencia,
       nfe: nfeSalva,
       parsed: nfe,
       fornecedorId,

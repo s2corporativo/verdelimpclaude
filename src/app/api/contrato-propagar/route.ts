@@ -114,7 +114,8 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // ISS — vencimento dia 10 do mês seguinte
+        // ISS — no Simples está DENTRO do DAS. Registrado como referência
+        // (valor 0) para não duplicar o recolhimento com o DAS acima.
         const dueDateIss = new Date(dataMes);
         dueDateIss.setMonth(dueDateIss.getMonth() + 1);
         dueDateIss.setDate(10);
@@ -122,19 +123,19 @@ export async function POST(req: NextRequest) {
         await prisma.fiscalTaxExpense.create({
           data: {
             taxType: "ISS",
-            description: `ISS ${competence} — projetado por contrato ${contratoCriado.number}`,
+            description: `ISS ${competence} (informativo — incluso no DAS) — ${contratoCriado.number}`,
             competence,
             dueDate: dueDateIss,
-            principalAmount: i.tributario.issMensal,
-            totalAmount: i.tributario.issMensal,
-            status: "projetado",
+            principalAmount: 0,
+            totalAmount: 0,
+            status: "informativo",
             generatedAuto: true,
             accountantReviewed: false,
-            notes: `Projeção automática vinculada ao contrato ${contratoCriado.number}`,
+            notes: `Referência: ISS ~R$${Number(i.tributario.issMensal).toFixed(2)} já incluso no DAS do Simples.`,
           },
         });
 
-        propagacao.tributosProjetados += 2;
+        propagacao.tributosProjetados += 1; // só o DAS é guia a recolher
       }
     } catch (e: any) {
       propagacao.avisos.push(`Tributos: ${e.message}`);
@@ -222,12 +223,16 @@ export async function POST(req: NextRequest) {
       });
     } catch { /* ignorar erro de audit */ }
 
+    const semAvisos = propagacao.avisos.length === 0;
     return NextResponse.json({
-      success: true,
+      success: semAvisos,
+      parcial: !semAvisos,
       contratoNumero: contratoCriado.number,
       contratoId: contratoCriado.id,
       propagacao,
-      mensagem: `✅ Contrato ${contratoCriado.number} criado e propagado em todos os módulos!`,
+      mensagem: semAvisos
+        ? `✅ Contrato ${contratoCriado.number} criado e propagado em todos os módulos!`
+        : `⚠️ Contrato ${contratoCriado.number} criado, mas houve avisos em alguns módulos — confira os detalhes.`,
     });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

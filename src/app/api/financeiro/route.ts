@@ -7,11 +7,18 @@ export async function GET(req: NextRequest) {
   try {
     const where: any = { deletedAt: null };
     if (tipo) where.status = tipo;
-    const data = await prisma.expense.findMany({ where, orderBy: { dueDate: "desc" }, take: 100, include: { category: true, supplier: true } });
-    const receitas = data.filter(e => Number(e.amount) > 0);
-    const totalReceitas = 57000; // vindas de NFS-e aprovadas
-    const totalDespesas = data.reduce((s, e) => s + Number(e.amount), 0);
-    if (data.length === 0) return NextResponse.json({ data: DEMO_FIN, totalReceitas: 57000, totalDespesas: 23700, saldo: 33300, _demo: true });
+    // Receita real: NFS-e emitidas + lançamentos de categoria "receita".
+    // Despesa: lançamentos que NÃO são de categoria receita. Antes a receita
+    // era um valor fixo (R$ 57.000) e a despesa somava só as 100 mais recentes.
+    const [data, todas, nfseAgg] = await Promise.all([
+      prisma.expense.findMany({ where, orderBy: { dueDate: "desc" }, take: 100, include: { category: true, supplier: true } }),
+      prisma.expense.findMany({ where: { deletedAt: null }, select: { amount: true, category: { select: { type: true } } } }),
+      prisma.fiscalNfse.aggregate({ _sum: { serviceValue: true } }).catch(() => ({ _sum: { serviceValue: 0 } } as any)),
+    ]);
+    const receitaLancada = todas.filter(e => e.category?.type === "receita").reduce((s, e) => s + Number(e.amount), 0);
+    const totalDespesas = todas.filter(e => e.category?.type !== "receita").reduce((s, e) => s + Number(e.amount), 0);
+    const totalReceitas = Number(nfseAgg?._sum?.serviceValue || 0) + receitaLancada;
+    if (data.length === 0 && totalReceitas === 0) return NextResponse.json({ data: DEMO_FIN, totalReceitas: 57000, totalDespesas: 23700, saldo: 33300, _demo: true });
     return NextResponse.json({ data, totalReceitas, totalDespesas, saldo: totalReceitas - totalDespesas });
   } catch { return NextResponse.json({ data: DEMO_FIN, totalReceitas: 57000, totalDespesas: 23700, saldo: 33300, _demo: true }); }
 }

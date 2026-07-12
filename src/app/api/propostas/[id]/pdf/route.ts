@@ -8,6 +8,13 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Exemplo/demo: renderiza a proposta modelo sem consultar o banco (antes
+  // o id "demo" caía em findUnique → null → 404).
+  if (params.id === "demo") {
+    return new NextResponse(gerarHtmlProposta(DEMO_PROPOSTA), {
+      status: 200, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+    });
+  }
   try {
     const proposta = await prisma.proposal.findUnique({
       where: { id: params.id },

@@ -27,7 +27,9 @@ export default function PipelinePage() {
   const fmt = (v:number) => v?.toLocaleString("pt-BR",{minimumFractionDigits:0});
 
   const moverStage = async (id:string, stage:string) => {
-    await fetch("/api/bid-pipeline",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"move_stage", id, stage }) });
+    // Só move na tela se persistir de fato (antes movia mesmo com erro em demo).
+    const r = await fetch("/api/bid-pipeline",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"move_stage", id, stage }) });
+    if(!r.ok){ const j=await r.json().catch(()=>({})); alert(j.error||"Não foi possível mover a licitação (registros de demonstração não são gravados)."); return; }
     setBids(p=>p.map(b=>b.id===id?{...b,stage}:b));
   };
 

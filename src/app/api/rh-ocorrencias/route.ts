@@ -26,7 +26,9 @@ export async function GET() {
       let temPeriodo = acqEnd <= hoje;
       while (temPeriodo) { const prox = new Date(acqEnd); prox.setFullYear(prox.getFullYear() + 1); if (prox <= hoje) acqEnd = prox; else break; }
       const acqStart = new Date(acqEnd); acqStart.setFullYear(acqStart.getFullYear() - 1);
-      const limiteGozo = new Date(acqEnd); limiteGozo.setMonth(limiteGozo.getMonth() + 11);
+      // Período concessivo (CLT art. 134): 12 meses após o período aquisitivo.
+      // A dobra (art. 137) ocorre se as férias não forem concedidas nesse prazo.
+      const limiteGozo = new Date(acqEnd); limiteGozo.setMonth(limiteGozo.getMonth() + 12);
 
       const feriasDoPeriodo = f.vacations.find((v) => Math.abs(new Date(v.acqEnd).getTime() - acqEnd.getTime()) < 45 * 24 * 3600 * 1000);
       let situacaoFerias: string;

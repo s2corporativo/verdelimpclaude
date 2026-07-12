@@ -37,8 +37,10 @@ export default function MedicaoPage() {
           setGedOk(id);
           setTimeout(() => setGedOk(null), 5000);
         }
+      } else {
+        alert(d.error || "Não foi possível atualizar a medição (registros de demonstração não são gravados).");
       }
-    } catch {}
+    } catch (e: any) { alert(e.message || "Erro de rede ao atualizar a medição."); }
     setAprovando(null);
     setShowApproveModal(null);
     setApprovedByInput("");

@@ -31,13 +31,26 @@ function calcINSS(salario: number): number {
   return contribuicao; // salários acima do teto param na última faixa (máx ≈ R$908,86)
 }
 
-// Tabela IRRF 2026 (tabela progressiva)
-function calcIRRF(baseCalculo: number): number {
-  if (baseCalculo <= 2259.20) return 0;
-  if (baseCalculo <= 2826.65) return (baseCalculo * 0.075) - 169.44;
-  if (baseCalculo <= 3751.05) return (baseCalculo * 0.15) - 381.44;
-  if (baseCalculo <= 4664.68) return (baseCalculo * 0.225) - 662.77;
-  return (baseCalculo * 0.275) - 896.00;
+// Tabela IRRF 2026 (progressiva) aplicada sobre a base de cálculo.
+function tabelaIRRF(baseCalculo: number): number {
+  let v = 0;
+  if (baseCalculo <= 2259.20) v = 0;
+  else if (baseCalculo <= 2826.65) v = baseCalculo * 0.075 - 169.44;
+  else if (baseCalculo <= 3751.05) v = baseCalculo * 0.15 - 381.44;
+  else if (baseCalculo <= 4664.68) v = baseCalculo * 0.225 - 662.77;
+  else v = baseCalculo * 0.275 - 896.00;
+  return Math.max(0, v);
+}
+
+const DEDUCAO_DEPENDENTE = 189.59;   // por dependente/mês
+const DESCONTO_SIMPLIFICADO = 564.80; // substitui INSS + dependentes
+
+// IRRF pelo MENOR imposto entre o modelo legal (INSS + dependentes) e o desconto
+// simplificado — antes ignorava dependentes e o simplificado, retendo a mais.
+function calcIRRF(bruto: number, inss: number, dependentes: number): number {
+  const baseLegal = bruto - inss - dependentes * DEDUCAO_DEPENDENTE;
+  const baseSimplificada = bruto - DESCONTO_SIMPLIFICADO;
+  return Math.min(tabelaIRRF(baseLegal), tabelaIRRF(baseSimplificada));
 }
 
 // FGTS: 8% sobre salário bruto (empresa paga, não desconta do funcionário)
@@ -53,8 +66,7 @@ export async function GET() {
     const folha = funcionarios.map(f => {
       const bruto = Number(f.salary);
       const inss = calcINSS(bruto);
-      const baseIRRF = bruto - inss;
-      const irrf = calcIRRF(baseIRRF);
+      const irrf = calcIRRF(bruto, inss, Number((f as any).dependentes || 0));
       const liquido = bruto - inss - irrf;
       const fgts = bruto * FGTS_RATE;
       const inssPatronal = bruto * INSS_PATRONAL;
