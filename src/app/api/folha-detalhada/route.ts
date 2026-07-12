@@ -1,19 +1,34 @@
 
 // Adaptado de: verdelimp-erp-prime-final/server/routers.ts → payrollRouter.generate
-// Calcula INSS 8% + IRRF tabela progressiva + líquido por funcionário
+// Calcula INSS (tabela progressiva por faixas) + IRRF + líquido por funcionário
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // Sempre executar no servidor — nunca pré-renderizar com dados demo no build
 export const dynamic = "force-dynamic";
 
-// Tabela INSS 2026 (simplificada)
+// Tabela INSS 2026 — PROGRESSIVA POR FAIXAS (cumulativa): cada parcela do salário
+// é tributada pela alíquota da sua faixa, não a alíquota da faixa toda sobre o
+// salário inteiro. Ex.: R$2.500 → 1.412×7,5% + (2.500−1.412)×9% = R$203,82
+// (e não 2.500×9% = R$225, que descontaria a mais do funcionário).
+const FAIXAS_INSS = [
+  { ate: 1412.00, aliq: 0.075 },
+  { ate: 2666.68, aliq: 0.09 },
+  { ate: 4000.03, aliq: 0.12 },
+  { ate: 7786.02, aliq: 0.14 }, // teto de contribuição
+];
+
 function calcINSS(salario: number): number {
-  if (salario <= 1412.00)  return salario * 0.075;
-  if (salario <= 2666.68)  return salario * 0.09;
-  if (salario <= 4000.03)  return salario * 0.12;
-  if (salario <= 7786.02)  return salario * 0.14;
-  return 7786.02 * 0.14; // teto
+  let contribuicao = 0;
+  let anterior = 0;
+  for (const f of FAIXAS_INSS) {
+    if (salario > anterior) {
+      const parcela = Math.min(salario, f.ate) - anterior;
+      contribuicao += parcela * f.aliq;
+      anterior = f.ate;
+    } else break;
+  }
+  return contribuicao; // salários acima do teto param na última faixa (máx ≈ R$908,86)
 }
 
 // Tabela IRRF 2026 (tabela progressiva)

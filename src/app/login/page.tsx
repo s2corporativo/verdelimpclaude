@@ -41,17 +41,19 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>E-mail</label>
+            <label htmlFor="login-email" style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>E-mail</label>
             <input
-              type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              id="login-email" name="email" type="email" required autoComplete="username"
+              value={email} onChange={(e) => setEmail(e.target.value)}
               style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
               placeholder="seu@email.com.br"
             />
           </div>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Senha</label>
+            <label htmlFor="login-password" style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Senha</label>
             <input
-              type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+              id="login-password" name="password" type="password" required autoComplete="current-password"
+              value={password} onChange={(e) => setPassword(e.target.value)}
               style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
               placeholder="••••••••"
             />

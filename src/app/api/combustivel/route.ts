@@ -9,7 +9,10 @@ export async function GET() {
     const logs = await prisma.fuelLog.findMany({ orderBy: { date: "desc" }, take: 100, include: { vehicle: { select: { plate: true, model: true } } } });
     if (!logs.length) return NextResponse.json({ data: DEMO_LOGS, veiculos: DEMO_VEIC, totalMes: 1842, totalLitros: 293, _demo: true });
     const veiculos = await prisma.vehicle.findMany({ where: { active: true } });
-    const totalMes = logs.filter(l => new Date(l.date).getMonth() === new Date().getMonth()).reduce((s, l) => s + Number(l.totalCost), 0);
+    const agora = new Date();
+    const totalMes = logs
+      .filter(l => { const d = new Date(l.date); return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear(); })
+      .reduce((s, l) => s + Number(l.totalCost), 0);
     const totalLitros = logs.reduce((s, l) => s + Number(l.liters), 0);
     return NextResponse.json({ data: logs, veiculos, totalMes, totalLitros });
   } catch { return NextResponse.json({ data: DEMO_LOGS, veiculos: DEMO_VEIC, totalMes: 1842, totalLitros: 293, _demo: true }); }

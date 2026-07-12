@@ -8,10 +8,18 @@ export default function CombustivelPage() {
   const load=()=>fetch("/api/combustivel").then(r=>r.json()).then(d=>{setData(d.data||[]);setVeics(d.veiculos||[]);setStats({totalMes:d.totalMes||0,totalLitros:d.totalLitros||0});setDemo(!!d._demo);});
   useEffect(()=>{load();},[]);
   const salvar=async()=>{ await fetch("/api/combustivel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)}); load(); };
-  const fmt=(v:number)=>v.toLocaleString("pt-BR",{minimumFractionDigits:2});
+  const fmt=(v:number)=>(Number.isFinite(v)?v:0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const preco=(v:number)=>(Number.isFinite(v)?v:0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:3});
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
   const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
-  const pmKm=data.length>=2?((Number(data[0]?.odometer||0)-Number(data[data.length-1]?.odometer||0))/data.reduce((s:number,l:any)=>s+Number(l.liters),0)).toFixed(1):"—";
+  // Média km/L correta: por veículo (maior−menor hodômetro ÷ litros do veículo),
+  // depois média da frota. Somar hodômetros de veículos diferentes dá valor irreal.
+  const pmKm=(()=>{
+    const porVeic:Record<string,{odos:number[];litros:number}>={};
+    for(const l of data){const k=l.vehicle?.plate||l.vehicleId||"?";(porVeic[k]??={odos:[],litros:0}).odos.push(Number(l.odometer||0));porVeic[k].litros+=Number(l.liters||0);}
+    const medias=Object.values(porVeic).map(v=>{const dist=Math.max(...v.odos)-Math.min(...v.odos);return v.odos.length>=2&&v.litros>0?dist/v.litros:NaN;}).filter(Number.isFinite);
+    return medias.length?(medias.reduce((s,m)=>s+m,0)/medias.length).toFixed(1):"—";
+  })();
   return(<div>
     <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Controle de Combustível {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
@@ -45,7 +53,7 @@ export default function CombustivelPage() {
         <td style={{padding:"8px 12px",fontWeight:600,fontSize:12}}>{l.vehicle?.plate} <span style={{fontSize:10,color:"#9ca3af"}}>— {l.vehicle?.model}</span></td>
         <td style={{padding:"8px 12px",fontFamily:"monospace"}}>{Number(l.odometer).toLocaleString("pt-BR")} km</td>
         <td style={{padding:"8px 12px",fontWeight:700,color:"#4a9410"}}>{Number(l.liters).toFixed(1)} L</td>
-        <td style={{padding:"8px 12px"}}>R${Number(l.pricePerLiter).toFixed(3)}</td>
+        <td style={{padding:"8px 12px"}}>R$ {preco(Number(l.pricePerLiter))}</td>
         <td style={{padding:"8px 12px",fontWeight:700}}>R${fmt(Number(l.totalCost))}</td>
         <td style={{padding:"8px 12px",fontSize:11}}>{l.fuelType}</td>
         <td style={{padding:"8px 12px",fontSize:11,color:"#6b7280"}}>{l.station||"—"}</td>

@@ -4,12 +4,19 @@ import { useEffect, useState } from "react";
 export default function ContratosPage() {
   const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);const [clientes,setClientes]=useState<any[]>([]);
   const [form,setForm]=useState({clientId:"",object:"",value:"",monthlyValue:"",startDate:"",endDate:"",notes:""});
+  const [erro,setErro]=useState("");const [salvando,setSalvando]=useState(false);
   const load=()=>fetch("/api/contratos").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);});
   useEffect(()=>{load();fetch("/api/clientes").then(r=>r.json()).then(d=>setClientes(d.data||[])).catch(()=>{});},[]);
   const salvar=async()=>{
-    await fetch("/api/contratos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
-    setForm({clientId:"",object:"",value:"",monthlyValue:"",startDate:"",endDate:"",notes:""});load();
+    setErro("");setSalvando(true);
+    try{
+      const r=await fetch("/api/contratos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
+      if(!r.ok){const j=await r.json().catch(()=>({}));setErro(j.error||"Não foi possível salvar o contrato. Confira os campos obrigatórios.");return;}
+      setForm({clientId:"",object:"",value:"",monthlyValue:"",startDate:"",endDate:"",notes:""});load();
+    }catch(e:any){setErro(e.message||"Erro de rede ao salvar.");}
+    finally{setSalvando(false);}
   };
+  const podeS=!!form.object&&!!form.value&&!!form.startDate&&!!form.endDate;
   const fmt=(v:number)=>v.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
   const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
@@ -40,8 +47,9 @@ export default function ContratosPage() {
       </div>
       <div style={{display:"flex",gap:10}}>
         <div style={{flex:1}}><label style={LS}>Observações</label><input style={IS} value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}/></div>
-        <button onClick={salvar} disabled={!form.object} style={{background:"#4a9410",color:"#fff",border:"none",padding:"8px 24px",borderRadius:8,cursor:"pointer",fontWeight:700,alignSelf:"flex-end"}}>+ Salvar</button>
+        <button onClick={salvar} disabled={!podeS||salvando} title={podeS?"":"Preencha objeto, valor total, início e término"} style={{background:podeS?"#4a9410":"#e5e7eb",color:podeS?"#fff":"#9ca3af",border:"none",padding:"8px 24px",borderRadius:8,cursor:podeS&&!salvando?"pointer":"not-allowed",fontWeight:700,alignSelf:"flex-end"}}>{salvando?"Salvando…":"+ Salvar"}</button>
       </div>
+      {erro&&<div style={{marginTop:10,background:"#fee2e2",color:"#991b1b",padding:"8px 12px",borderRadius:8,fontSize:12}}>⛔ {erro}</div>}
     </div>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
       <table style={{borderCollapse:"collapse",width:"100%"}}>
