@@ -13,6 +13,7 @@ const MENU = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/dashboard/alertas", label: "Central de Alertas", icon: "🚨", grupo: "alertas" },
   { href: "/dashboard/ajuda", label: "Ajuda com IA", icon: "🤖" },
+  { href: "/dashboard/manual", label: "Manual do Sistema", icon: "📖" },
 
   { s: "COMERCIAL" },
   { href: "/dashboard/oportunidades", label: "Oportunidades CRM", icon: "🎯" },
@@ -44,6 +45,7 @@ const MENU = [
   { href: "/dashboard/rh", label: "RH & Pessoas", icon: "👷", grupo: "rh" },
 
   { s: "SISTEMA" },
+  { href: "/dashboard/diagnostico", label: "Central de Diagnóstico", icon: "🩺" },
   { href: "/dashboard/admin", label: "Administração", icon: "🛡️", roles: ["ADMIN"] },
   { href: "/dashboard/integracoes", label: "Integrações", icon: "🔌" },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: "⚙️" },
