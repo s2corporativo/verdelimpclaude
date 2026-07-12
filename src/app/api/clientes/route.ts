@@ -1,8 +1,16 @@
 // src/app/api/clientes/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { registrarAuditoria } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
+
+async function userId() {
+  const s = await getServerSession(authOptions);
+  return (s?.user as any)?.id || null;
+}
 
 export async function GET() {
   try {
@@ -55,9 +63,45 @@ export async function POST(req: NextRequest) {
         notes: body.notes,
       },
     });
+    await registrarAuditoria({ userId: await userId(), action: "CRIAR", module: "clientes", entityType: "Client", entityId: cliente.id, newValues: { name: cliente.name } });
     return NextResponse.json(cliente, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado" }, { status: 409 });
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+// Editar cliente
+export async function PUT(req: NextRequest) {
+  try {
+    const b = await req.json();
+    if (!b.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    if (b.name !== undefined && !String(b.name).trim()) return NextResponse.json({ error: "Nome não pode ficar vazio" }, { status: 400 });
+    const campos = ["name", "cnpjCpf", "type", "category", "email", "phone", "contact", "logradouro", "municipio", "uf", "cep", "situacao", "notes"];
+    const data: any = {};
+    for (const k of campos) if (b[k] !== undefined) data[k] = b[k] || null;
+    const cliente = await prisma.client.update({ where: { id: b.id }, data });
+    await registrarAuditoria({ userId: await userId(), action: "EDITAR", module: "clientes", entityType: "Client", entityId: b.id, newValues: data });
+    return NextResponse.json(cliente);
+  } catch (e: any) {
+    if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado em outro cliente" }, { status: 409 });
+    if (e.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+// Excluir (soft delete) — preserva histórico de contratos/propostas vinculados
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    const vinculos = await prisma.contract.count({ where: { clientId: id } });
+    if (vinculos > 0) return NextResponse.json({ error: `Cliente tem ${vinculos} contrato(s) vinculado(s) — não pode ser excluído.` }, { status: 409 });
+    await prisma.client.update({ where: { id }, data: { deletedAt: new Date(), active: false } });
+    await registrarAuditoria({ userId: await userId(), action: "EXCLUIR", module: "clientes", entityType: "Client", entityId: id });
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    if (e.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
