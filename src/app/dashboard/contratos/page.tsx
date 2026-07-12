@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, TabelaHead, KpiGrid, KpiCard } from "@/components/ui";
 export default function ContratosPage() {
   const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);const [clientes,setClientes]=useState<any[]>([]);
   const [form,setForm]=useState({clientId:"",object:"",value:"",monthlyValue:"",startDate:"",endDate:"",notes:""});
@@ -30,17 +30,14 @@ export default function ContratosPage() {
   const vencidos=data.filter((c:any)=>c.alerta==="vencido").length;
   return(<div>
     <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Gestão de Contratos <DemoBadge mostrar={demo} /></h1>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+    <KpiGrid colunas={4}>
       {[["Contratos Ativos",data.filter((c:any)=>c.status==="Ativo").length,"📋","#4a9410"],
         ["Valor Mensal","R$"+fmt(data.filter((c:any)=>c.status==="Ativo").reduce((s:number,c:any)=>s+Number(c.monthlyValue),0)),"💰","#4a9410"],
         ["Renovar em breve",vencendo,"⚠️","#d97706"],
         ["Vencidos",vencidos,"🚨","#dc2626"]].map(([l,v,i,c])=>(
-        <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:`3px solid ${c}`}}>
-          <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase"}}>{l}</span><span>{i}</span></div>
-          <div style={{fontSize:20,fontWeight:700,color:c as string,marginTop:5}}>{v}</div>
-        </div>
+        <KpiCard key={l as string} label={l as string} valor={v as any} cor={c as string} icone={i as string} />
       ))}
-    </div>
+    </KpiGrid>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:14}}>
       <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>{editId?"✏️ Editar contrato":"+ Novo Contrato"}</h3>
       <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr",gap:9,marginBottom:9}}>
@@ -60,7 +57,7 @@ export default function ContratosPage() {
     </div>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
       <table style={{borderCollapse:"collapse",width:"100%"}}>
-        <thead><tr style={{background:"#e8f5ee"}}>{["Número","Objeto","Valor Mensal","Vigência","Término","Status","Alerta","Ações"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+        <TabelaHead colunas={["Número","Objeto","Valor Mensal","Vigência","Término","Status","Alerta","Ações"]} />
         <tbody>{data.map((c:any)=>(
           <tr key={c.id} style={{borderBottom:"1px solid #f3f4f6",background:editId===c.id?"#f0fdf4":undefined}}>
             <td style={{padding:"8px 12px",fontWeight:700,fontFamily:"monospace",color:"#334532",fontSize:12}}>{c.number}</td>

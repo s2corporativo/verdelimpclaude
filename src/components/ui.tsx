@@ -33,3 +33,47 @@ export function TituloPagina({ children, demo }: { children: React.ReactNode; de
     </h1>
   );
 }
+
+/** Caixa branca padrão (borda + cantos arredondados) usada como container de tabelas, formulários, etc. */
+export function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{ background: CORES.fundoCard, border: `1px solid ${CORES.borda}`, borderRadius: 12, overflow: "hidden", ...style }}>
+      {children}
+    </div>
+  );
+}
+
+/** Grade de KPI cards. `colunas` controla quantas colunas (default 4). */
+export function KpiGrid({ colunas = 4, children }: { colunas?: number; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${colunas},1fr)`, gap: 10, marginBottom: 16 }}>
+      {children}
+    </div>
+  );
+}
+
+/** Card de indicador: rótulo em caixa alta + valor destacado, com borda superior colorida e ícone opcional. */
+export function KpiCard({ label, valor, cor = CORES.verde, icone }: { label: React.ReactNode; valor: React.ReactNode; cor?: string; icone?: React.ReactNode }) {
+  return (
+    <div style={{ background: CORES.fundoCard, border: `1px solid ${CORES.borda}`, borderRadius: 10, padding: "12px 14px", borderTop: `3px solid ${cor}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 10, color: CORES.textoSuave, fontWeight: 600, textTransform: "uppercase" }}>{label}</span>
+        {icone != null && <span>{icone}</span>}
+      </div>
+      <div style={{ fontSize: 19, fontWeight: 700, color: cor, marginTop: 4 }}>{valor}</div>
+    </div>
+  );
+}
+
+/** Cabeçalho de tabela padrão (fundo verde-claro da marca). Passe os rótulos das colunas. */
+export function TabelaHead({ colunas, alinhar = "left" }: { colunas: string[]; alinhar?: "left" | "right" }) {
+  return (
+    <thead>
+      <tr style={{ background: CORES.verdeClaro }}>
+        {colunas.map(h => (
+          <th key={h} style={{ padding: "9px 12px", textAlign: alinhar, fontSize: 11, fontWeight: 700, color: CORES.verdeEscuro }}>{h}</th>
+        ))}
+      </tr>
+    </thead>
+  );
+}

@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, TabelaHead } from "@/components/ui";
 export default function PropostasPage() {
   const [data, setData] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
@@ -69,7 +69,7 @@ export default function PropostasPage() {
 
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
       <table style={{borderCollapse:"collapse",width:"100%"}}>
-        <thead><tr style={{background:"#e8f5ee"}}>{["Número","Objeto","Cliente","Valor Total","Data","Status","Ações"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+        <TabelaHead colunas={["Número","Objeto","Cliente","Valor Total","Data","Status","Ações"]} />
         <tbody>{data.map((p:any)=>{
           const [bg,co]=STATUS_COLORS[p.status]||["#f3f4f6","#6b7280"];
           return(<tr key={p.id} style={{borderBottom:"1px solid #f3f4f6"}}>

@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, TabelaHead } from "@/components/ui";
 export default function FornecedoresPage() {
   const [data, setData] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
@@ -55,7 +55,7 @@ export default function FornecedoresPage() {
       </div>
     </div>
     <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",borderRadius:12,overflow:"hidden",border:"1px solid #e5e7eb"}}>
-      <thead><tr style={{background:"#e8f5ee"}}>{["Nome","CNPJ","Tipo","Município","Situação","Ações"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+      <TabelaHead colunas={["Nome","CNPJ","Tipo","Município","Situação","Ações"]} />
       <tbody>{data.map((f:any)=><tr key={f.id} style={{borderBottom:"1px solid #f3f4f6",background:editId===f.id?"#f0fdf4":undefined}}>
         <td style={{padding:"8px 12px",fontWeight:600,fontSize:12}}>{f.name}</td>
         <td style={{padding:"8px 12px",fontFamily:"monospace",fontSize:11}}>{f.cnpj||"—"}</td>

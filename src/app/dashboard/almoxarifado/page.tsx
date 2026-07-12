@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, KpiGrid, KpiCard, Card, TabelaHead } from "@/components/ui";
 export default function AlmoxarifadoPage() {
   const [data, setData] = useState<any[]>([]);
   const [stats, setStats] = useState({total:0,criticos:0,valorEstoque:0});
@@ -29,17 +29,14 @@ export default function AlmoxarifadoPage() {
   const STATUS_COLORS:any={regular:["#dcfce7","#15803d"],atencao:["#fef9c3","#92400e"],critico:["#fee2e2","#991b1b"],em_uso:["#dbeafe","#1e40af"],manutencao:["#f3e8ff","#7e22ce"]};
   return (<div>
     <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Almoxarifado <DemoBadge mostrar={demo} /></h1>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+    <KpiGrid colunas={3}>
       {[["Total de Itens",stats.total||data.length,"📦","#4a9410"],["Estoque Crítico",stats.criticos,"🚨","#dc2626"],["Valor em Estoque","R$"+fmt(stats.valorEstoque),"💰","#4a9410"]].map(([l,v,i,c])=>(
-        <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:"3px solid "+c}}>
-          <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase"}}>{l}</span><span>{i}</span></div>
-          <div style={{fontSize:20,fontWeight:700,color:c as string,marginTop:5}}>{v}</div>
-        </div>
+        <KpiCard key={l as string} label={l as string} valor={v as any} cor={c as string} icone={i as string} />
       ))}
-    </div>
+    </KpiGrid>
     <div style={{marginBottom:12}}><input placeholder="🔍 Buscar por código ou descrição..." value={busca} onChange={e=>setBusca(e.target.value)} style={{width:"100%",maxWidth:360,padding:"8px 12px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13}}/></div>
     <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-      <thead><tr style={{background:"#e8f5ee"}}>{["Código","Descrição","Categoria","Qtd.","Mín.","Custo Unit.","Status"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+      <TabelaHead colunas={["Código","Descrição","Categoria","Qtd.","Mín.","Custo Unit.","Status"]} />
       <tbody>{filtrados.map((i:any)=>{
         const sc=STATUS_COLORS[i.status]||["#f3f4f6","#374151"];
         const isAbaixo=Number(i.currentQuantity)<=Number(i.minimumStock);

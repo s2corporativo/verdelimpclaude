@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { TabelaHead } from "@/components/ui";
 
 const IS: any = { width: "100%", padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 };
 const LS: any = { fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 3 };
@@ -69,7 +70,7 @@ export default function SsoPage() {
       </div>
 
       <table style={{ borderCollapse: "collapse", width: "100%", background: "#fff", borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb" }}>
-        <thead><tr style={{ background: "#e8f5ee" }}>{["Funcionário", "Função", "ASO", "Treinamentos NR", "Última entrega EPI", "Dossiê"].map((h) => <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#334532" }}>{h}</th>)}</tr></thead>
+        <TabelaHead colunas={["Funcionário", "Função", "ASO", "Treinamentos NR", "Última entrega EPI", "Dossiê"]} />
         <tbody>{data.map((f) => (
           <tr key={f.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
             <td style={{ padding: "8px 12px", fontWeight: 600, fontSize: 12 }}>{f.nome}</td>
