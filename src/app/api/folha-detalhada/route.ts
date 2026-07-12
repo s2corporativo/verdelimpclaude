@@ -57,6 +57,17 @@ function calcIRRF(bruto: number, inss: number, dependentes: number): number {
 const FGTS_RATE = 0.08;
 // INSS Patronal: 7% (Simples Nacional + MEI — alíquota simplificada)
 const INSS_PATRONAL = 0.07;
+// Salário mínimo — base da insalubridade (validar valor vigente e a base na CCT)
+const SALARIO_MINIMO = 1518.0;
+
+// Adicionais recorrentes: insalubridade (grau% sobre o salário mínimo) e
+// periculosidade (30% sobre o salário base). Não são cumuláveis entre si —
+// aplica-se o mais vantajoso ao empregado (art. 193 §2º CLT).
+function calcAdicionais(salarioBase: number, insalubridadeGrau: number, periculosidade: boolean): number {
+  const insal = (Number(insalubridadeGrau) || 0) / 100 * SALARIO_MINIMO;
+  const peric = periculosidade ? salarioBase * 0.30 : 0;
+  return Math.max(insal, peric);
+}
 
 export async function GET() {
   try {
@@ -64,14 +75,16 @@ export async function GET() {
     if (!funcionarios.length) return NextResponse.json({ folha: DEMO_FOLHA, totais: DEMO_TOTAIS, _demo: true });
 
     const folha = funcionarios.map(f => {
-      const bruto = Number(f.salary);
+      const salarioBase = Number(f.salary);
+      const adicionais = calcAdicionais(salarioBase, (f as any).insalubridadeGrau || 0, (f as any).periculosidade || false);
+      const bruto = salarioBase + adicionais; // adicionais integram a base de INSS/IRRF/FGTS
       const inss = calcINSS(bruto);
       const irrf = calcIRRF(bruto, inss, Number((f as any).dependentes || 0));
       const liquido = bruto - inss - irrf;
       const fgts = bruto * FGTS_RATE;
       const inssPatronal = bruto * INSS_PATRONAL;
       const custoTotal = bruto + fgts + inssPatronal;
-      return { id: f.id, nome: f.name, cargo: f.role, salarioBruto: bruto, inss: Number(inss.toFixed(2)), irrf: Number(irrf.toFixed(2)), salarioLiquido: Number(liquido.toFixed(2)), fgts: Number(fgts.toFixed(2)), inssPatronal: Number(inssPatronal.toFixed(2)), custoTotal: Number(custoTotal.toFixed(2)) };
+      return { id: f.id, nome: f.name, cargo: f.role, salarioBase: Number(salarioBase.toFixed(2)), adicionais: Number(adicionais.toFixed(2)), salarioBruto: Number(bruto.toFixed(2)), inss: Number(inss.toFixed(2)), irrf: Number(irrf.toFixed(2)), salarioLiquido: Number(liquido.toFixed(2)), fgts: Number(fgts.toFixed(2)), inssPatronal: Number(inssPatronal.toFixed(2)), custoTotal: Number(custoTotal.toFixed(2)) };
     });
 
     const totais = folha.reduce((acc, f) => ({

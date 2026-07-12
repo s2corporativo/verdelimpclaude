@@ -41,6 +41,18 @@ export default function MedicaoPage() {
         alert(d.error || "Não foi possível atualizar a medição (registros de demonstração não são gravados).");
       }
     } catch (e: any) { alert(e.message || "Erro de rede ao atualizar a medição."); }
+    finally { setAprovando(null); setShowApproveModal(null); setApprovedByInput(""); }
+  };
+
+  const faturar = async (m: any) => {
+    if (!confirm(`Faturar a medição de ${m.contract?.number || ""} (${m.period})?\n\nIsso lança a NFS-e no sistema (registro gerencial) e a receita no financeiro. A emissão OFICIAL da nota exige certificado + homologação com o contador.`)) return;
+    setAprovando(m.id);
+    try {
+      const r = await fetch("/api/medicao", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "faturar", id: m.id }) });
+      const d = await r.json();
+      if (!r.ok) { alert(d.error || "Não foi possível faturar."); }
+      else { alert(d.mensagem || "Medição faturada."); load(); }
+    } catch (e: any) { alert(e.message || "Erro de rede ao faturar."); }
     setAprovando(null);
     setShowApproveModal(null);
     setApprovedByInput("");
@@ -144,10 +156,13 @@ export default function MedicaoPage() {
                 </>
               )}
               {m.status === "aprovada" && (
-                <button onClick={()=>{ if(confirm("A emissão oficial de NFS-e exige certificado digital e homologação com o contador. Abrir a Central Fiscal para registrar a nota?")) window.location.href="/dashboard/fiscal"; }}
+                <button onClick={()=>faturar(m)} disabled={isAprovando}
                   style={{ background:"#f3e8ff", color:"#6d28d9", border:"1px solid #c4b5fd", padding:"7px 14px", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700 }}>
-                  🧾 Emitir NFS-e
+                  🧾 Faturar (lançar NFS-e + receita)
                 </button>
+              )}
+              {m.status === "faturada" && (
+                <span style={{ background:"#dcfce7", color:"#15803d", padding:"6px 12px", borderRadius:8, fontSize:12, fontWeight:700 }}>✅ Faturada</span>
               )}
             </div>
           </div>

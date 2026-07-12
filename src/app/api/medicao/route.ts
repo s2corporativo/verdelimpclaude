@@ -36,12 +36,12 @@ export async function PATCH(req: NextRequest) {
         const periodo = m.period || new Date(m.startDate).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
         const nomeDoc = `Medição Aprovada — ${m.contract?.number || ""} ${periodo} — R$ ${Number(m.value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
-        // Verificar se já existe (evitar duplicata)
+        // Verificar se já existe (evitar duplicata). Inclui o período para não
+        // confundir medições diferentes do mesmo contrato na mesma semana.
         const existente = await prisma.document.findFirst({
           where: {
-            nome: { contains: m.contract?.number || "" },
+            nome: { contains: `${m.contract?.number || ""} ${periodo}` },
             subcategoria: "Medição",
-            createdAt: { gte: new Date(Date.now() - 7 * 86400000) },
           },
         });
 
@@ -77,6 +77,54 @@ export async function PATCH(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const b = await req.json();
+
+    // Faturar a medição: gera a NFS-e (lançada), a receita no financeiro e
+    // marca a medição como "faturada". Antes o botão "Emitir NFS-e" só navegava.
+    if (b.action === "faturar") {
+      if (!b.id) return NextResponse.json({ error: "id da medição obrigatório" }, { status: 400 });
+      const med = await prisma.measurement.findUnique({
+        where: { id: b.id },
+        include: { contract: { include: { client: true } } },
+      });
+      if (!med) return NextResponse.json({ error: "Medição não encontrada" }, { status: 404 });
+      if (med.status !== "aprovada") return NextResponse.json({ error: "Só é possível faturar medição aprovada" }, { status: 400 });
+
+      const config = await prisma.companyConfig.findFirst();
+      const issRate = config ? Number(config.aliqISS) : 5;
+      const valor = Number(med.value);
+      const issAmount = valor * (issRate / 100);
+      const nfCount = await prisma.fiscalNfse.count();
+      const number = `NFSE-${new Date().getFullYear()}-${String(nfCount + 1).padStart(4, "0")}`;
+      const competence = med.period || new Date().toISOString().slice(0, 7);
+
+      const cat = await prisma.expenseCategory.upsert({
+        where: { name: "Receita Contratual" }, update: {},
+        create: { name: "Receita Contratual", type: "receita", active: true },
+      });
+
+      const [nfse] = await prisma.$transaction([
+        prisma.fiscalNfse.create({
+          data: {
+            number, municipality: config?.municipio || "Betim", providerCnpj: config?.cnpj || "",
+            receiverName: med.contract?.client?.name || null, receiverCnpj: med.contract?.client?.cnpjCpf || null,
+            clientId: med.contract?.clientId || null,
+            description: `Medição ${competence} — ${med.contract?.object || med.contract?.number || ""}`,
+            serviceValue: valor, calculationBase: valor, issRate, issAmount, netAmount: valor - issAmount,
+            issueDate: new Date(), competence, status: "lancada",
+          },
+        }),
+        prisma.expense.create({
+          data: {
+            description: `Receita — NFS-e ${number} (${med.contract?.number || ""})`,
+            amount: valor, dueDate: new Date(), status: "previsto", categoryId: cat.id, competence,
+            notes: `Faturamento da medição ${med.id}`,
+          },
+        }),
+        prisma.measurement.update({ where: { id: b.id }, data: { status: "faturada" } }),
+      ]);
+      return NextResponse.json({ success: true, nfse, mensagem: `NFS-e ${number} lançada e receita registrada.` });
+    }
+
     const m = await prisma.measurement.create({ data: { contractId: b.contractId, period: b.period, startDate: new Date(b.startDate), endDate: new Date(b.endDate), value: Number(b.value||0), status: "em_elaboracao", notes: b.notes, items: { create: (b.items||[]).map((i: any) => ({ description: i.description, unit: i.unit, quantity: Number(i.quantity), unitValue: Number(i.unitValue), totalValue: Number(i.quantity)*Number(i.unitValue) })) } }, include: { items: true } });
     return NextResponse.json(m, { status: 201 });
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
