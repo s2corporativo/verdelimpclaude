@@ -1,5 +1,4 @@
 // src/app/api/dre/route.ts
-// Adaptado de: verdelimp-erp-prime-final/drizzle/schema.ts → dreSummary table
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 

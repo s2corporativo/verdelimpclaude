@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function CombustivelPage() {
   const [data,setData]=useState<any[]>([]);const [veics,setVeics]=useState<any[]>([]);
   const [demo,setDemo]=useState(false);const [stats,setStats]=useState({totalMes:0,totalLitros:0});
@@ -21,7 +22,7 @@ export default function CombustivelPage() {
     return medias.length?(medias.reduce((s,m)=>s+m,0)/medias.length).toFixed(1):"—";
   })();
   return(<div>
-    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Controle de Combustível {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Controle de Combustível <DemoBadge mostrar={demo} /></h1>
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
       {[["Custo no Mês","R$"+fmt(stats.totalMes),"⛽","#dc2626"],["Litros Abastecidos",Number(stats.totalLitros).toFixed(0)+"L","🛢️","#4a9410"],["Média km/L",pmKm,"🚗","#1d4ed8"],["Veículos",veics.length,"🚙","#7c3aed"]].map(([l,v,i,c])=>(
         <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:`3px solid ${c}`}}>

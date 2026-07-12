@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function FiscalPage() {
   const [despesas, setDespesas] = useState<any[]>([]);
   const [nfses, setNfses] = useState<any[]>([]);
@@ -30,7 +31,7 @@ export default function FiscalPage() {
   const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const tabs = [{id:"despesas",l:"Despesas Tributárias"},{id:"nfse",l:"NFS-e Emitidas"},{id:"apuracao",l:"✨ Apuração Automática"}];
   return (<div>
-    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Central Fiscal {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Central Fiscal <DemoBadge mostrar={demo} /></h1>
     <div style={{display:"flex",gap:8,marginBottom:16}}>{tabs.map(t=><button key={t.id} onClick={()=>setAba(t.id)} style={{background:aba===t.id?"#334532":"transparent",color:aba===t.id?"#fff":"#374151",border:"1px solid "+( aba===t.id?"#334532":"#d1d5db"),padding:"7px 14px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:aba===t.id?700:400}}>{t.l}</button>)}</div>
     <div style={{background:"#fef9c3",border:"1px solid #fde68a",borderRadius:8,padding:"8px 13px",marginBottom:14,fontSize:11,color:"#92400e"}}>⚠️ Apoio gerencial — todos os valores sujeitos à validação do contador. DAS exige apuração oficial no PGDAS-D.</div>
     {aba==="despesas"&&(<div>

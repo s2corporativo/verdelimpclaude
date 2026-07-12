@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { DemoBadge } from "@/components/ui";
 
 const CAT_ICON: any = {
   contrato:"📋", fiscal:"💸", rh:"👷", juridico:"⚖️",
@@ -163,7 +164,7 @@ export default function DocumentosPage() {
         <div>
           <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             📁 Gerenciador de Documentos
-            {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
+            <DemoBadge mostrar={demo} />
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>
             GED integrado — Contratos, Fiscal, RH, Jurídico, Licitações, Técnico

@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Nenhuma OS informada" }, { status: 400 });
     }
 
-    // ── Chamar Claude para gerar o plano otimizado ────────────────
+    // ── Gerar o plano otimizado via IA (Groq) ────────────────
     const prompt = `Você é especialista em logística operacional para empresa de paisagismo/manutenção ambiental.
 
 DADOS DA SEMANA: ${semana || "próxima semana"}

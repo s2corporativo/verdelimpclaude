@@ -1,5 +1,4 @@
 
-// Adaptado de: verdelimp-erp-prime-final/drizzle/schema.ts → serviceHistory table
 // serviceDate, serviceType, area(m²), cost, revenue por contractId
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";

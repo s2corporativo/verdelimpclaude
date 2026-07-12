@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function DrePage() {
   const [dados, setDados] = useState<any>(null);
   const [ano, setAno] = useState("2026");
@@ -14,8 +15,8 @@ export default function DrePage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, margin: 0 }}>DRE — Demonstrativo de Resultado {demo && <span style={{ fontSize: 11, background: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: 8 }}>Demo</span>}</h1>
-          <p style={{ color: "#6b7280", fontSize: 12, margin: "3px 0 0" }}>Adaptado de verdelimp-erp-prime-final → dreSummary table (Drizzle ORM) · Apoio gerencial — validar com contador</p>
+          <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, margin: 0 }}>DRE — Demonstrativo de Resultado <DemoBadge mostrar={demo} /></h1>
+          <p style={{ color: "#6b7280", fontSize: 12, margin: "3px 0 0" }}>Receitas, tributos, despesas e folha agregados por competência · Apoio gerencial — validar com o contador</p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <select style={{ padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} value={ano} onChange={e => setAno(e.target.value)}>

@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function PropostasPage() {
   const [data, setData] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
@@ -43,7 +44,7 @@ export default function PropostasPage() {
   };
 
   return (<div>
-    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Propostas Comerciais {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Propostas Comerciais <DemoBadge mostrar={demo} /></h1>
 
     <div style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:8,padding:"9px 13px",marginBottom:16,fontSize:11,color:"#15803d"}}>
       📄 <strong>PDF disponível:</strong> Clique em "Gerar PDF" em qualquer proposta. O sistema abre a proposta formatada — use <strong>Ctrl+P → Salvar como PDF</strong> para exportar. Inclui: dados do cliente, objeto, composição de BDI, condições comerciais e espaço para assinatura.

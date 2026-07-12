@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 
 const TIPOS = ["Terraplanagem","Valetamento","Drenagem Superficial","Limpeza de Terreno","Nivelamento","Carregamento de Material","Apoio PRADA/Recuperação","Demolição/Retirada","Outro"];
 const STATUS_STYLE: any = {
@@ -61,7 +62,7 @@ export default function RetroPage() {
         <div>
           <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🚜 Retroescavadeira
-            {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
+            <DemoBadge mostrar={demo} />
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>Gestão de serviços, despesas operacionais e viabilidade por job</p>
         </div>

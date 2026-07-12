@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 
 const TIPOS = ["Desinsetização","Desratização","Descupinização","Geral","Controle Formigas","Fumigação"];
 const TIPO_ICON: any = { "Desinsetização":"🪲","Desratização":"🐀","Descupinização":"🐛","Geral":"🦟","Controle Formigas":"🐜","Fumigação":"💨" };
@@ -59,7 +60,7 @@ export default function DetetizacaoPage() {
         <div>
           <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🪲 Dedetização — Controle de Pragas
-            {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
+            <DemoBadge mostrar={demo} />
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>Desinsetização · Desratização · Descupinização · Controle de Formigas</p>
         </div>

@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function TreinamentosPage() {
   const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);
   const [form,setForm]=useState({employeeId:"",trainingType:"NR-06",issuedAt:"",expiresAt:"",institution:""});
@@ -17,7 +18,7 @@ export default function TreinamentosPage() {
   const vencidos=data.filter((t:any)=>t.status==="vencido").length;
   const aVencer=data.filter((t:any)=>t.status==="a_vencer").length;
   return(<div>
-    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Treinamentos & NRs {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Treinamentos & NRs <DemoBadge mostrar={demo} /></h1>
     {(vencidos>0||aVencer>0)&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"10px 14px",marginBottom:14}}>
       🚨 <strong>{vencidos} vencido(s)</strong> e <strong>{aVencer} a vencer</strong> — regularize para evitar autuação do MTE
     </div>}

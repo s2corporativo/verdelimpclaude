@@ -1,6 +1,5 @@
 
 "use client";
-// Adaptado de: verdelimp-erp-prime-final → notificationsRouter (getByUser, markAsRead)
 import { useEffect, useState } from "react";
 
 const URGENCY_STYLE: any = {

@@ -1,6 +1,7 @@
 
 "use client";
 import { useState, useEffect } from "react";
+import { DemoBadge } from "@/components/ui";
 
 type Prioridade = "urgente" | "normal" | "pode_agendar";
 type Status = "pendente" | "agendado" | "em_execucao" | "concluido";
@@ -112,7 +113,7 @@ export default function LogisticaPage() {
         <div>
           <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🚛 Logística Operacional
-            {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
+            <DemoBadge mostrar={demo} />
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>
             Planejamento de equipes, rotas e cronograma semanal por OS — IA otimiza ordem, deslocamento e alocação

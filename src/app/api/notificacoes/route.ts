@@ -1,5 +1,4 @@
 
-// Adaptado de: verdelimp-erp-prime-final/server/routers.ts → notificationsRouter
 // getByUser (unreadOnly), markAsRead — sistema de alertas internos
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
