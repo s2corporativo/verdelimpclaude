@@ -44,7 +44,7 @@ export default function RhOcorrenciasPage() {
     <div>
       <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🏖️ Férias & Ocorrências</h1>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>
-        Controle de períodos aquisitivos (CLT: gozo em até 11 meses após completar o período, senão paga em dobro), advertências e suspensões.
+        Controle de períodos aquisitivos (CLT art. 134/137: concessão em até 12 meses após completar o período aquisitivo, senão as férias são devidas em dobro), advertências e suspensões.
       </p>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
