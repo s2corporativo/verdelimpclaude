@@ -62,9 +62,12 @@ Seja específico com valores realistas para MG. Indique que é apoio gerencial.`
           clientId: clientId || null,
           object: title || extracted.objeto || "Proposta gerada por IA",
           status: "Aberta",
-          totalValue: extracted.valor_estimado || 0,
+          // O valor da proposta NÃO é o valor estimado do edital (esse é o
+          // orçamento do órgão). Fica 0 até a precificação; a estimativa do
+          // edital vai como referência na nota técnica.
+          totalValue: 0,
           validityDays: 30,
-          technicalNotes: proposta,
+          technicalNotes: `${proposta}\n\n---\nReferência do edital — valor estimado pelo órgão: R$ ${Number(extracted.valor_estimado || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}. Precifique pelo custo + BDI antes de enviar.`,
         },
       });
     } catch { /* salvar é opcional */ }
@@ -73,8 +76,10 @@ Seja específico com valores realistas para MG. Indique que é apoio gerencial.`
       success: true,
       proposta,
       extracted,
+      valorEstimadoEdital: extracted.valor_estimado || 0,
       propostaId: propostaSalva?.id,
       propostaNumber: propostaSalva?.number,
+      propostaNumero: propostaSalva?.number, // compat com a tela (lia propostaNumero)
     });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
