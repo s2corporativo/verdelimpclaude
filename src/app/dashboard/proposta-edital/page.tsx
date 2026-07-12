@@ -43,7 +43,7 @@ export default function PropostaEditalPage() {
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 14 }}>Cole o texto do edital ou escopo técnico. A IA extrai os requisitos, calcula os custos e gera a proposta completa com memorial de cálculo.</p>
 
       <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "9px 13px", marginBottom: 14, fontSize: 11, color: "#1e40af" }}>
-        📋 <strong>Inspirado em:</strong> verdelimp-erp-prime-final · routers.ts → quotesRouter.generateFromScope · Adaptado para Claude (Anthropic) em vez de Gemini
+        📋 <strong>Como funciona:</strong> o edital é lido por IA, que extrai o objeto e os requisitos e monta um rascunho de proposta. Revise e precifique antes de enviar.
       </div>
 
       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 18, marginBottom: 14 }}>

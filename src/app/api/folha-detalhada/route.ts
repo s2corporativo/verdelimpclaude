@@ -1,5 +1,4 @@
 
-// Adaptado de: verdelimp-erp-prime-final/server/routers.ts → payrollRouter.generate
 // Calcula INSS (tabela progressiva por faixas) + IRRF + líquido por funcionário
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";

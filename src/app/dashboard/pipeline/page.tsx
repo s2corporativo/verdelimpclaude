@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 
 const STAGES = [
   { id:"monitorando",     label:"👁️ Monitorando",       cor:"#6b7280", bg:"#f3f4f6" },
@@ -51,7 +52,7 @@ export default function PipelinePage() {
         <div>
           <h1 style={{color:"#334532",fontSize:20,fontWeight:700,margin:0}}>
             🏆 Pipeline de Licitações — CRM
-            {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8,marginLeft:8}}>Demo</span>}
+            <DemoBadge mostrar={demo} />
           </h1>
           <p style={{color:"#6b7280",fontSize:12,margin:"4px 0 0"}}>Acompanhe licitações do monitoramento até a assinatura — visão Kanban por estágio</p>
         </div>

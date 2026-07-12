@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function FolhaDetalhadaPage() {
   const [dados,setDados]=useState<any>(null);const [demo,setDemo]=useState(false);
   const [extras,setExtras]=useState<Record<string,{he50?:number;he100?:number}>>({});
@@ -15,8 +16,8 @@ export default function FolhaDetalhadaPage() {
   };
   if(!dados) return <div style={{color:"#4a9410",padding:20}}>⟳ Calculando folha...</div>;
   return(<div>
-    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Folha Detalhada — INSS + IRRF {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
-    <p style={{color:"#6b7280",fontSize:13,marginBottom:14}}>Adaptado de: <code style={{fontSize:11,background:"#f3f4f6",padding:"1px 6px",borderRadius:4}}>verdelimp-erp-prime-final → payrollRouter.generate</code> · INSS tabela progressiva 2026 + IRRF. Apoio gerencial — validar com contador.</p>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Folha Detalhada — INSS + IRRF <DemoBadge mostrar={demo} /></h1>
+    <p style={{color:"#6b7280",fontSize:13,marginBottom:14}}>INSS (tabela progressiva 2026) + IRRF, adicionais e horas extras. Apoio gerencial — validar com o contador.</p>
     {dados.aviso&&<div style={{background:"#fef9c3",border:"1px solid #fde68a",borderRadius:8,padding:"8px 13px",marginBottom:14,fontSize:11,color:"#92400e"}}>⚠️ {dados.aviso}</div>}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
       {[["Salário Bruto Total","R$"+fmt(dados.totais.bruto),"💰","#4a9410"],["INSS Descontado","R$"+fmt(dados.totais.inss),"🏛️","#d97706"],["Salário Líquido Total","R$"+fmt(dados.totais.liquido),"💵","#4a9410"],["Custo Total Empresa","R$"+fmt(dados.totais.custoTotal),"🏦","#dc2626"]].map(([l,v,i,c])=>(

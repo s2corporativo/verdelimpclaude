@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 
 function Grafico({ meses, tendencia }: { meses: any[], tendencia?: number }) {
   const [ativo, setAtivo] = useState<"barras"|"margem">("barras");
@@ -133,7 +134,7 @@ export default function DashboardPage() {
           <h1 style={{ color: "#334532", fontSize: 22, fontWeight: 700, margin: 0 }}>Dashboard</h1>
           <p style={{ color: "#6b7280", fontSize: 12, margin: "3px 0 0" }}>
             VERDELIMP · CNPJ 30.198.776/0001-29 · Simples Nacional · Betim/MG
-            {demo && <span style={{ marginLeft: 8, background: "#e0e7ff", color: "#3730a3", fontSize: 10, padding: "2px 8px", borderRadius: 8, fontWeight: 700 }}>Demo</span>}
+            <DemoBadge mostrar={demo} />
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>

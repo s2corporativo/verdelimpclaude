@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 
 export default function MobilizacoesPage() {
   const [data, setData] = useState<any[]>([]);
@@ -37,7 +38,7 @@ export default function MobilizacoesPage() {
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, margin: 0 }}>
           🦺 Mobilização de Equipe
-          {demo && <span style={{ fontSize: 11, background: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: 8, marginLeft: 8 }}>Demo</span>}
+          <DemoBadge mostrar={demo} />
         </h1>
         <p style={{ color: "#6b7280", fontSize: 13, margin: "4px 0 0" }}>
           Controle de funcionários alocados por contrato — quem está em qual obra, desde quando e custo mensal por contrato

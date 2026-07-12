@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function ClientesPage() {
   const [data, setData] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
@@ -43,7 +44,7 @@ export default function ClientesPage() {
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
   const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
   return (<div>
-    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Clientes {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Clientes <DemoBadge mostrar={demo} /></h1>
     <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"8px 13px",marginBottom:14,fontSize:11,color:"#1e40af"}}>
       🔗 Digite o CNPJ e clique em "CNPJ" — razão social e município preenchidos automaticamente via Receita Federal (BrasilAPI). O CEP preenche o endereço via ViaCEP.
     </div>

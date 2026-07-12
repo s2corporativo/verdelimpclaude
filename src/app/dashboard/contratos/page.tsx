@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function ContratosPage() {
   const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);const [clientes,setClientes]=useState<any[]>([]);
   const [form,setForm]=useState({clientId:"",object:"",value:"",monthlyValue:"",startDate:"",endDate:"",notes:""});
@@ -28,7 +29,7 @@ export default function ContratosPage() {
   const vencendo=data.filter((c:any)=>c.alerta==="renovar").length;
   const vencidos=data.filter((c:any)=>c.alerta==="vencido").length;
   return(<div>
-    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Gestão de Contratos {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}</h1>
+    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Gestão de Contratos <DemoBadge mostrar={demo} /></h1>
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
       {[["Contratos Ativos",data.filter((c:any)=>c.status==="Ativo").length,"📋","#4a9410"],
         ["Valor Mensal","R$"+fmt(data.filter((c:any)=>c.status==="Ativo").reduce((s:number,c:any)=>s+Number(c.monthlyValue),0)),"💰","#4a9410"],

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 
 export default function MedicaoPage() {
   const [data, setData] = useState<any[]>([]);
@@ -64,7 +65,7 @@ export default function MedicaoPage() {
     <div>
       <h1 style={{ color:"#334532", fontSize:20, fontWeight:700, margin:"0 0 6px" }}>
         📏 Medição Mensal
-        {demo && <span style={{ fontSize:11, background:"#e0e7ff", color:"#3730a3", padding:"2px 8px", borderRadius:8, marginLeft:8 }}>Demo</span>}
+        <DemoBadge mostrar={demo} />
       </h1>
       <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:8, padding:"8px 13px", marginBottom:14, fontSize:11, color:"#1e40af" }}>
         📋 Medições registradas do dia 21 ao dia 20. Após aprovação, o sistema salva automaticamente no <strong>GED</strong> e libera emissão da NFS-e.

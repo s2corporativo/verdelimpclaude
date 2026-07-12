@@ -1,5 +1,4 @@
 // src/app/api/epi/route.ts
-// Adaptado de: verdelimp-erp-prime-final/drizzle/schema.ts → epiInventory table
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";

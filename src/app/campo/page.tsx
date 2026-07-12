@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 
-// App mobile para equipe de campo — sem autenticação complexa, acesso por PIN
-const PIN_CORRETO = "1234"; // TODO: mover para env var / configuração
+// App mobile para equipe de campo — acesso rápido por PIN. Configurável via
+// NEXT_PUBLIC_CAMPO_PIN. Observação: por ser validado no cliente, o PIN é uma
+// barreira de conveniência, não de segurança forte — não protege dados sensíveis.
+const PIN_CORRETO = process.env.NEXT_PUBLIC_CAMPO_PIN || "1234";
 
 export default function CampoPage() {
   const [pin, setPin] = useState("");

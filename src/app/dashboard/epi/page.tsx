@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 export default function EpiPage() {
   const [epis, setEpis] = useState<any[]>([]);
   const [entregas, setEntregas] = useState<any[]>([]);
@@ -12,8 +13,8 @@ export default function EpiPage() {
   const SC: any = { ativo: ["#dcfce7", "#15803d", "✅ Ativo"], a_vencer: ["#fef9c3", "#92400e", "⚠️ A vencer"], vencido: ["#fee2e2", "#991b1b", "⛔ Vencido"] };
   return (
     <div>
-      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Controle de EPI {demo && <span style={{ fontSize: 11, background: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: 8 }}>Demo</span>}</h1>
-      <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 14 }}>Adaptado de verdelimp-erp-prime-final → epiInventory table · Controle de estoque, entregas e número CA.</p>
+      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Controle de EPI <DemoBadge mostrar={demo} /></h1>
+      <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 14 }}>Controle de estoque, entregas e validade do CA dos equipamentos de proteção individual.</p>
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         {[["estoque", "Estoque de EPIs"], ["entregas", "Histórico de Entregas"]].map(([id, l]) => (
           <button key={id} onClick={() => setAba(id)} style={{ background: aba === id ? "#334532" : "transparent", color: aba === id ? "#fff" : "#374151", border: `1px solid ${aba === id ? "#334532" : "#d1d5db"}`, padding: "7px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: aba === id ? 700 : 400 }}>{l}</button>

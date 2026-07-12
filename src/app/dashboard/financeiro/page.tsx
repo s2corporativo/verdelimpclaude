@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { DemoBadge } from "@/components/ui";
 
 export default function FinanceiroPage() {
   const [data, setData] = useState<any[]>([]);
@@ -38,7 +39,7 @@ export default function FinanceiroPage() {
   return (
     <div>
       <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>
-        💰 Financeiro {demo&&<span style={{fontSize:11,background:"#e0e7ff",color:"#3730a3",padding:"2px 8px",borderRadius:8}}>Demo</span>}
+        💰 Financeiro <DemoBadge mostrar={demo} />
       </h1>
 
       {/* KPIs */}
