@@ -20,9 +20,9 @@ export default function RHPage() {
         </div>
       ))}
     </div>
-    <div style={{background:"#fef9c3",border:"1px solid #fde68a",borderRadius:8,padding:"8px 13px",marginBottom:14,fontSize:11,color:"#92400e"}}>⚠️ Apoio gerencial — validar com contador. Encargos podem variar conforme categorias e convenções coletivas.</div>
+    <div style={{background:"#fef9c3",border:"1px solid #fde68a",borderRadius:8,padding:"8px 13px",marginBottom:14,fontSize:11,color:"#92400e"}}>⚠️ Apoio gerencial — validar com contador. <strong>Custo Total ≈ salário × 1,70</strong> = custo operacional cheio (encargos + 13º + férias+⅓ + provisões + insumos/EPI), o mesmo fator usado nas Mobilizações para precificar contratos. A <a href="/dashboard/folha-detalhada" style={{color:"#92400e",fontWeight:700}}>Folha Detalhada</a> mostra o custo direto mensal (salário + FGTS + INSS patronal). Encargos variam conforme categorias e convenções coletivas.</div>
     <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-      <thead><tr style={{background:"#e8f5ee"}}>{["Funcionário","Função","Salário","FGTS 8%","INSS 7%","Custo Total","Status"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+      <thead><tr style={{background:"#e8f5ee"}}>{["Funcionário","Função","Salário","FGTS 8%","INSS 7%","Custo Total (op.)","Status"].map(h=><th key={h} title={h.startsWith("Custo")?"Custo operacional cheio ≈ salário × 1,70 (encargos + provisões + insumos)":undefined} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
       <tbody>{data.map((e:any)=>(
         <tr key={e.id} style={{borderBottom:"1px solid #f3f4f6"}}>
           <td style={{padding:"8px 12px",fontWeight:600,fontSize:12}}>{e.name}</td>
