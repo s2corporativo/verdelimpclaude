@@ -114,6 +114,7 @@ export default function DashboardPage() {
   const [fiscal, setFiscal] = useState<any>({});
   const [graficos, setGraficos] = useState<any[]>([]);
   const [tendencia, setTendencia] = useState<number>(0);
+  const [alertas, setAlertas] = useState<any>({ total: 0, criticos: 0 });
   const [demo, setDemo] = useState(false);
   const fmt = (v: number) => (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -122,8 +123,10 @@ export default function DashboardPage() {
       fetch("/api/dashboard").then(r => r.json()).catch(() => ({})),
       fetch("/api/fiscal/dashboard").then(r => r.json()).catch(() => ({})),
       fetch("/api/dashboard/graficos").then(r => r.json()).catch(() => ({ meses: [] })),
-    ]).then(([d, f, g]) => {
-      setDados(d); setFiscal(f); setGraficos(g.meses || []); setTendencia(g.tendencia || 0); setDemo(!!d._demo || !!f._demo);
+      fetch("/api/alertas-central").then(r => r.json()).catch(() => ({ resumo: {} })),
+    ]).then(([d, f, g, a]) => {
+      setDados(d); setFiscal(f); setGraficos(g.meses || []); setTendencia(g.tendencia || 0);
+      setAlertas(a.resumo || { total: 0, criticos: 0 }); setDemo(!!d._demo || !!f._demo);
     });
   }, []);
 
@@ -157,7 +160,11 @@ export default function DashboardPage() {
         <Kpi l="Tributos em aberto" v={`R$${fmt(fiscal.tributosAberto || 8450)}`} i="💸" c="#d97706" alert={fiscal.tributosAberto > 0} />
         <Kpi l="Tributos pagos" v={`R$${fmt(fiscal.tributosPago || 5770)}`} i="✅" />
         <Kpi l="Docs alerta" v={fiscal.docsVencer || 2} i="📋" c={fiscal.docsVencer > 0 ? "#dc2626" : "#4a9410"} alert={fiscal.docsVencer > 0} />
-        <Kpi l="Contratos ativos" v={dados.totalContratos || "—"} i="📋" />
+        <Kpi l="Contratos ativos" v={dados.totalContratos ?? "—"} i="📋" />
+        <Kpi l="Faturamento contratado" v={`R$${fmt(dados.faturamentoContratado || 128500)}`} i="💰" c="#15803d" />
+        <a href="/dashboard/alertas" style={{ textDecoration: "none" }}>
+          <Kpi l="Alertas (30/90d)" v={alertas.total ?? 0} i="🚨" c={alertas.criticos > 0 ? "#dc2626" : "#4a9410"} alert={alertas.criticos > 0} />
+        </a>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, marginBottom: 14 }}>
