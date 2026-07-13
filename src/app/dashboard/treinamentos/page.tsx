@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge, TabelaHead, KpiGrid, KpiCard } from "@/components/ui";
+import { DemoBadge, TabelaHead, KpiGrid, KpiCard, Botao } from "@/components/ui";
 import { estiloInput, estiloLabel } from "@/lib/estilos";
 export default function TreinamentosPage() {
   const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);
@@ -37,7 +37,7 @@ export default function TreinamentosPage() {
         <div><label style={LS}>Vencimento*</label><input type="date" style={IS} value={form.expiresAt} onChange={e=>setForm(p=>({...p,expiresAt:e.target.value}))}/></div>
         <div style={{display:"flex",flexDirection:"column",justifyContent:"flex-end"}}><label style={LS}>Instituição</label><input style={IS} value={form.institution} onChange={e=>setForm(p=>({...p,institution:e.target.value}))}/></div>
       </div>
-      <button onClick={salvar} style={{background:"#4a9410",color:"#fff",border:"none",padding:"8px 24px",borderRadius:8,cursor:"pointer",fontWeight:700,marginTop:10}}>+ Registrar</button>
+      <Botao onClick={salvar} style={{padding:"8px 24px",marginTop:10}}>+ Registrar</Botao>
     </div>
     <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
       <TabelaHead colunas={["Funcionário","Função","Treinamento","Emissão","Vencimento","Dias","Instituição","Status"]} />

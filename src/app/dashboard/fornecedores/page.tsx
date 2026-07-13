@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge, TabelaHead } from "@/components/ui";
+import { DemoBadge, TabelaHead, Botao } from "@/components/ui";
 import { estiloInput, estiloLabel } from "@/lib/estilos";
 export default function FornecedoresPage() {
   const [data, setData] = useState<any[]>([]);
@@ -51,8 +51,8 @@ export default function FornecedoresPage() {
       </div>
       {msg&&<p style={{color:msg.startsWith("⛔")?"#991b1b":"#059669",fontSize:12,marginBottom:8}}>{msg}</p>}
       <div style={{display:"flex",gap:8}}>
-        <button onClick={salvar} disabled={!form.nome} style={{background:"#4a9410",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:600}}>{editId?"✓ Salvar alterações":"+ Cadastrar"}</button>
-        {editId&&<button onClick={limpar} style={{background:"#fff",color:"#374151",border:"1px solid #d1d5db",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:600}}>Cancelar</button>}
+        <Botao onClick={salvar} disabled={!form.nome} style={{padding:"9px 24px",fontWeight:600}}>{editId?"✓ Salvar alterações":"+ Cadastrar"}</Botao>
+        {editId&&<Botao variante="neutro" onClick={limpar} style={{padding:"9px 18px",fontWeight:600}}>Cancelar</Botao>}
       </div>
     </div>
     <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",borderRadius:12,overflow:"hidden",border:"1px solid #e5e7eb"}}>
