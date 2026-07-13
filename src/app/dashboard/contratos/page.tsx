@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge, TabelaHead, KpiGrid, KpiCard } from "@/components/ui";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 export default function ContratosPage() {
   const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);const [clientes,setClientes]=useState<any[]>([]);
   const [form,setForm]=useState({clientId:"",object:"",value:"",monthlyValue:"",startDate:"",endDate:"",notes:""});
@@ -24,8 +25,8 @@ export default function ContratosPage() {
   const excluir=async(c:any)=>{if(!confirm(`Cancelar o contrato ${c.number}? As medições e custos são preservados.`))return;const r=await fetch(`/api/contratos?id=${c.id}`,{method:"DELETE"});if(!r.ok){const j=await r.json().catch(()=>({}));setErro(j.error||"Não foi possível cancelar.");return;}load();};
   const podeS=!!form.object&&!!form.value&&!!form.startDate&&!!form.endDate;
   const fmt=(v:number)=>v.toLocaleString("pt-BR",{minimumFractionDigits:2});
-  const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
-  const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const IS = estiloInput;
+  const LS = estiloLabel;
   const vencendo=data.filter((c:any)=>c.alerta==="renovar").length;
   const vencidos=data.filter((c:any)=>c.alerta==="vencido").length;
   return(<div>

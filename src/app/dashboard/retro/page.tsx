@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge } from "@/components/ui";
+import { estiloLabel } from "@/lib/estilos";
 
 const TIPOS = ["Terraplanagem","Valetamento","Drenagem Superficial","Limpeza de Terreno","Nivelamento","Carregamento de Material","Apoio PRADA/Recuperação","Demolição/Retirada","Outro"];
 const STATUS_STYLE: any = {
@@ -50,7 +51,7 @@ export default function RetroPage() {
 
   const fmt = (v:number) => v?.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const IS:any = { width:"100%", padding:"7px 10px", border:"1px solid #d1d5db", borderRadius:8, fontSize:12 };
-  const LS:any = { fontSize:11, fontWeight:600, color:"#374151", display:"block", marginBottom:3 };
+  const LS = estiloLabel;
 
   const faturado = jobs.filter(j=>j.status==="concluido").reduce((s:number,j:any)=>s+Number(j.valorCobrado||0),0);
   const custo = jobs.filter(j=>j.status==="concluido").reduce((s:number,j:any)=>s+Number(j.custoTotal||0),0);

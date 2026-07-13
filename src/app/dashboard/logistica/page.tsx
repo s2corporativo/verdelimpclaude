@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { DemoBadge } from "@/components/ui";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 
 type Prioridade = "urgente" | "normal" | "pode_agendar";
 type Status = "pendente" | "agendado" | "em_execucao" | "concluido";
@@ -99,8 +100,8 @@ export default function LogisticaPage() {
   const removeOs = (id: string) => setOs(p => p.filter(o => o.id!==id));
   const fmt = (v: number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
 
-  const IS: any = { width:"100%", padding:"7px 10px", border:"1px solid #d1d5db", borderRadius:8, fontSize:13 };
-  const LS: any = { fontSize:11, fontWeight:600, color:"#374151", display:"block", marginBottom:3 };
+  const IS = estiloInput;
+  const LS = estiloLabel;
 
   const urgentes = os.filter(o=>o.prioridade==="urgente"&&o.status==="pendente").length;
   const pendentes = os.filter(o=>o.status==="pendente"||o.status==="agendado").length;

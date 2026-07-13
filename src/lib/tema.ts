@@ -13,7 +13,9 @@ export const CORES = {
   // Neutros
   texto: "#111827",
   textoSuave: "#6b7280",
+  textoLabel: "#374151",  // rótulos de formulário
   borda: "#e5e7eb",
+  bordaInput: "#d1d5db",  // borda de campos de formulário
   fundo: "#f3f4f6",
   fundoCard: "#ffffff",
 

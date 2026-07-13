@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { TabelaHead } from "@/components/ui";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 
-const IS: any = { width: "100%", padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 };
-const LS: any = { fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 3 };
+const IS = estiloInput;
+const LS = estiloLabel;
 const BTN: any = { border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600 };
 
 const BADGE: Record<string, [string, string, string]> = {

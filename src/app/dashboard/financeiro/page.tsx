@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge } from "@/components/ui";
+import { estiloLabel } from "@/lib/estilos";
 
 export default function FinanceiroPage() {
   const [data, setData] = useState<any[]>([]);
@@ -25,7 +26,7 @@ export default function FinanceiroPage() {
   };
   const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:12};
-  const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const LS = estiloLabel;
   const STATUS_C:any={pago:["#dcfce7","#15803d","✅ Pago"],recebido:["#dcfce7","#15803d","✅ Recebido"],em_aberto:["#fef9c3","#92400e","⏳ Em aberto"],vencido:["#fee2e2","#dc2626","🚨 Vencido"],previsto:["#dbeafe","#1e40af","📅 Previsto"],cancelado:["#f3f4f6","#6b7280","Cancelado"]};
 
   const AGING_BUCKETS = [
