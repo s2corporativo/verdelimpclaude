@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, TabelaHead } from "@/components/ui";
 export default function FiscalPage() {
   const [despesas, setDespesas] = useState<any[]>([]);
   const [nfses, setNfses] = useState<any[]>([]);
@@ -44,7 +44,7 @@ export default function FiscalPage() {
         ))}
       </div>
       <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-        <thead><tr style={{background:"#e8f5ee"}}>{["Tipo","Descrição","Competência","Vencimento","Valor","Origem","Status",""].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+        <TabelaHead colunas={["Tipo","Descrição","Competência","Vencimento","Valor","Origem","Status",""]} />
         <tbody>{despesas.map((d:any)=><tr key={d.id} style={{borderBottom:"1px solid #f3f4f6"}}>
           <td style={{padding:"8px 12px"}}><span style={{background:"#f3f4f6",padding:"2px 7px",borderRadius:7,fontSize:11,fontWeight:700}}>{d.taxType}</span></td>
           <td style={{padding:"8px 12px",fontSize:12}}>{d.description}</td>
@@ -62,7 +62,7 @@ export default function FiscalPage() {
         🔗 <strong>ISS automático:</strong> alíquota preenchida pela tabela da Lei Complementar 33/2003 de Betim/MG ao cadastrar nova NFS-e via API POST /api/fiscal/nfse
       </div>
       <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-        <thead><tr style={{background:"#e8f5ee"}}>{["Número","Tomador","Valor","ISS","Alíq.","Retido","Líquido","Competência"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+        <TabelaHead colunas={["Número","Tomador","Valor","ISS","Alíq.","Retido","Líquido","Competência"]} />
         <tbody>{nfses.map((n:any)=><tr key={n.id} style={{borderBottom:"1px solid #f3f4f6"}}>
           <td style={{padding:"8px 12px",fontWeight:700,color:"#334532"}}>{n.number}</td>
           <td style={{padding:"8px 12px",fontSize:12}}>{n.receiverName||n.client?.name||"—"}</td>

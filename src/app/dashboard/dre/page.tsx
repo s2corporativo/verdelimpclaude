@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, KpiGrid, KpiCard } from "@/components/ui";
 export default function DrePage() {
   const [dados, setDados] = useState<any>(null);
   const [ano, setAno] = useState("2026");
@@ -27,14 +27,11 @@ export default function DrePage() {
       </div>
       {dados && (
         <div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 16 }}>
+          <KpiGrid colunas={4}>
             {[["Receita Bruta", dados.totais.receitaBruta, "#4a9410"],["Tributos", dados.totais.deducoesTributos, "#d97706"],["Despesas Op.", dados.totais.despesasOp, "#dc2626"],["Lucro Líquido", dados.totais.lucroLiquido, dados.totais.lucroLiquido >= 0 ? "#4a9410" : "#dc2626"]].map(([l, v, c]) => (
-              <div key={l as string} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px", borderTop: `3px solid ${c}` }}>
-                <div style={{ fontSize: 10, color: "#6b7280", fontWeight: 600, textTransform: "uppercase" }}>{l}</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: c as string, marginTop: 4 }}>R${fmt(Number(v))}</div>
-              </div>
+              <KpiCard key={l as string} label={l as string} valor={`R$${fmt(Number(v))}`} cor={c as string} />
             ))}
-          </div>
+          </KpiGrid>
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
             <div style={{ background: "#e8f5ee", padding: "9px 16px", display: "flex", justifyContent: "space-between" }}>
               <span style={{ fontWeight: 700, color: "#334532", fontSize: 13 }}>DRE Mensal {ano}</span>

@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, Card, TabelaHead } from "@/components/ui";
 export default function ClientesPage() {
   const [data, setData] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
@@ -66,9 +66,9 @@ export default function ClientesPage() {
         {editId&&<button onClick={limpar} style={{background:"#fff",color:"#374151",border:"1px solid #d1d5db",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:600}}>Cancelar</button>}
       </div>
     </div>
-    <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
+    <Card>
       <table style={{borderCollapse:"collapse",width:"100%"}}>
-        <thead><tr style={{background:"#e8f5ee"}}>{["Nome","CNPJ","Tipo","Município","Status","Ações"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+        <TabelaHead colunas={["Nome","CNPJ","Tipo","Município","Status","Ações"]} />
         <tbody>{data.map((c:any)=><tr key={c.id} style={{borderBottom:"1px solid #f3f4f6",background:editId===c.id?"#f0fdf4":undefined}}>
           <td style={{padding:"8px 12px",fontWeight:600,fontSize:12}}>{c.name}</td>
           <td style={{padding:"8px 12px",fontFamily:"monospace",fontSize:11}}>{c.cnpjCpf||"—"}</td>
@@ -81,6 +81,6 @@ export default function ClientesPage() {
           </td>
         </tr>)}</tbody>
       </table>
-    </div>
+    </Card>
   </div>);
 }

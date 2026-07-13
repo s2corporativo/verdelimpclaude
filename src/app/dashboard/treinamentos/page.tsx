@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, TabelaHead, KpiGrid, KpiCard } from "@/components/ui";
 export default function TreinamentosPage() {
   const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);
   const [form,setForm]=useState({employeeId:"",trainingType:"NR-06",issuedAt:"",expiresAt:"",institution:""});
@@ -22,14 +22,11 @@ export default function TreinamentosPage() {
     {(vencidos>0||aVencer>0)&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"10px 14px",marginBottom:14}}>
       🚨 <strong>{vencidos} vencido(s)</strong> e <strong>{aVencer} a vencer</strong> — regularize para evitar autuação do MTE
     </div>}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+    <KpiGrid colunas={3}>
       {[["Válidos",data.filter((t:any)=>t.status==="valido").length,"✅","#4a9410"],["A vencer (30d)",aVencer,"⚠️","#d97706"],["Vencidos",vencidos,"⛔","#dc2626"]].map(([l,v,i,c])=>(
-        <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:`3px solid ${c}`}}>
-          <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase"}}>{l}</span><span>{i}</span></div>
-          <div style={{fontSize:20,fontWeight:700,color:c as string,marginTop:5}}>{v}</div>
-        </div>
+        <KpiCard key={l as string} label={l as string} valor={v as any} cor={c as string} icone={i as string} />
       ))}
-    </div>
+    </KpiGrid>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:14}}>
       <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>+ Registrar Treinamento</h3>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:9}}>
@@ -42,7 +39,7 @@ export default function TreinamentosPage() {
       <button onClick={salvar} style={{background:"#4a9410",color:"#fff",border:"none",padding:"8px 24px",borderRadius:8,cursor:"pointer",fontWeight:700,marginTop:10}}>+ Registrar</button>
     </div>
     <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-      <thead><tr style={{background:"#e8f5ee"}}>{["Funcionário","Função","Treinamento","Emissão","Vencimento","Dias","Instituição","Status"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+      <TabelaHead colunas={["Funcionário","Função","Treinamento","Emissão","Vencimento","Dias","Instituição","Status"]} />
       <tbody>{data.sort((a:any,b:any)=>a.diasVenc-b.diasVenc).map((t:any,i:number)=>{
         const [bg,co,txt]=SC[t.status]||["#f3f4f6","#374151","—"];
         return<tr key={i} style={{borderBottom:"1px solid #f3f4f6"}}>

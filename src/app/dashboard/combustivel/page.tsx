@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, TabelaHead, KpiGrid, KpiCard } from "@/components/ui";
 export default function CombustivelPage() {
   const [data,setData]=useState<any[]>([]);const [veics,setVeics]=useState<any[]>([]);
   const [demo,setDemo]=useState(false);const [stats,setStats]=useState({totalMes:0,totalLitros:0});
@@ -23,14 +23,11 @@ export default function CombustivelPage() {
   })();
   return(<div>
     <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Controle de Combustível <DemoBadge mostrar={demo} /></h1>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+    <KpiGrid colunas={4}>
       {[["Custo no Mês","R$"+fmt(stats.totalMes),"⛽","#dc2626"],["Litros Abastecidos",Number(stats.totalLitros).toFixed(0)+"L","🛢️","#4a9410"],["Média km/L",pmKm,"🚗","#1d4ed8"],["Veículos",veics.length,"🚙","#7c3aed"]].map(([l,v,i,c])=>(
-        <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:`3px solid ${c}`}}>
-          <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase"}}>{l}</span><span>{i}</span></div>
-          <div style={{fontSize:20,fontWeight:700,color:c as string,marginTop:5}}>{v}</div>
-        </div>
+        <KpiCard key={l as string} label={l as string} valor={v as any} cor={c as string} icone={i as string} />
       ))}
-    </div>
+    </KpiGrid>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:14}}>
       <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>+ Registrar Abastecimento</h3>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr",gap:8,marginBottom:9}}>
@@ -48,7 +45,7 @@ export default function CombustivelPage() {
       </div>
     </div>
     <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-      <thead><tr style={{background:"#e8f5ee"}}>{["Data","Veículo","Hodômetro","Litros","Preço/L","Total","Tipo","Posto"].map(h=><th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:"#334532"}}>{h}</th>)}</tr></thead>
+      <TabelaHead colunas={["Data","Veículo","Hodômetro","Litros","Preço/L","Total","Tipo","Posto"]} />
       <tbody>{data.map((l:any,i:number)=><tr key={i} style={{borderBottom:"1px solid #f3f4f6"}}>
         <td style={{padding:"8px 12px",fontSize:11}}>{l.date?new Date(l.date).toLocaleDateString("pt-BR"):""}</td>
         <td style={{padding:"8px 12px",fontWeight:600,fontSize:12}}>{l.vehicle?.plate} <span style={{fontSize:10,color:"#9ca3af"}}>— {l.vehicle?.model}</span></td>

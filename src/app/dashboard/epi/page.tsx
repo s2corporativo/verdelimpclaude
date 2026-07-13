@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge } from "@/components/ui";
+import { DemoBadge, Card, TabelaHead } from "@/components/ui";
 export default function EpiPage() {
   const [epis, setEpis] = useState<any[]>([]);
   const [entregas, setEntregas] = useState<any[]>([]);
@@ -21,9 +21,9 @@ export default function EpiPage() {
         ))}
       </div>
       {aba === "estoque" && (
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
+        <Card>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
-            <thead><tr style={{ background: "#e8f5ee" }}>{["Código", "EPI", "Qtd. Atual", "Mínimo", "Status"].map(h => <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#334532" }}>{h}</th>)}</tr></thead>
+            <TabelaHead colunas={["Código", "EPI", "Qtd. Atual", "Mínimo", "Status"]} />
             <tbody>{epis.map((e: any) => {
               const critico = Number(e.currentQuantity) <= Number(e.minimumStock);
               return (<tr key={e.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
@@ -35,12 +35,12 @@ export default function EpiPage() {
               </tr>);
             })}</tbody>
           </table>
-        </div>
+        </Card>
       )}
       {aba === "entregas" && (
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
+        <Card>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
-            <thead><tr style={{ background: "#e8f5ee" }}>{["Funcionário", "Função", "EPI", "Data", "Qtd", "Nº CA", "Status"].map(h => <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#334532" }}>{h}</th>)}</tr></thead>
+            <TabelaHead colunas={["Funcionário", "Função", "EPI", "Data", "Qtd", "Nº CA", "Status"]} />
             <tbody>{entregas.map((e: any, i: number) => {
               const [bg, co, txt] = SC[e.status] || ["#f3f4f6", "#374151", e.status];
               return (<tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
@@ -54,7 +54,7 @@ export default function EpiPage() {
               </tr>);
             })}</tbody>
           </table>
-        </div>
+        </Card>
       )}
     </div>
   );

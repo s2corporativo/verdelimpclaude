@@ -7,6 +7,7 @@ export const CORES = {
   // Marca
   verdeEscuro: "#334532", // títulos, sidebar
   verde: "#4a9410",       // ações primárias, valores positivos
+  verdeClaro: "#e8f5ee",  // fundo de cabeçalho de tabela / faixas
   laranja: "#e05008",     // destaque/acento
 
   // Neutros
