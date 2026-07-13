@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge } from "@/components/ui";
+import { estiloLabel } from "@/lib/estilos";
 
 const STAGES = [
   { id:"monitorando",     label:"👁️ Monitorando",       cor:"#6b7280", bg:"#f3f4f6" },
@@ -44,7 +45,7 @@ export default function PipelinePage() {
   const totalGanho = bids.filter(b=>b.stage==="ganho").reduce((s,b)=>s+Number(b.valorEstimado||0),0);
   const totalPipeline = bids.filter(b=>!["ganho","perdido"].includes(b.stage)).reduce((s,b)=>s+(Number(b.valorEstimado||0)*Number(b.probabilidade||50)/100),0);
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:12};
-  const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const LS = estiloLabel;
 
   return (
     <div>

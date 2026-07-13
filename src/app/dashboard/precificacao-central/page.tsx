@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { estiloLabel } from "@/lib/estilos";
 
 // ── Aba 1: Calculadora rápida com IA ─────────────────────────────
 function AbaCalculadora() {
@@ -20,7 +21,7 @@ function AbaCalculadora() {
   const bdi=(custo>0?((unit/custo-1)*100):0).toFixed(1);
   const fmt=(v:number)=>v.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:12};
-  const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const LS = estiloLabel;
   const analisar=async()=>{
     setLoadingIA("...");
     try{

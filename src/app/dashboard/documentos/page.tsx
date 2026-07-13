@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { DemoBadge } from "@/components/ui";
+import { estiloLabel } from "@/lib/estilos";
 
 const CAT_ICON: any = {
   contrato:"📋", fiscal:"💸", rh:"👷", juridico:"⚖️",
@@ -150,7 +151,7 @@ export default function DocumentosPage() {
   };
 
   const IS:any = {width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:12};
-  const LS:any = {fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const LS = estiloLabel;
   const hoje = new Date();
   const fmt = (d:string) => new Date(d).toLocaleDateString("pt-BR");
 

@@ -2,6 +2,7 @@
 // Componentes de UI reutilizáveis do Verdelimp — padronizam elementos que
 // antes eram repetidos com estilos inline levemente diferentes em cada tela.
 import { CORES } from "@/lib/tema";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 
 /** Selo "Demo" exibido quando a tela está com dados de exemplo (tabela vazia). */
 export function DemoBadge({ mostrar = true }: { mostrar?: boolean }) {
@@ -63,6 +64,33 @@ export function KpiCard({ label, valor, cor = CORES.verde, icone }: { label: Rea
       <div style={{ fontSize: 19, fontWeight: 700, color: cor, marginTop: 4 }}>{valor}</div>
     </div>
   );
+}
+
+/** Campo de formulário padrão. Aceita todas as props de <input> + override de style. */
+export function Input({ style, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} style={{ ...estiloInput, ...style }} />;
+}
+
+/** Rótulo + campo em bloco. `label` opcional; `children` é o input/select/textarea. */
+export function Campo({ label, children, style }: { label?: React.ReactNode; children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={style}>
+      {label != null && <label style={estiloLabel}>{label}</label>}
+      {children}
+    </div>
+  );
+}
+
+/** Botão padronizado com variantes de cor da marca. */
+export function Botao({ variante = "primario", style, children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variante?: "primario" | "escuro" | "perigo" | "neutro" }) {
+  const vars: Record<string, React.CSSProperties> = {
+    primario: { background: CORES.verde, color: "#fff", border: "none" },
+    escuro: { background: CORES.verdeEscuro, color: "#fff", border: "none" },
+    perigo: { background: CORES.erro, color: "#fff", border: "none" },
+    neutro: { background: "#fff", color: CORES.textoLabel, border: `1px solid ${CORES.bordaInput}` },
+  };
+  const base: React.CSSProperties = { borderRadius: 8, padding: "8px 16px", cursor: props.disabled ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13, opacity: props.disabled ? 0.6 : 1 };
+  return <button {...props} style={{ ...base, ...vars[variante], ...style }}>{children}</button>;
 }
 
 /** Cabeçalho de tabela padrão (fundo verde-claro da marca). Passe os rótulos das colunas. */

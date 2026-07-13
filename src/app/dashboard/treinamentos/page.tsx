@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge, TabelaHead, KpiGrid, KpiCard } from "@/components/ui";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 export default function TreinamentosPage() {
   const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);
   const [form,setForm]=useState({employeeId:"",trainingType:"NR-06",issuedAt:"",expiresAt:"",institution:""});
@@ -13,8 +14,8 @@ export default function TreinamentosPage() {
   const salvar=async()=>{ const r=await fetch("/api/treinamentos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)}); if(r.ok){ const d=await fetch("/api/treinamentos").then(x=>x.json()); setData(d.data||[]); } };
   const NRS=["NR-06","NR-12","NR-35","NR-20","NR-10","ASO","CNH Cat. B","CNH Cat. C","Direção Defensiva","Primeiros Socorros","SIPAT","Outro"];
   const SC:any={valido:["#dcfce7","#15803d","✅ Válido"],a_vencer:["#fef9c3","#92400e","⚠️ A vencer"],vencido:["#fee2e2","#991b1b","⛔ Vencido"]};
-  const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
-  const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const IS = estiloInput;
+  const LS = estiloLabel;
   const vencidos=data.filter((t:any)=>t.status==="vencido").length;
   const aVencer=data.filter((t:any)=>t.status==="a_vencer").length;
   return(<div>

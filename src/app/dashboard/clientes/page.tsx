@@ -1,7 +1,8 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { DemoBadge, Card, TabelaHead } from "@/components/ui";
+import { DemoBadge, Card, TabelaHead, Campo, Input, Botao } from "@/components/ui";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 export default function ClientesPage() {
   const [data, setData] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
@@ -41,8 +42,8 @@ export default function ClientesPage() {
     if(!r.ok){ const j=await r.json().catch(()=>({})); setMsg("⛔ "+(j.error||"Não foi possível excluir.")); return; }
     setMsg("✓ Excluído."); load();
   };
-  const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
-  const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const IS = estiloInput;
+  const LS = estiloLabel;
   return (<div>
     <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Clientes <DemoBadge mostrar={demo} /></h1>
     <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"8px 13px",marginBottom:14,fontSize:11,color:"#1e40af"}}>
@@ -52,18 +53,18 @@ export default function ClientesPage() {
       <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>+ Novo Cliente</h3>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div><label style={LS}>CNPJ</label><div style={{display:"flex",gap:6}}><input style={{...IS,flex:1}} value={form.cnpj} onChange={e=>setForm(p=>({...p,cnpj:e.target.value}))} placeholder="00.000.000/0000-00"/><button onClick={buscarCNPJ} style={{background:"#059669",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:12}}>🔍 CNPJ</button></div></div>
-        <div><label style={LS}>Razão Social*</label><input style={IS} value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))}/></div>
+        <Campo label="Razão Social*"><Input value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))}/></Campo>
         <div><label style={LS}>Tipo</label><select style={IS} value={form.tipo} onChange={e=>setForm(p=>({...p,tipo:e.target.value}))}><option>Público</option><option>Privado</option></select></div>
-        <div><label style={LS}>Telefone</label><input style={IS} value={form.contato} onChange={e=>setForm(p=>({...p,contato:e.target.value}))}/></div>
-        <div><label style={LS}>E-mail</label><input style={IS} value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))}/></div>
+        <Campo label="Telefone"><Input value={form.contato} onChange={e=>setForm(p=>({...p,contato:e.target.value}))}/></Campo>
+        <Campo label="E-mail"><Input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))}/></Campo>
         <div><label style={LS}>CEP</label><div style={{display:"flex",gap:6}}><input style={{...IS,flex:1}} value={form.cep} onChange={e=>setForm(p=>({...p,cep:e.target.value}))} placeholder="00000-000"/><button onClick={buscarCEP} style={{background:"#1d4ed8",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:12}}>🔍 CEP</button></div></div>
         <div><label style={LS}>Município</label><input style={IS} value={form.municipio} onChange={e=>setForm(p=>({...p,municipio:e.target.value}))}/></div>
         <div><label style={LS}>UF</label><input style={IS} value={form.uf} onChange={e=>setForm(p=>({...p,uf:e.target.value}))}/></div>
       </div>
       {msg&&<p style={{color:msg.startsWith("⛔")?"#991b1b":"#059669",fontSize:12,marginBottom:8}}>{msg}</p>}
       <div style={{display:"flex",gap:8}}>
-        <button onClick={salvar} disabled={loading||!form.nome} style={{background:"#4a9410",color:"#fff",border:"none",padding:"9px 24px",borderRadius:8,cursor:"pointer",fontWeight:600}}>{loading?"Salvando...":editId?"✓ Salvar alterações":"+ Cadastrar"}</button>
-        {editId&&<button onClick={limpar} style={{background:"#fff",color:"#374151",border:"1px solid #d1d5db",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:600}}>Cancelar</button>}
+        <Botao onClick={salvar} disabled={loading||!form.nome} style={{padding:"9px 24px",fontWeight:600}}>{loading?"Salvando...":editId?"✓ Salvar alterações":"+ Cadastrar"}</Botao>
+        {editId&&<Botao variante="neutro" onClick={limpar} style={{padding:"9px 18px",fontWeight:600}}>Cancelar</Botao>}
       </div>
     </div>
     <Card>

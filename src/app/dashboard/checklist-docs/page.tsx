@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 
-const IS: any = { width: "100%", padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 };
-const LS: any = { fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 3 };
+const IS = estiloInput;
+const LS = estiloLabel;
 const CARD: any = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 14 };
 
 const TIPOS = [

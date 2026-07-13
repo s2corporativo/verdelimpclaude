@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge } from "@/components/ui";
+import { estiloLabel } from "@/lib/estilos";
 
 const TIPO_ICON: any = { Roçadeira:"🌿", Motosserra:"🪚", Veiculo:"🚗", Soprador:"💨", Bomba:"⛽", Outro:"🔧" };
 const STATUS_STYLE: any = {
@@ -22,7 +23,7 @@ export default function EquipamentosPage() {
   const [novoEq, setNovoEq] = useState<any>({ tipo:"Roçadeira" });
   const fmt = (v:number) => v?.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const IS: any = {width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:12};
-  const LS: any = {fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const LS = estiloLabel;
 
   useEffect(() => {
     fetch("/api/equipamentos").then(r=>r.json()).then(d=>{

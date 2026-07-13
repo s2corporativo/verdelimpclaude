@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge, TabelaHead } from "@/components/ui";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 export default function FornecedoresPage() {
   const [data, setData] = useState<any[]>([]);
   const [demo, setDemo] = useState(false);
@@ -34,8 +35,8 @@ export default function FornecedoresPage() {
     if(!r.ok){ const j=await r.json().catch(()=>({})); setMsg("⛔ "+(j.error||"Não foi possível excluir.")); return; }
     setMsg("✓ Excluído."); load();
   };
-  const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
-  const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const IS = estiloInput;
+  const LS = estiloLabel;
   return (<div>
     <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Fornecedores <DemoBadge mostrar={demo} /></h1>
     <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:16}}>

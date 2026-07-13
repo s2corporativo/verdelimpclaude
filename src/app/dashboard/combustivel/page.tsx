@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge, TabelaHead, KpiGrid, KpiCard } from "@/components/ui";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 export default function CombustivelPage() {
   const [data,setData]=useState<any[]>([]);const [veics,setVeics]=useState<any[]>([]);
   const [demo,setDemo]=useState(false);const [stats,setStats]=useState({totalMes:0,totalLitros:0});
@@ -11,8 +12,8 @@ export default function CombustivelPage() {
   const salvar=async()=>{ await fetch("/api/combustivel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)}); load(); };
   const fmt=(v:number)=>(Number.isFinite(v)?v:0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
   const preco=(v:number)=>(Number.isFinite(v)?v:0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:3});
-  const IS:any={width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:13};
-  const LS:any={fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:3};
+  const IS = estiloInput;
+  const LS = estiloLabel;
   // Média km/L correta: por veículo (maior−menor hodômetro ÷ litros do veículo),
   // depois média da frota. Somar hodômetros de veículos diferentes dá valor irreal.
   const pmKm=(()=>{
