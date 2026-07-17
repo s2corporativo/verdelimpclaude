@@ -37,12 +37,14 @@ export async function registrarAuditoria(params: {
   } catch { /* auditoria nunca deve derrubar a operação principal */ }
 }
 
-// Gera senha provisória forte para novos usuários / reset
+// Gera senha provisória forte para novos usuários / reset.
+// Usa randomInt (CSPRNG) — antes usava Math.random, previsível para uma credencial.
+import { randomInt } from "crypto";
 export function gerarSenhaProvisoria() {
   const letras = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz";
   const numeros = "23456789";
   const simbolos = "@#$%&*";
-  const sortear = (s: string) => s[Math.floor(Math.random() * s.length)];
+  const sortear = (s: string) => s[randomInt(s.length)];
   let senha = "";
   for (let i = 0; i < 8; i++) senha += sortear(letras);
   senha += sortear(numeros) + sortear(numeros) + sortear(simbolos);

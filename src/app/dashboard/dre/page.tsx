@@ -6,7 +6,7 @@ export default function DrePage() {
   const [dados, setDados] = useState<any>(null);
   const [ano, setAno] = useState("2026");
   const [demo, setDemo] = useState(false);
-  const load = () => fetch(`/api/dre?ano=${ano}`).then(r => r.json()).then(d => { setDados(d); setDemo(!!d._demo); });
+  const load = () => fetch(`/api/dre?ano=${ano}`).then(r => r.json()).then(d => { if (d && d.totais) { setDados(d); setDemo(!!d._demo); } }).catch(() => {});
   useEffect(() => { load(); }, [ano]);
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
   const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];

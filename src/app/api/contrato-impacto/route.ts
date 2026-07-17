@@ -201,11 +201,13 @@ export async function POST(req: NextRequest) {
       tributario: {
         dasMensal: round(dasMensal),
         dasTotal: round(dasTotal),
-        issMensal: round(issMensal),
+        issMensal: round(issMensal),   // informativo — no Simples o ISS já está DENTRO do DAS
         issTotal: round(issTotal),
-        tributosMensal: round(dasMensal + issMensal),
-        tributosTotal: round(dasTotal + issTotal),
-        aliquotaEfetiva: round((dasMensal + issMensal) / c.valorMensal * 100, 2),
+        // Tributo do Simples = DAS (o ISS não se soma; somar inflava ~5% e
+        // contradizia o bloco `dre` deste mesmo arquivo).
+        tributosMensal: round(dasMensal),
+        tributosTotal: round(dasTotal),
+        aliquotaEfetiva: round(dasMensal / c.valorMensal * 100, 2),
       },
       rh: {
         equipeNecessaria: equipeCalculada,

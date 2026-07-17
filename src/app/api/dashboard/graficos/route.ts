@@ -14,8 +14,11 @@ export async function GET() {
       const [nfses, tributos, desp, medicoes] = await Promise.all([
         prisma.fiscalNfse.aggregate({ where: { competence: comp }, _sum: { serviceValue: true } }),
         prisma.fiscalTaxExpense.aggregate({ where: { competence: comp }, _sum: { totalAmount: true } }),
-        prisma.expense.aggregate({ where: { competence: comp }, _sum: { amount: true } }),
-        prisma.measurement.aggregate({ where: { contract: { startDate: { lte: new Date(d.getFullYear(), d.getMonth()+1, 0) } }, status: "aprovada" }, _sum: { value: true } }),
+        prisma.expense.aggregate({ where: { competence: comp, deletedAt: null, NOT: { category: { is: { type: "receita" } } } }, _sum: { amount: true } }),
+        // Fallback de faturamento quando não há NFS-e: medições aprovadas DA
+        // competência (antes somava todas as medições aprovadas do histórico,
+        // repetindo o mesmo valor em todo mês sem NFS-e).
+        prisma.measurement.aggregate({ where: { period: comp, status: "aprovada" }, _sum: { value: true } }),
       ]);
       const fat = Number(nfses._sum.serviceValue||0) || Number(medicoes._sum.value||0);
       const trib = Number(tributos._sum.totalAmount||0);

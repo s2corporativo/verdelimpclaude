@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
       prisma.fiscalNfse.findMany({ where: { competence: competencia } }),
       prisma.fiscalTaxExpense.findMany({ where: { competence: competencia } }),
       prisma.employee.findMany({ where: { active: true }, select: { name: true, role: true, salary: true } }),
-      prisma.expense.findMany({ where: { competence: competencia, deletedAt: null }, include: { category: { select: { name: true } } } }),
+      prisma.expense.findMany({ where: { competence: competencia, deletedAt: null, NOT: { category: { is: { type: "receita" } } } }, include: { category: { select: { name: true } } } }),
     ]);
     const faturamento = nfses.reduce((s,n)=>s+Number(n.serviceValue),0);
     const totalTributos = tributos.reduce((s,t)=>s+Number(t.totalAmount),0);

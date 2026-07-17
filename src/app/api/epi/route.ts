@@ -50,31 +50,43 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     if (!b.itemId || !b.employeeId) return NextResponse.json({ error: "Item e funcionário obrigatórios" }, { status: 400 });
 
-    const entrega = await prisma.inventoryEpiDelivery.create({
-      data: {
-        itemId: b.itemId,
-        employeeId: b.employeeId,
-        deliveryDate: b.deliveryDate ? new Date(b.deliveryDate) : new Date(),
-        expectedReplacementDate: b.replacementDate ? new Date(b.replacementDate) : null,
-        quantity: Number(b.quantity || 1),
-        caNumber: b.caNumber || null,
-        caExpirationDate: b.caExpirationDate ? new Date(b.caExpirationDate) : null,
-        reason: b.reason || "Dotação periódica",
-        status: "ativo",
-      },
-    });
+    const qtd = Number(b.quantity || 1);
+    if (!(qtd > 0)) return NextResponse.json({ error: "Quantidade deve ser positiva" }, { status: 400 });
 
-    // Dar baixa no estoque
-    await prisma.inventoryMovement.create({
-      data: {
-        itemId: b.itemId,
-        movementType: "saida_funcionario",
-        quantity: Number(b.quantity || 1),
-        movementDate: new Date(),
-        employeeId: b.employeeId,
-        reason: `EPI entregue — ${b.reason || "Dotação periódica"}`,
-      },
-    });
+    // Estoque: a entrega dá baixa no saldo do item. Movimento + baixa + entrega
+    // vão numa única transação (antes o saldo nunca era atualizado — o estoque
+    // ficava perpetuamente superestimado e o alerta de crítico nunca disparava).
+    const item = await prisma.inventoryItem.findUnique({ where: { id: b.itemId } });
+    if (!item) return NextResponse.json({ error: "Item de EPI não encontrado" }, { status: 404 });
+    const novoSaldo = Number(item.currentQuantity) - qtd;
+    if (novoSaldo < 0) return NextResponse.json({ error: `Estoque insuficiente: saldo ${Number(item.currentQuantity)}, entrega ${qtd}` }, { status: 400 });
+
+    const [entrega] = await prisma.$transaction([
+      prisma.inventoryEpiDelivery.create({
+        data: {
+          itemId: b.itemId,
+          employeeId: b.employeeId,
+          deliveryDate: b.deliveryDate ? new Date(b.deliveryDate) : new Date(),
+          expectedReplacementDate: b.replacementDate ? new Date(b.replacementDate) : null,
+          quantity: qtd,
+          caNumber: b.caNumber || null,
+          caExpirationDate: b.caExpirationDate ? new Date(b.caExpirationDate) : null,
+          reason: b.reason || "Dotação periódica",
+          status: "ativo",
+        },
+      }),
+      prisma.inventoryMovement.create({
+        data: {
+          itemId: b.itemId,
+          movementType: "saida_funcionario",
+          quantity: qtd,
+          movementDate: new Date(),
+          employeeId: b.employeeId,
+          reason: `EPI entregue — ${b.reason || "Dotação periódica"}`,
+        },
+      }),
+      prisma.inventoryItem.update({ where: { id: b.itemId }, data: { currentQuantity: novoSaldo } }),
+    ]);
 
     const session = await getServerSession(authOptions);
     await registrarAuditoria({ userId: (session?.user as any)?.id || null, action: "CRIAR", module: "sst", entityType: "InventoryEpiDelivery", entityId: entrega.id, newValues: { itemId: b.itemId, employeeId: b.employeeId, caNumber: b.caNumber } });

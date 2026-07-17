@@ -18,7 +18,17 @@ export default function OportunidadesPage() {
   const [form, setForm] = useState({ prospectName: "", contactName: "", phone: "", serviceType: "", estimatedValue: "", origin: "indicação", nextAction: "", nextActionDate: "" });
   const [msg, setMsg] = useState("");
 
-  const carregar = useCallback(async () => { const r = await fetch("/api/oportunidades"); setDados(await r.json()); }, []);
+  // Sempre garante um objeto com `oportunidades` (array) — se a API falhar ou
+  // devolver um corpo de erro, evita tela branca no filter e o "Carregando…" eterno.
+  const carregar = useCallback(async () => {
+    try {
+      const r = await fetch("/api/oportunidades");
+      const j = await r.json();
+      setDados(j && Array.isArray(j.oportunidades) ? j : { oportunidades: [], valorEmAberto: 0 });
+    } catch {
+      setDados({ oportunidades: [], valorEmAberto: 0 });
+    }
+  }, []);
   useEffect(() => { carregar(); }, [carregar]);
 
   const salvar = async () => {

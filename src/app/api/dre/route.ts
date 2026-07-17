@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
       const [nfses, tributos, despesas] = await Promise.all([
         prisma.fiscalNfse.aggregate({ where: { competence: comp }, _sum: { serviceValue: true } }),
         prisma.fiscalTaxExpense.aggregate({ where: { competence: comp }, _sum: { totalAmount: true } }),
-        prisma.expense.aggregate({ where: { competence: comp, deletedAt: null }, _sum: { amount: true } }),
+        // Exclui lançamentos de categoria "receita" (ex.: receita contratual
+        // projetada) — são receita, não despesa operacional.
+        prisma.expense.aggregate({ where: { competence: comp, deletedAt: null, NOT: { category: { is: { type: "receita" } } } }, _sum: { amount: true } }),
       ]);
       const rec = Number(nfses._sum.serviceValue || 0);
       const trib = Number(tributos._sum.totalAmount || 0);

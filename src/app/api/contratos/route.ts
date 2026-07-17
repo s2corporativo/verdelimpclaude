@@ -14,7 +14,7 @@ async function userId() {
 
 export async function GET() {
   try {
-    const data = await prisma.contract.findMany({ orderBy: { endDate: "asc" }, include: { measurements: { select: { id: true, status: true, value: true } } } });
+    const data = await prisma.contract.findMany({ where: { status: { not: "Cancelado" } }, orderBy: { endDate: "asc" }, include: { measurements: { select: { id: true, status: true, value: true } } } });
     const hoje = new Date();
     const enriched = data.map(c => {
       const diasFim = Math.ceil((new Date(c.endDate).getTime() - hoje.getTime()) / 86400000);

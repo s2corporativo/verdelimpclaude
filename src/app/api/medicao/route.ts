@@ -97,11 +97,10 @@ export async function POST(req: NextRequest) {
       const number = `NFSE-${new Date().getFullYear()}-${String(nfCount + 1).padStart(4, "0")}`;
       const competence = med.period || new Date().toISOString().slice(0, 7);
 
-      const cat = await prisma.expenseCategory.upsert({
-        where: { name: "Receita Contratual" }, update: {},
-        create: { name: "Receita Contratual", type: "receita", active: true },
-      });
-
+      // A NFS-e É o registro de receita do faturamento. Antes criávamos também
+      // um Expense de categoria "receita" (espelho) — o que fazia a mesma receita
+      // ser contada duas vezes no /api/financeiro (NFS-e + Expense) e subtraída
+      // como despesa na DRE/relatório. A NFS-e sozinha é a fonte da verdade.
       const [nfse] = await prisma.$transaction([
         prisma.fiscalNfse.create({
           data: {
@@ -113,16 +112,9 @@ export async function POST(req: NextRequest) {
             issueDate: new Date(), competence, status: "lancada",
           },
         }),
-        prisma.expense.create({
-          data: {
-            description: `Receita — NFS-e ${number} (${med.contract?.number || ""})`,
-            amount: valor, dueDate: new Date(), status: "previsto", categoryId: cat.id, competence,
-            notes: `Faturamento da medição ${med.id}`,
-          },
-        }),
         prisma.measurement.update({ where: { id: b.id }, data: { status: "faturada" } }),
       ]);
-      return NextResponse.json({ success: true, nfse, mensagem: `NFS-e ${number} lançada e receita registrada.` });
+      return NextResponse.json({ success: true, nfse, mensagem: `NFS-e ${number} lançada.` });
     }
 
     const m = await prisma.measurement.create({ data: { contractId: b.contractId, period: b.period, startDate: new Date(b.startDate), endDate: new Date(b.endDate), value: Number(b.value||0), status: "em_elaboracao", notes: b.notes, items: { create: (b.items||[]).map((i: any) => ({ description: i.description, unit: i.unit, quantity: Number(i.quantity), unitValue: Number(i.unitValue), totalValue: Number(i.quantity)*Number(i.unitValue) })) } }, include: { items: true } });
