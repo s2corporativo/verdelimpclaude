@@ -36,6 +36,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
       { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato" },
       { href: "/dashboard/cronograma", label: "📅 Cronograma" },
       { href: "/dashboard/medicao", label: "📏 Medição" },
+      { href: "/dashboard/email-busca", label: "📧 Buscar no E-mail" },
     ],
   },
   {
