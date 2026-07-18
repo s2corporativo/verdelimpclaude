@@ -381,6 +381,19 @@ model FiscalNfse {
   @@index([clientId])
 }
 
+// Cofre de credenciais — chaves de API e senhas de integração cadastradas
+// pela tela Admin → Credenciais & APIs. O valor é criptografado (AES-256-GCM,
+// chave derivada do NEXTAUTH_SECRET) antes de ir ao banco; todo o sistema lê
+// via src/lib/cofre.ts (banco primeiro, variável de ambiente como fallback).
+model SystemCredential {
+  id        String   @id @default(cuid())
+  name      String   @unique // ex.: GROQ_API_KEY — só nomes do catálogo do cofre
+  value     String // criptografado — nunca armazenado em claro
+  updatedBy String? // e-mail/nome de quem salvou (auditoria)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model FiscalSimplesDas {
   id                   String    @id @default(cuid())
   competence           String    @unique

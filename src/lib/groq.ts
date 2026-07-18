@@ -1,18 +1,26 @@
 // src/lib/groq.ts
 // Helper centralizado para chamadas GROQ (llama-3.3-70b-versatile)
-// Substitui todas as chamadas Anthropic do projeto
+// Substitui todas as chamadas Anthropic do projeto.
+// A chave vem do COFRE (Admin → Credenciais & APIs) com fallback para a
+// variável de ambiente GROQ_API_KEY — ver src/lib/cofre.ts.
+import { getCredencial } from "@/lib/cofre";
 
 export interface GroqMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
 
+/** true quando há chave GROQ disponível (cofre ou ambiente). */
+export async function groqConfigurado(): Promise<boolean> {
+  return Boolean(await getCredencial("GROQ_API_KEY"));
+}
+
 export async function groqChat(
   messages: GroqMessage[],
   maxTokens = 1000
 ): Promise<string> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) throw new Error("GROQ_API_KEY não configurada nas variáveis de ambiente");
+  const key = await getCredencial("GROQ_API_KEY");
+  if (!key) throw new Error("GROQ_API_KEY não configurada — cadastre em Admin → Credenciais & APIs");
 
   const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -40,8 +48,8 @@ export async function groqTranscribe(
   audioBuffer: Buffer,
   mimeType: string = "audio/webm"
 ): Promise<string> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) throw new Error("GROQ_API_KEY não configurada");
+  const key = await getCredencial("GROQ_API_KEY");
+  if (!key) throw new Error("GROQ_API_KEY não configurada — cadastre em Admin → Credenciais & APIs");
 
   const form = new FormData();
   const ext = mimeType.includes("mp4") ? "mp4" : mimeType.includes("mp3") ? "mp3" : "webm";

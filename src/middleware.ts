@@ -28,6 +28,7 @@ export default withAuth(
       ["/dashboard/diagnostico", ["ADMIN"]],
       ["/api/alertas/whatsapp", ["ADMIN"]],
       ["/dashboard/configuracoes", ["ADMIN"]],
+      ["/dashboard/credenciais", ["ADMIN"]], // cofre de chaves/senhas (API já coberta por /api/admin)
       // E-mail — cotações/contratos recebidos + análise IA
       ["/api/email-analise", [...GES, "FINANCEIRO"]],
       ["/dashboard/email-analise", [...GES, "FINANCEIRO"]],

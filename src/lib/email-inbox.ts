@@ -1,19 +1,19 @@
 // Leitura da caixa de e-mail via IMAP — busca cotações e contratos recebidos
 // para análise com IA (módulo Cotações & Contratos por E-mail).
 //
-// Configuração (.env.production):
-//   EMAIL_IMAP_HOST  ex.: imap.gmail.com (Gmail exige senha de app)
-//   EMAIL_IMAP_PORT  padrão 993 (TLS)
-//   EMAIL_IMAP_USER  conta que recebe as cotações
-//   EMAIL_IMAP_PASS  senha ou senha de app
+// Credenciais: COFRE (Admin → Credenciais & APIs) com fallback para as
+// variáveis EMAIL_IMAP_HOST / EMAIL_IMAP_PORT / EMAIL_IMAP_USER / EMAIL_IMAP_PASS.
+// Gmail/Outlook exigem senha de aplicativo.
 //
 // Somente LEITURA: nenhuma mensagem é movida, marcada ou apagada.
 import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import { getCredenciais } from "@/lib/cofre";
 
-export function imapConfigurado(): boolean {
-  return Boolean(process.env.EMAIL_IMAP_HOST && process.env.EMAIL_IMAP_USER && process.env.EMAIL_IMAP_PASS);
+export async function imapConfigurado(): Promise<boolean> {
+  const c = await getCredenciais("EMAIL_IMAP_HOST", "EMAIL_IMAP_USER", "EMAIL_IMAP_PASS");
+  return Boolean(c.EMAIL_IMAP_HOST && c.EMAIL_IMAP_USER && c.EMAIL_IMAP_PASS);
 }
 
 // Palavras que indicam cotação/orçamento/contrato no assunto do e-mail.
@@ -54,11 +54,12 @@ const MAX_ANEXO_BYTES = 10 * 1024 * 1024; // anexo acima disso não é extraído
 const MAX_TEXTO_ANEXO = 20000;      // caracteres extraídos por anexo
 
 async function conectar(): Promise<ImapFlow> {
+  const c = await getCredenciais("EMAIL_IMAP_HOST", "EMAIL_IMAP_PORT", "EMAIL_IMAP_USER", "EMAIL_IMAP_PASS");
   const client = new ImapFlow({
-    host: process.env.EMAIL_IMAP_HOST!,
-    port: Number(process.env.EMAIL_IMAP_PORT || 993),
+    host: c.EMAIL_IMAP_HOST!,
+    port: Number(c.EMAIL_IMAP_PORT || 993),
     secure: true,
-    auth: { user: process.env.EMAIL_IMAP_USER!, pass: process.env.EMAIL_IMAP_PASS! },
+    auth: { user: c.EMAIL_IMAP_USER!, pass: c.EMAIL_IMAP_PASS! },
     logger: false,
   });
   await client.connect();

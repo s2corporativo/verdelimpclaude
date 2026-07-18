@@ -8,7 +8,7 @@ import { z } from "zod";
 import { exigirPapel, erroInterno } from "@/lib/authz";
 import { validar } from "@/lib/validacao";
 import { imapConfigurado, listarEmails, lerEmail } from "@/lib/email-inbox";
-import { groqChat } from "@/lib/groq";
+import { groqChat, groqConfigurado } from "@/lib/groq";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +25,10 @@ export async function GET(req: NextRequest) {
   const { erro } = await exigirPapel(...PAPEIS);
   if (erro) return erro;
   try {
-    if (!imapConfigurado()) {
+    if (!(await imapConfigurado())) {
       return NextResponse.json({
         configurado: false, data: DEMO_EMAILS, _demo: true,
-        aviso: "IMAP não configurado — exibindo exemplos. Defina EMAIL_IMAP_HOST/PORT/USER/PASS no .env.production.",
+        aviso: "IMAP não configurado — exibindo exemplos. Cadastre o servidor/usuário/senha em Admin → Credenciais & APIs.",
       });
     }
     const dias = Math.min(Math.max(Number(req.nextUrl.searchParams.get("dias") || 30), 1), 90);
@@ -65,11 +65,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (!imapConfigurado()) {
-      return NextResponse.json({ error: "IMAP não configurado — defina EMAIL_IMAP_HOST/PORT/USER/PASS no ambiente." }, { status: 503 });
+    if (!(await imapConfigurado())) {
+      return NextResponse.json({ error: "IMAP não configurado — cadastre em Admin → Credenciais & APIs." }, { status: 503 });
     }
-    if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({ error: "GROQ_API_KEY ausente — a análise por IA está indisponível. Configure a chave no .env.production." }, { status: 503 });
+    if (!(await groqConfigurado())) {
+      return NextResponse.json({ error: "Chave GROQ ausente — a análise por IA está indisponível. Cadastre em Admin → Credenciais & APIs." }, { status: 503 });
     }
 
     const email = await lerEmail(body.uid);
