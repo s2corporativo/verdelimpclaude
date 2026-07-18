@@ -164,20 +164,20 @@ ajuda, transcrição de voz, análise de cotações/contratos por e-mail e **an�
 jurídica de documentos** (reconhece o tipo e lê como advogado especialista). Sem ela,
 o restante do ERP funciona normalmente.
 
-### Inserir / trocar a chave GROQ depois do deploy
+### Inserir / trocar chaves e senhas — Cofre de Credenciais (recomendado)
 
-1. Pegue a chave em https://console.groq.com → **API Keys → Create API Key** (começa com `gsk_...`).
-2. Na VPS, edite o `.env.production` e cole a chave:
+O jeito preferido é **pela própria tela do sistema**, sem SSH e sem reiniciar:
 
-```bash
-cd /opt/verdelimp-erp
-nano .env.production          # defina GROQ_API_KEY=gsk_sua_chave_aqui
-docker compose up -d app      # só o app precisa reiniciar para reler a variável
-```
+1. Entre como administrador → menu **Sistema → 🔑 Credenciais & APIs**.
+2. Cole a chave/senha no campo (GROQ, SMTP, IMAP…) e clique **Salvar**.
+3. O valor é gravado **criptografado (AES-256-GCM)** no banco e **todo o
+   sistema passa a usá-lo na hora** — a credencial do cofre tem prioridade
+   sobre a variável de ambiente correspondente.
+4. Confirme com **“Testar IA”** na mesma tela (ou `GET /api/ia-status`).
 
-3. Confirme em **Integrações → “Testar IA agora”** (ou `GET /api/ia-status`): deve
-   responder **“IA ATIVA”** com a latência. A chave fica só no `.env.production`
-   (nunca no código nem no Git).
+As variáveis no `.env.production` continuam funcionando como *fallback* para
+quem preferir infra-como-código; o cofre depende do `NEXTAUTH_SECRET` (a chave
+de criptografia deriva dele — se o segredo mudar, recadastre as credenciais).
 
 Para o módulo **Cotações & Contratos por E-mail** (busca mensagens na caixa de
 entrada, somente leitura, e analisa com IA), configure também:

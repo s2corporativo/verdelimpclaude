@@ -1,9 +1,12 @@
-// Envio de e-mail via SMTP (nodemailer) — configurado por variáveis de ambiente
-// SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM
+// Envio de e-mail via SMTP (nodemailer). As credenciais vêm do COFRE
+// (Admin → Credenciais & APIs) com fallback para as variáveis de ambiente
+// SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM.
 import nodemailer from "nodemailer";
+import { getCredenciais } from "@/lib/cofre";
 
-export function emailConfigurado(): boolean {
-  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+export async function emailConfigurado(): Promise<boolean> {
+  const c = await getCredenciais("SMTP_HOST", "SMTP_USER", "SMTP_PASS");
+  return Boolean(c.SMTP_HOST && c.SMTP_USER && c.SMTP_PASS);
 }
 
 export async function enviarEmail(params: {
@@ -12,19 +15,20 @@ export async function enviarEmail(params: {
   html: string;
   texto?: string;
 }): Promise<{ ok: boolean; erro?: string }> {
-  if (!emailConfigurado()) {
-    return { ok: false, erro: "SMTP não configurado — defina SMTP_HOST, SMTP_USER e SMTP_PASS no ambiente" };
+  const c = await getCredenciais("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM");
+  if (!c.SMTP_HOST || !c.SMTP_USER || !c.SMTP_PASS) {
+    return { ok: false, erro: "SMTP não configurado — cadastre em Admin → Credenciais & APIs (ou defina SMTP_HOST/USER/PASS no ambiente)" };
   }
   try {
-    const porta = Number(process.env.SMTP_PORT || 587);
+    const porta = Number(c.SMTP_PORT || 587);
     const transporte = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: c.SMTP_HOST,
       port: porta,
       secure: porta === 465,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      auth: { user: c.SMTP_USER, pass: c.SMTP_PASS },
     });
     await transporte.sendMail({
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+      from: c.EMAIL_FROM || c.SMTP_USER,
       to: params.para,
       subject: params.assunto,
       html: params.html,

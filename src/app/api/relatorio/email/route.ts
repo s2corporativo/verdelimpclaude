@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const competencia = body.competencia || new Date().toISOString().slice(0, 7);
 
-    if (!emailConfigurado()) {
-      return NextResponse.json({ error: "SMTP não configurado. Defina SMTP_HOST, SMTP_USER, SMTP_PASS e EMAIL_FROM no .env.production da VPS." }, { status: 400 });
+    if (!(await emailConfigurado())) {
+      return NextResponse.json({ error: "SMTP não configurado. Cadastre em Admin → Credenciais & APIs (ou defina SMTP_HOST/USER/PASS no ambiente)." }, { status: 400 });
     }
 
     const config = await prisma.companyConfig.findFirst();

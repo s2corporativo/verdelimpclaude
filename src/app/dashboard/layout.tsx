@@ -49,6 +49,7 @@ const MENU = [
   { s: "SISTEMA" },
   { href: "/dashboard/diagnostico", label: "Central de Diagnóstico", icon: "🩺" },
   { href: "/dashboard/admin", label: "Administração", icon: "🛡️", roles: ["ADMIN"] },
+  { href: "/dashboard/credenciais", label: "Credenciais & APIs", icon: "🔑", roles: ["ADMIN"] },
   { href: "/dashboard/integracoes", label: "Integrações", icon: "🔌" },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: "⚙️" },
   { href: "/dashboard/alterar-senha", label: "Alterar Senha", icon: "🔐" },

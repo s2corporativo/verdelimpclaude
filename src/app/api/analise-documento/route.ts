@@ -6,6 +6,7 @@ import { z } from "zod";
 import { exigirPapel, erroInterno } from "@/lib/authz";
 import { validar } from "@/lib/validacao";
 import { analisarDocumentoJuridico } from "@/lib/analise-juridica";
+import { groqConfigurado } from "@/lib/groq";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
 
 export const dynamic = "force-dynamic";
@@ -24,8 +25,8 @@ export async function POST(req: Request) {
   const { erro } = await exigirPapel(); // qualquer usuário autenticado
   if (erro) return erro;
   try {
-    if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({ error: "GROQ_API_KEY ausente — a análise por IA está indisponível. Configure a chave no servidor." }, { status: 503 });
+    if (!(await groqConfigurado())) {
+      return NextResponse.json({ error: "Chave GROQ ausente — a análise por IA está indisponível. Cadastre em Admin → Credenciais & APIs." }, { status: 503 });
     }
 
     const { data: body, erro: erroVal } = validar(Schema, await req.json().catch(() => ({})));

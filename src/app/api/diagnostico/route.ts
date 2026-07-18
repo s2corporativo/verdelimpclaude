@@ -4,6 +4,7 @@
 // Nunca lança: cada verificação é isolada em try/catch.
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCredenciais } from "@/lib/cofre";
 
 export const dynamic = "force-dynamic";
 
@@ -75,24 +76,31 @@ export async function GET() {
     correcao: "Gere um segredo forte (openssl rand -base64 32) e reinicie a aplicação." });
   else add({ id: "secret", area: "Segurança", titulo: "Segredo de sessão", status: "ok", detalhe: "Segredo de sessão configurado." });
 
+  // 6-7b. Integrações que leem do COFRE (Admin → Credenciais & APIs) com
+  // fallback para variáveis de ambiente — ver src/lib/cofre.ts.
+  const cred = await getCredenciais(
+    "GROQ_API_KEY", "SMTP_HOST", "SMTP_USER", "SMTP_PASS",
+    "EMAIL_IMAP_HOST", "EMAIL_IMAP_USER", "EMAIL_IMAP_PASS",
+  );
+
   // 6. Integração de IA (GROQ)
-  if (process.env.GROQ_API_KEY) add({ id: "groq", area: "Integrações", titulo: "IA (GROQ)", status: "ok", detalhe: "Chave GROQ configurada — recursos de IA disponíveis." });
+  if (cred.GROQ_API_KEY) add({ id: "groq", area: "Integrações", titulo: "IA (GROQ)", status: "ok", detalhe: "Chave GROQ configurada — recursos de IA disponíveis." });
   else add({ id: "groq", area: "Integrações", titulo: "IA (GROQ)", status: "atencao",
-    detalhe: "Chave GROQ ausente — chat de ajuda, proposta por edital e análise de preço ficam indisponíveis.",
-    correcao: "Pegue a chave gratuita em console.groq.com e adicione GROQ_API_KEY no .env.production; depois docker compose up -d app." });
+    detalhe: "Chave GROQ ausente — análise jurídica, cotações por e-mail, editais, chat e voz ficam indisponíveis.",
+    correcao: "Pegue a chave gratuita em console.groq.com e cadastre em Admin → Credenciais & APIs (vale na hora, sem reiniciar)." });
 
   // 7. E-mail (SMTP)
-  if (process.env.SMTP_HOST && process.env.SMTP_USER) add({ id: "smtp", area: "Integrações", titulo: "E-mail (SMTP)", status: "ok", detalhe: "SMTP configurado — envio de relatórios por e-mail disponível." });
+  if (cred.SMTP_HOST && cred.SMTP_USER && cred.SMTP_PASS) add({ id: "smtp", area: "Integrações", titulo: "E-mail (SMTP)", status: "ok", detalhe: "SMTP configurado — envio de relatórios por e-mail disponível." });
   else add({ id: "smtp", area: "Integrações", titulo: "E-mail (SMTP)", status: "atencao",
     detalhe: "SMTP não configurado — o envio de e-mail (ex.: relatório ao contador) fica indisponível.",
-    correcao: "Preencha SMTP_HOST/PORT/USER/PASS no .env.production se quiser enviar e-mails. (Opcional.)" });
+    correcao: "Cadastre servidor, usuário e senha SMTP em Admin → Credenciais & APIs. (Opcional.)" });
 
   // 7b. E-mail (IMAP) — busca de cotações/contratos + análise IA
-  if (process.env.EMAIL_IMAP_HOST && process.env.EMAIL_IMAP_USER && process.env.EMAIL_IMAP_PASS)
+  if (cred.EMAIL_IMAP_HOST && cred.EMAIL_IMAP_USER && cred.EMAIL_IMAP_PASS)
     add({ id: "imap", area: "Integrações", titulo: "E-mail (IMAP — cotações/contratos)", status: "ok", detalhe: "IMAP configurado — busca de cotações e contratos na caixa de entrada disponível." });
   else add({ id: "imap", area: "Integrações", titulo: "E-mail (IMAP — cotações/contratos)", status: "atencao",
     detalhe: "IMAP não configurado — a busca de cotações/contratos no e-mail e a análise por IA ficam em modo demonstrativo.",
-    correcao: "Defina EMAIL_IMAP_HOST (ex.: imap.gmail.com), EMAIL_IMAP_PORT (993), EMAIL_IMAP_USER e EMAIL_IMAP_PASS (senha de app) no .env.production e reinicie o app." });
+    correcao: "Cadastre o servidor IMAP (ex.: imap.gmail.com), usuário e senha de app em Admin → Credenciais & APIs." });
 
   // 8. Contratos ativos sem cliente vinculado
   try {

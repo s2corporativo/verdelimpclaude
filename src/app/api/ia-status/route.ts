@@ -3,7 +3,7 @@
 // e confirma que o modelo respondeu — é a prova de que a IA está ativa.
 import { NextResponse } from "next/server";
 import { exigirPapel } from "@/lib/authz";
-import { groqChat } from "@/lib/groq";
+import { groqChat, groqConfigurado } from "@/lib/groq";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +20,12 @@ export async function GET() {
   const { erro } = await exigirPapel(); // qualquer usuário autenticado
   if (erro) return erro;
 
-  if (!process.env.GROQ_API_KEY) {
+  if (!(await groqConfigurado())) {
     return NextResponse.json({
       ativa: false,
       motivo: "sem_chave",
-      mensagem: "A IA está INATIVA: a variável GROQ_API_KEY não está configurada no servidor.",
-      correcao: "Pegue a chave gratuita em https://console.groq.com e defina GROQ_API_KEY no .env.production; depois reinicie o app (docker compose up -d app).",
+      mensagem: "A IA está INATIVA: nenhuma chave GROQ cadastrada (cofre ou ambiente).",
+      correcao: "Pegue a chave gratuita em https://console.groq.com e cadastre em Admin → Credenciais & APIs — vale na hora, sem reiniciar.",
       recursos: RECURSOS,
     });
   }
