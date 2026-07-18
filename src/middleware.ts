@@ -12,10 +12,13 @@ export default withAuth(
       return NextResponse.redirect(new URL("/dashboard/alterar-senha", req.url));
     }
 
-    // Proteção por perfil. FIN = financeiro/fiscal; RH_ = pessoas; SST = campo/segurança.
+    // Proteção por perfil. FIN = financeiro/fiscal; RH_ = pessoas; SST = campo/segurança;
+    // GES = gestão/comercial; OPE = operação de campo.
     const FIN = ["ADMIN", "FISCAL", "FINANCEIRO"];
     const RH_ = ["ADMIN", "RH"];
     const SST = ["ADMIN", "RH", "OPERACIONAL"];
+    const GES = ["ADMIN", "GESTOR", "COMERCIAL"];
+    const OPE = ["ADMIN", "GESTOR", "OPERACIONAL"];
     const guards: [string, string[]][] = [
       // Sistema / administração
       ["/api/admin", ["ADMIN"]],
@@ -49,6 +52,38 @@ export default withAuth(
       ["/api/almoxarifado", ["ADMIN", "ALMOXARIFADO", "OPERACIONAL"]],
       ["/dashboard/almoxarifado", ["ADMIN", "ALMOXARIFADO", "OPERACIONAL"]],
       ["/dashboard/propostas", ["ADMIN", "COMERCIAL", "OPERACIONAL"]],
+      // GED — documentos podem conter holerite/ASO/contrato social; papel mínimo
+      // aqui, e o handler ainda restringe os confidenciais por categoria.
+      ["/api/documentos", ["ADMIN", "GESTOR", "COMERCIAL", "RH", "FINANCEIRO", "FISCAL"]],
+      ["/dashboard/documentos", ["ADMIN", "GESTOR", "COMERCIAL", "RH", "FINANCEIRO", "FISCAL"]],
+      // Comercial / licitações / precificação
+      ["/api/clientes", [...GES, "FINANCEIRO", "FISCAL"]],
+      ["/api/fornecedores", [...GES, "FINANCEIRO", "FISCAL", "ALMOXARIFADO"]],
+      ["/api/oportunidades", GES],
+      ["/api/pncp", GES],
+      ["/api/bid-pipeline", GES],
+      ["/api/analise-licitacao", GES],
+      ["/api/analise-preco", GES],
+      ["/api/proposta-edital", GES],
+      ["/api/extrair-edital", GES],
+      ["/api/precificacao-bdi", GES],
+      ["/api/hora-homem", [...GES, "FINANCEIRO"]],
+      ["/api/equipe-otimizada", GES],
+      ["/api/propostas", [...GES, "OPERACIONAL"]],
+      ["/api/proposta-contrato", GES],
+      // Contratos e medição (valores contratuais)
+      ["/api/contratos", [...GES, "OPERACIONAL", "FINANCEIRO", "FISCAL"]],
+      ["/api/contrato-impacto", GES],
+      ["/api/contrato-propagar", GES],
+      ["/api/cronograma-contrato", [...GES, "OPERACIONAL"]],
+      ["/api/medicao", [...GES, "OPERACIONAL", "FINANCEIRO", "FISCAL"]],
+      // Operação de campo e frota
+      ["/api/logistica", OPE],
+      ["/api/equipamentos", OPE],
+      ["/api/combustivel", [...OPE, "FINANCEIRO"]],
+      ["/api/retro", OPE],
+      ["/api/detetizacao", OPE],
+      ["/api/voz", [...OPE, "COMERCIAL"]],
     ];
 
     for (const [route, required] of guards) {

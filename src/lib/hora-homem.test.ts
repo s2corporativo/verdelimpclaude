@@ -7,15 +7,21 @@ import {
 } from "./hora-homem";
 
 describe("custoHoraHomem — custo real da hora produtiva", () => {
-  it("soma encargos (41,44%) + benefícios e divide pelas horas produtivas", () => {
+  it("soma encargos (57,44% — Anexo IV) + benefícios e divide pelas horas produtivas", () => {
     const c = custoHoraHomem(2000, PARAMETROS_PADRAO);
-    expect(c.encargosPct).toBeCloseTo(41.44, 2);            // 8+7+8,33+11,11+3+4
-    expect(c.encargosValor).toBeCloseTo(828.8, 2);          // 2000×41,44%
+    expect(c.encargosPct).toBeCloseTo(57.44, 2);            // 8+23+8,33+11,11+3+4
+    expect(c.encargosValor).toBeCloseTo(1148.8, 2);         // 2000×57,44%
     expect(c.beneficios).toBeCloseTo(750, 2);               // 660 + 90
-    expect(c.custoMensalTotal).toBeCloseTo(3578.8, 2);
+    expect(c.custoMensalTotal).toBeCloseTo(3898.8, 2);
     expect(c.horasProdutivas).toBeCloseTo(165, 2);          // 220×75%
-    expect(c.custoHoraPaga).toBeCloseTo(3578.8 / 220, 2);   // ~16,27
-    expect(c.custoHoraProdutiva).toBeCloseTo(3578.8 / 165, 2); // ~21,69
+    expect(c.custoHoraPaga).toBeCloseTo(3898.8 / 220, 2);
+    expect(c.custoHoraProdutiva).toBeCloseTo(3898.8 / 165, 2);
+  });
+
+  it("o patronal padrão está alinhado ao Anexo IV do Simples (20% CPP + 3% RAT)", () => {
+    // Regressão do bug histórico: default de 7% não tinha base legal para
+    // limpeza/conservação (Anexo IV) e subestimava o custo em ~16 p.p.
+    expect(PARAMETROS_PADRAO.inssPatronalPct).toBe(23);
   });
 
   it("a hora PRODUTIVA custa mais que a hora paga (eficiência < 100%)", () => {

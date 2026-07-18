@@ -3,10 +3,13 @@
 // (11 meses após o fim do aquisitivo) alimenta a Central de Alertas.
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { exigirPapel } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const { erro } = await exigirPapel("ADMIN", "RH");
+  if (erro) return erro;
   try {
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     const funcionarios = await prisma.employee.findMany({
@@ -65,6 +68,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const { erro } = await exigirPapel("ADMIN", "RH");
+  if (erro) return erro;
   try {
     const b = await req.json();
 
@@ -103,6 +108,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const { erro } = await exigirPapel("ADMIN", "RH");
+  if (erro) return erro;
   try {
     const b = await req.json();
     if (!b.id || !b.tipo) return NextResponse.json({ error: "id e tipo obrigatórios" }, { status: 400 });
@@ -122,6 +129,8 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const { erro } = await exigirPapel("ADMIN", "RH");
+  if (erro) return erro;
   try {
     const id = req.nextUrl.searchParams.get("id");
     const tipo = req.nextUrl.searchParams.get("tipo");

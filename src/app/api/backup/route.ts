@@ -2,8 +2,11 @@
 // Exporta todos os dados do sistema em JSON estruturado para download/Google Drive
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { exigirPapel } from "@/lib/authz";
 
 export async function GET(req: NextRequest) {
+  const { erro } = await exigirPapel("ADMIN");
+  if (erro) return erro;
   const { searchParams } = new URL(req.url);
   const formato = searchParams.get("formato") || "json"; // json | csv_financeiro
   const modulo = searchParams.get("modulo") || "completo";

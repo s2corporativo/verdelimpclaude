@@ -57,8 +57,11 @@ async function main() {
     }
   }
 
-  // Usuários — em produção defina SEED_ADMIN_PASSWORD no ambiente;
-  // a senha padrão abaixo é pública (está no repositório) e serve só para desenvolvimento
+  // Usuários — em produção SEED_ADMIN_PASSWORD é OBRIGATÓRIA: a senha padrão
+  // abaixo é pública (está no repositório) e só pode existir em desenvolvimento.
+  if (!process.env.SEED_ADMIN_PASSWORD && process.env.NODE_ENV === "production") {
+    throw new Error("SEED_ADMIN_PASSWORD é obrigatória em produção — abortando seed para não criar admin com senha pública.");
+  }
   const senhaInicial = process.env.SEED_ADMIN_PASSWORD || "Verdelimp@2026";
   if (!process.env.SEED_ADMIN_PASSWORD) {
     console.warn("⚠️  SEED_ADMIN_PASSWORD não definida — usando senha padrão de desenvolvimento. NÃO use em produção.");

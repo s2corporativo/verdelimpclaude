@@ -22,7 +22,9 @@ export interface ParametrosHH {
 
 export const PARAMETROS_PADRAO: ParametrosHH = {
   fgtsPct: 8,
-  inssPatronalPct: 7,
+  // Anexo IV do Simples (limpeza/conservação — caso Verdelimp): CPP 20% + RAT 3%
+  // recolhida FORA do DAS. Ajustar se o enquadramento/FAP mudar (ver tabelas-fiscais.ts).
+  inssPatronalPct: 23,
   decimoTerceiroPct: 8.33,
   feriasPct: 11.11,
   encargosSobreProvisoesPct: 3,

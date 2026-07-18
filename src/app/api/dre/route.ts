@@ -1,6 +1,7 @@
 // src/app/api/dre/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -13,7 +14,13 @@ export async function GET(req: NextRequest) {
       const [nfses, tributos, despesas] = await Promise.all([
         prisma.fiscalNfse.aggregate({ where: { competence: comp }, _sum: { serviceValue: true } }),
         prisma.fiscalTaxExpense.aggregate({ where: { competence: comp }, _sum: { totalAmount: true } }),
-        prisma.expense.aggregate({ where: { competence: comp, deletedAt: null }, _sum: { amount: true } }),
+        // Só DESPESAS de verdade: o faturamento de medição gera um lançamento de
+        // categoria tipo "receita" nesta mesma tabela — somá-lo aqui subtraía a
+        // receita duas vezes do lucro (double-count corrigido).
+        prisma.expense.aggregate({
+          where: { competence: comp, deletedAt: null, category: { isNot: { type: "receita" } } },
+          _sum: { amount: true },
+        }),
       ]);
       const rec = Number(nfses._sum.serviceValue || 0);
       const trib = Number(tributos._sum.totalAmount || 0);
@@ -33,18 +40,9 @@ export async function GET(req: NextRequest) {
     const folhaAnual = folhaMensal * 12;
 
     return NextResponse.json({ ano, meses, totais, folhaMensal, folhaAnual });
-  } catch {
-    // Dados demo
-    const mesesDemo = [
-      { competencia: `${ano}-01`, mes: 1, receitaBruta: 50000, deducoesTributos: 6200, despesasOp: 19000, lucroLiquido: 24800 },
-      { competencia: `${ano}-02`, mes: 2, receitaBruta: 48600, deducoesTributos: 5900, despesasOp: 18500, lucroLiquido: 24200 },
-      { competencia: `${ano}-03`, mes: 3, receitaBruta: 54200, deducoesTributos: 6600, despesasOp: 20000, lucroLiquido: 27600 },
-      { competencia: `${ano}-04`, mes: 4, receitaBruta: 57000, deducoesTributos: 7870, despesasOp: 22100, lucroLiquido: 27030 },
-      { competencia: `${ano}-05`, mes: 5, receitaBruta: 0, deducoesTributos: 0, despesasOp: 0, lucroLiquido: 0 },
-      { competencia: `${ano}-06`, mes: 6, receitaBruta: 0, deducoesTributos: 0, despesasOp: 0, lucroLiquido: 0 },
-      ...Array.from({ length: 6 }, (_, i) => ({ competencia: `${ano}-${String(i+7).padStart(2,"0")}`, mes: i+7, receitaBruta: 0, deducoesTributos: 0, despesasOp: 0, lucroLiquido: 0 })),
-    ];
-    const totais = mesesDemo.reduce((a, m) => ({ receitaBruta: a.receitaBruta+m.receitaBruta, deducoesTributos: a.deducoesTributos+m.deducoesTributos, despesasOp: a.despesasOp+m.despesasOp, lucroLiquido: a.lucroLiquido+m.lucroLiquido }), { receitaBruta: 0, deducoesTributos: 0, despesasOp: 0, lucroLiquido: 0 });
-    return NextResponse.json({ ano, meses: mesesDemo, totais, folhaMensal: 20600, folhaAnual: 247200, _demo: true });
+  } catch (e) {
+    // Relatório financeiro NUNCA devolve número fabricado quando o banco falha —
+    // dado demo plausível mascarando erro é pior que erro explícito.
+    return erroInterno(e, "api/dre GET");
   }
 }

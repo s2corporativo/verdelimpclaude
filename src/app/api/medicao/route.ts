@@ -1,8 +1,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { dataLocal } from "@/lib/fiscal-calc";
 
 export const dynamic = "force-dynamic";
+
+// Competência no fuso LOCAL — toISOString() usa UTC e, à noite no Brasil,
+// pulava a competência para o mês seguinte.
+const competenciaLocal = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
 export async function GET() {
   try {
@@ -95,7 +100,7 @@ export async function POST(req: NextRequest) {
       const issAmount = valor * (issRate / 100);
       const nfCount = await prisma.fiscalNfse.count();
       const number = `NFSE-${new Date().getFullYear()}-${String(nfCount + 1).padStart(4, "0")}`;
-      const competence = med.period || new Date().toISOString().slice(0, 7);
+      const competence = med.period || competenciaLocal();
 
       const cat = await prisma.expenseCategory.upsert({
         where: { name: "Receita Contratual" }, update: {},
@@ -125,7 +130,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, nfse, mensagem: `NFS-e ${number} lançada e receita registrada.` });
     }
 
-    const m = await prisma.measurement.create({ data: { contractId: b.contractId, period: b.period, startDate: new Date(b.startDate), endDate: new Date(b.endDate), value: Number(b.value||0), status: "em_elaboracao", notes: b.notes, items: { create: (b.items||[]).map((i: any) => ({ description: i.description, unit: i.unit, quantity: Number(i.quantity), unitValue: Number(i.unitValue), totalValue: Number(i.quantity)*Number(i.unitValue) })) } }, include: { items: true } });
+    const m = await prisma.measurement.create({ data: { contractId: b.contractId, period: b.period, startDate: dataLocal(b.startDate), endDate: dataLocal(b.endDate), value: Number(b.value||0), status: "em_elaboracao", notes: b.notes, items: { create: (b.items||[]).map((i: any) => ({ description: i.description, unit: i.unit, quantity: Number(i.quantity), unitValue: Number(i.unitValue), totalValue: Number(i.quantity)*Number(i.unitValue) })) } }, include: { items: true } });
     return NextResponse.json(m, { status: 201 });
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
 }
