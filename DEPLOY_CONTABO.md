@@ -160,8 +160,24 @@ GROQ_API_KEY=chave_do_console_groq
 
 A `GROQ_API_KEY` (plano gratuito em https://console.groq.com) habilita os recursos de IA:
 proposta por edital, análise de licitação/preço, cronograma, plano logístico, chat de
-ajuda, transcrição de voz e análise de cotações/contratos por e-mail. Sem ela, o
-restante do ERP funciona normalmente.
+ajuda, transcrição de voz, análise de cotações/contratos por e-mail e **análise
+jurídica de documentos** (reconhece o tipo e lê como advogado especialista). Sem ela,
+o restante do ERP funciona normalmente.
+
+### Inserir / trocar a chave GROQ depois do deploy
+
+1. Pegue a chave em https://console.groq.com → **API Keys → Create API Key** (começa com `gsk_...`).
+2. Na VPS, edite o `.env.production` e cole a chave:
+
+```bash
+cd /opt/verdelimp-erp
+nano .env.production          # defina GROQ_API_KEY=gsk_sua_chave_aqui
+docker compose up -d app      # só o app precisa reiniciar para reler a variável
+```
+
+3. Confirme em **Integrações → “Testar IA agora”** (ou `GET /api/ia-status`): deve
+   responder **“IA ATIVA”** com a latência. A chave fica só no `.env.production`
+   (nunca no código nem no Git).
 
 Para o módulo **Cotações & Contratos por E-mail** (busca mensagens na caixa de
 entrada, somente leitura, e analisa com IA), configure também:
