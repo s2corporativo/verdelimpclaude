@@ -13,6 +13,7 @@ const RECURSOS = [
   "Análise de licitação (PNCP)", "Análise de preço", "Cronograma de contrato",
   "Plano semanal de logística", "Explicação do diagnóstico",
   "Transcrição de voz do campo", "Análise de cotações/contratos por e-mail",
+  "Análise jurídica de documentos (reconhece o tipo + leitura de advogado)",
 ];
 
 export async function GET() {

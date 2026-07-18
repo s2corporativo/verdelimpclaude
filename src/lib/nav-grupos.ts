@@ -42,6 +42,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
     key: "docs", titulo: "Documentos & Conformidade",
     abas: [
       { href: "/dashboard/documentos", label: "📁 Arquivos (GED)" },
+      { href: "/dashboard/analise-juridica", label: "⚖️ Análise Jurídica (IA)" },
       { href: "/dashboard/checklist-docs", label: "📑 Checklist & Geração" },
       { href: "/dashboard/monitor-docs", label: "🚦 Monitor" },
       { href: "/dashboard/sso", label: "🛟 Dossiê SSO" },

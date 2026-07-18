@@ -31,7 +31,7 @@ export default function IntegracoesPage() {
     {nome:"NFS-e Portal Nacional",url:"nfse.gov.br/EmissorNacional",status:"ativa",uso:"Emissão manual no portal gov.br + registro da nota no ERP",modulos:"Fiscal · NFS-e",auth:"gov.br / e-CNPJ"},
     {nome:"NF-e SEFAZ",url:"nfe.fazenda.gov.br",status:"pendente",uso:"Consulta e manifestação",modulos:"Fiscal",auth:"Cert. A1"},
     {nome:"eSocial",url:"esocial.gov.br",status:"pendente",uso:"Obrigações trabalhistas",modulos:"RH",auth:"Cert. A1"},
-    {nome:"GROQ llama-3.3-70b",url:"api.groq.com",status:"ativa",uso:"IA: chat, análise de editais, precificação, cronogramas, cotações por e-mail",modulos:"Ajuda · Licitações · Precificação · Logística · E-mail",auth:"Server-side"},
+    {nome:"GROQ llama-3.3-70b",url:"api.groq.com",status:"ativa",uso:"IA: chat, editais, precificação, cronogramas, cotações por e-mail, análise jurídica de documentos",modulos:"Ajuda · Licitações · Precificação · Logística · E-mail · Jurídico",auth:"Server-side"},
     {nome:"E-mail IMAP (leitura)",url:"EMAIL_IMAP_HOST",status:"pendente",uso:"Busca cotações e contratos recebidos + análise IA",modulos:"Alertas · Comercial",auth:"IMAP (senha de app)"},
   ];
   return (<div>
