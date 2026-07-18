@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     // ── Calcular BDI conforme TCU Acórdão 2369/2011 ──────────────
     const AC = bdi.ac || 0;      // Administração Central (%)
-    const S = bdi.s || 0;        // Seguro + Garantia (%)
+    const S = bdi.s || 0;        // Seguro (%) — Garantia é o campo G, não lançar nos dois
     const R = bdi.r || 0;        // Riscos (%)
     const G = bdi.g || 0;        // Garantia (%)
     const DF = bdi.df || 0;      // Despesas Financeiras (%)
@@ -26,7 +26,11 @@ export async function POST(req: NextRequest) {
     // ── Calcular custo unitário de cada item ──────────────────────
     const itensCalculados = itens.map((item: any) => {
       const mo = Number(item.custoMO) || 0;       // Mão de obra direta
-      const enc = mo * (Number(item.encargos) || 0.70); // Encargos CLT
+      // Encargos: 0 é valor legítimo (MO já com encargos) — só o campo AUSENTE
+      // cai no padrão de 70%; o antigo `|| 0.70` sobrescrevia o zero do usuário.
+      const encPct = item.encargos === undefined || item.encargos === null || item.encargos === ""
+        ? 0.70 : (Number(item.encargos) || 0);
+      const enc = mo * encPct;                    // Encargos CLT
       const mat = Number(item.custoMat) || 0;     // Materiais
       const eq = Number(item.custoEq) || 0;       // Equipamentos
       const ter = Number(item.terceiros) || 0;    // Terceiros
@@ -49,7 +53,9 @@ export async function POST(req: NextRequest) {
     });
 
     const totalGeral = itensCalculados.reduce((s: number, i: any) => s + i.totalItem, 0);
-    const custoDirectoTotal = itensCalculados.reduce((s: number, i: any) => s + i.custoDirecto * (i.quantidade || 1), 0);
+    // Mesma quantidade do totalItem (0 conta como 0) — o antigo `|| 1` fazia o
+    // custo direto contar 1 unidade de um item com quantidade zero.
+    const custoDirectoTotal = itensCalculados.reduce((s: number, i: any) => s + i.custoDirecto * (Number(i.quantidade) || 0), 0);
     const bdiValorTotal = totalGeral - custoDirectoTotal;
     const margemReal = custoDirectoTotal > 0 ? (L / 100) * (custoDirectoTotal * (1 + bdiArredondado / 100)) : 0;
 
