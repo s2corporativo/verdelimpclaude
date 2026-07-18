@@ -1,90 +1,114 @@
 "use client";
-// NFS-e Nacional — pré-visualização da DPS e emissão (gov.br / Padrão Nacional).
-// Betim aderiu ao Emissor Nacional: desde 01/01/2026 a nota sai só pelo portal
-// nacional. Esta tela monta a DPS a partir dos contratos/medições e prepara a
-// emissão via API do Contribuinte quando o certificado estiver configurado.
+// NFS-e Nacional — a emissão é feita DIRETAMENTE no Portal Nacional (gov.br).
+// Esta tela: (1) monta a prévia/dados da DPS a partir de contratos/medições para
+// copiar no portal, (2) abre o Emissor Nacional e (3) registra e armazena a nota
+// emitida (número + chave de acesso + link do PDF).
 import { useEffect, useState, useCallback } from "react";
 
 const brl = (v: number) => (Number(v) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const PORTAL_EMISSOR = "https://www.nfse.gov.br/EmissorNacional";
+const PORTAL_CONSULTA = "https://www.nfse.gov.br/consultapublica";
 
 export default function NfseNacionalPage() {
   const [cfg, setCfg] = useState<any>(null);
   const [contratos, setContratos] = useState<any[]>([]);
   const [medicoes, setMedicoes] = useState<any[]>([]);
+  const [emitidas, setEmitidas] = useState<any[]>([]);
   const [origem, setOrigem] = useState<"medicao" | "contrato">("medicao");
   const [selId, setSelId] = useState("");
-  const [cTribNac, setCTribNac] = useState("");
   const [aliqISS, setAliqISS] = useState("");
-  const [serie, setSerie] = useState("1");
-  const [numero, setNumero] = useState("1");
   const [issRetido, setIssRetido] = useState(false);
   const [prev, setPrev] = useState<any>(null);
-  const [resultado, setResultado] = useState<any>(null);
+  const [dados, setDados] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
 
+  // Registro da nota emitida no portal
+  const [numero, setNumero] = useState("");
+  const [chave, setChave] = useState("");
+  const [pdfLink, setPdfLink] = useState("");
+  const [dataEmissao, setDataEmissao] = useState("");
+  const [regMsg, setRegMsg] = useState("");
+
   const carregar = useCallback(async () => {
     try {
-      const [c, ct, md] = await Promise.all([
+      const [c, ct, md, nf] = await Promise.all([
         fetch("/api/nfse/config").then((r) => r.json()),
         fetch("/api/contratos").then((r) => r.json()),
         fetch("/api/medicao").then((r) => r.json()),
+        fetch("/api/fiscal/nfse").then((r) => r.json()),
       ]);
       setCfg(c);
       setContratos(ct.data || []);
       const meds = (md.data || []).filter((m: any) => ["aprovada", "faturada", "enviada"].includes(m.status));
       setMedicoes(meds.length ? meds : (md.data || []));
+      setEmitidas(nf._demo ? [] : (nf.data || []));
     } catch {}
   }, []);
   useEffect(() => { carregar(); }, [carregar]);
 
   const corpo = () => {
-    const base: any = { cTribNac: cTribNac || undefined, aliqISS: aliqISS || undefined, serie, numero, issRetido };
+    const base: any = { aliqISS: aliqISS || undefined, issRetido };
     if (selId) base[origem === "medicao" ? "measurementId" : "contractId"] = selId;
     return base;
   };
 
   const gerarPrevia = async () => {
-    setBusy(true); setErro(""); setResultado(null); setPrev(null);
+    setBusy(true); setErro(""); setPrev(null); setDados(null);
     try {
-      const r = await fetch("/api/nfse/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo()) });
-      const j = await r.json();
-      if (!r.ok) setErro(j.error || "Erro ao gerar a prévia."); else setPrev(j);
+      const [rp, re] = await Promise.all([
+        fetch("/api/nfse/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo()) }),
+        fetch("/api/nfse/emitir", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo()) }),
+      ]);
+      const jp = await rp.json();
+      const je = await re.json();
+      if (!rp.ok) { setErro(jp.error || "Erro ao gerar a prévia."); }
+      else { setPrev(jp); setDados(je.dados || null); if (je.dados) setNumero(""); }
     } catch (e: any) { setErro(e.message); }
     setBusy(false);
   };
 
-  const emitir = async () => {
-    setBusy(true); setErro(""); setResultado(null);
+  const registrar = async () => {
+    setBusy(true); setErro(""); setRegMsg("");
     try {
-      const r = await fetch("/api/nfse/emitir", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo()) });
+      const body: any = { ...corpo(), numero, chaveAcesso: chave || undefined, pdfLink: pdfLink || undefined, dataEmissao: dataEmissao || undefined };
+      const r = await fetch("/api/nfse/registrar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const j = await r.json();
-      setResultado({ ...j, http: r.status });
+      if (!r.ok) { setErro(j.error || "Erro ao registrar a nota."); }
+      else {
+        setRegMsg(`✅ NFS-e ${j.nfse?.number} registrada e armazenada.`);
+        setNumero(""); setChave(""); setPdfLink(""); setDataEmissao("");
+        carregar();
+      }
     } catch (e: any) { setErro(e.message); }
     setBusy(false);
   };
 
   const label = { fontSize: 11, fontWeight: 700 as const, color: "#374151", display: "block" as const, marginBottom: 3 };
   const input = { padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, width: "100%" };
+  const btn = (bg: string) => ({ background: bg, color: "#fff", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: busy ? "default" as const : "pointer" as const, opacity: busy ? 0.6 : 1 });
 
   return (
     <div>
       <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🧾 NFS-e Nacional (gov.br)</h1>
-      <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 12, maxWidth: 760 }}>
-        Monta a DPS (Declaração de Prestação de Serviço) no padrão nacional a partir dos seus contratos e medições. Betim aderiu ao Emissor Nacional — desde 01/01/2026 a nota é emitida exclusivamente pelo portal nacional.
+      <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 12, maxWidth: 780 }}>
+        A emissão é feita <strong>diretamente no Portal Nacional (gov.br)</strong>. Aqui você monta os dados da nota a partir de contratos/medições, abre o Emissor Nacional e registra a nota emitida — que fica armazenada no sistema.
       </p>
 
-      {/* Prontidão */}
+      {/* Ações do portal */}
+      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: 16, marginBottom: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <a href={PORTAL_EMISSOR} target="_blank" rel="noopener noreferrer" style={{ ...btn("#1d4ed8"), textDecoration: "none", display: "inline-block" }}>🌐 Emitir no Portal gov.br</a>
+        <a href={PORTAL_CONSULTA} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: "#1d4ed8" }}>🔎 Consulta pública de NFS-e →</a>
+        <span style={{ fontSize: 11, color: "#6b7280" }}>Login gov.br (nível prata/ouro) ou certificado e-CNPJ. Betim emite só pelo portal nacional desde 01/01/2026.</span>
+      </div>
+
+      {/* Prontidão dos dados do prestador */}
       {cfg && (
         <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: 0 }}>Prontidão para emissão</h2>
-            <span style={{ fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 20, background: cfg.ambiente === "producao" ? "#fee2e2" : "#e0f2fe", color: cfg.ambiente === "producao" ? "#991b1b" : "#075985" }}>
-              Ambiente: {cfg.ambienteLabel}
-            </span>
-          </div>
+          <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: "0 0 10px" }}>Dados do prestador</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 6 }}>
-            {(cfg.checks || []).map((c: any, i: number) => (
+            {(cfg.checks || []).filter((c: any) => c.item !== "Certificado digital (servidor)").map((c: any, i: number) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#374151" }}>
                 <span>{c.ok ? "✅" : "⛔"}</span>
                 <span><strong>{c.item}:</strong> {c.valor}</span>
@@ -93,10 +117,6 @@ export default function NfseNacionalPage() {
           </div>
         </div>
       )}
-
-      <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "10px 14px", marginBottom: 18, fontSize: 12, color: "#92400e" }}>
-        ⚠️ A emissão com validade jurídica exige <strong>certificado e-CNPJ A1</strong> configurado no servidor, testes em <strong>Produção Restrita</strong> e validação dos códigos de serviço pelo <strong>contador</strong>. Sem isso, a tela gera apenas a <strong>prévia da DPS</strong> para conferência.
-      </div>
 
       {/* Origem dos dados */}
       <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 16 }}>
@@ -119,20 +139,8 @@ export default function NfseNacionalPage() {
             </select>
           </div>
           <div>
-            <label style={label}>Código de tributação nacional (contador)</label>
-            <input value={cTribNac} onChange={(e) => setCTribNac(e.target.value)} placeholder="ex.: confirmar com contador" style={input as any} />
-          </div>
-          <div>
             <label style={label}>Alíquota ISS (%)</label>
             <input value={aliqISS} onChange={(e) => setAliqISS(e.target.value)} placeholder="padrão da empresa" style={input as any} />
-          </div>
-          <div>
-            <label style={label}>Série</label>
-            <input value={serie} onChange={(e) => setSerie(e.target.value)} style={input as any} />
-          </div>
-          <div>
-            <label style={label}>Número da DPS</label>
-            <input value={numero} onChange={(e) => setNumero(e.target.value)} style={input as any} />
           </div>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
             <label style={{ fontSize: 12, color: "#374151", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
@@ -140,56 +148,104 @@ export default function NfseNacionalPage() {
             </label>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-          <button onClick={gerarPrevia} disabled={busy}
-            style={{ background: "#4a9410", color: "#fff", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
-            {busy ? "Gerando…" : "👁️ Gerar prévia da DPS"}
-          </button>
-          <button onClick={emitir} disabled={busy || !prev}
-            style={{ background: prev ? "#e05008" : "#e5e7eb", color: prev ? "#fff" : "#9ca3af", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: prev && !busy ? "pointer" : "default" }}>
-            📤 Emitir
+        <div style={{ marginTop: 14 }}>
+          <button onClick={gerarPrevia} disabled={busy} style={btn("#4a9410")}>
+            {busy ? "Gerando…" : "👁️ Preparar dados da nota"}
           </button>
         </div>
       </div>
 
       {erro && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13 }}>⛔ {erro}</div>}
 
-      {/* Resultado da emissão */}
-      {resultado && (
-        <div style={{ background: resultado.emitida ? "#dcfce7" : "#fef3c7", border: `1px solid ${resultado.emitida ? "#86efac" : "#fde68a"}`, borderRadius: 10, padding: 16, marginBottom: 16 }}>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: resultado.emitida ? "#15803d" : "#92400e" }}>
-            {resultado.emitida ? "✅ NFS-e emitida" : "⚠️ Emissão não concluída"}
-          </p>
-          <p style={{ margin: "6px 0 0", fontSize: 13, color: "#374151" }}>{resultado.mensagem || resultado.error}</p>
-          {resultado.idDPS && <p style={{ margin: "6px 0 0", fontSize: 11, color: "#6b7280" }}>ID da DPS: <code>{resultado.idDPS}</code> · Endpoint: {resultado.endpoint}</p>}
-          {Array.isArray(resultado.comoResolver) && (
-            <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12, color: "#374151" }}>
-              {resultado.comoResolver.map((l: string, i: number) => <li key={i} style={{ whiteSpace: "pre-wrap" }}>{l}</li>)}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* Prévia da DPS */}
-      {prev && (
-        <div style={{ background: "#fff", borderRadius: 12, padding: 16 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: "0 0 8px" }}>Prévia da DPS · {prev.resumo?.competencia}</h2>
-          <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10, fontSize: 12, color: "#374151" }}>
-            <span><strong>Prestador:</strong> {prev.resumo?.prestador}</span>
-            <span><strong>Tomador:</strong> {prev.resumo?.tomador}</span>
-            <span><strong>Valor:</strong> {brl(prev.resumo?.valor)}</span>
-            <span><strong>ISS:</strong> {prev.resumo?.aliqISS}%</span>
-            <span><strong>Item LC116 sugerido:</strong> {prev.itemLC116Sugerido}</span>
+      {/* Dados prontos para copiar no portal */}
+      {dados && (
+        <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 16, border: "1px solid #e5e7eb" }}>
+          <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: "0 0 4px" }}>📋 Dados para copiar no Emissor Nacional</h2>
+          <p style={{ fontSize: 11, color: "#6b7280", margin: "0 0 10px" }}>Preencha o formulário do portal gov.br com estes dados. Depois de emitir, registre a nota abaixo.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8, fontSize: 12, color: "#374151" }}>
+            <span><strong>Prestador:</strong> {dados.prestador} ({dados.cnpjPrestador})</span>
+            <span><strong>Município:</strong> {dados.municipio} · IBGE {dados.codigoIBGE || "—"}</span>
+            <span><strong>Tomador:</strong> {dados.tomador} {dados.docTomador ? `(${dados.docTomador})` : ""}</span>
+            <span><strong>Competência:</strong> {dados.competencia}</span>
+            <span><strong>Valor do serviço:</strong> {brl(dados.valorServico)}</span>
+            <span><strong>Alíquota ISS:</strong> {dados.aliqISS}% {dados.issRetido ? "(retido)" : ""}</span>
+            <span><strong>Item LC 116 sugerido:</strong> {dados.itemLC116Sugerido}</span>
+            <span style={{ gridColumn: "1 / -1" }}><strong>Descrição:</strong> {dados.descricao}</span>
           </div>
-          {Array.isArray(prev.avisos) && prev.avisos.length > 0 && (
-            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 12px", marginBottom: 10 }}>
+          {Array.isArray(prev?.avisos) && prev.avisos.length > 0 && (
+            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 12px", marginTop: 10 }}>
               {prev.avisos.map((a: string, i: number) => <p key={i} style={{ margin: "2px 0", fontSize: 12, color: "#92400e" }}>⚠️ {a}</p>)}
             </div>
           )}
-          <pre style={{ background: "#0f172a", color: "#e2e8f0", padding: 14, borderRadius: 8, fontSize: 11, overflowX: "auto", margin: 0, maxHeight: 380 }}>{prev.xml}</pre>
-          <p style={{ margin: "8px 0 0", fontSize: 11, color: "#9ca3af" }}>Este XML é a DPS <strong>não assinada</strong>, para conferência. A assinatura digital é aplicada na transmissão com o certificado.</p>
+
+          {/* Registro da nota emitida */}
+          <div style={{ borderTop: "1px solid #f3f4f6", marginTop: 14, paddingTop: 14 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 800, color: "#334532", margin: "0 0 10px" }}>💾 Registrar nota emitida</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+              <div>
+                <label style={label}>Número da NFS-e *</label>
+                <input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="do portal gov.br" style={input as any} />
+              </div>
+              <div>
+                <label style={label}>Chave de acesso</label>
+                <input value={chave} onChange={(e) => setChave(e.target.value)} placeholder="chave / cód. verificação" style={input as any} />
+              </div>
+              <div>
+                <label style={label}>Data de emissão</label>
+                <input type="date" value={dataEmissao} onChange={(e) => setDataEmissao(e.target.value)} style={input as any} />
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={label}>Link do PDF / DANFSE</label>
+                <input value={pdfLink} onChange={(e) => setPdfLink(e.target.value)} placeholder="https://…" style={input as any} />
+              </div>
+            </div>
+            <button onClick={registrar} disabled={busy || !numero} style={{ ...btn(numero ? "#e05008" : "#e5e7eb"), marginTop: 12, color: numero ? "#fff" : "#9ca3af" }}>
+              💾 Registrar e armazenar
+            </button>
+            {regMsg && <p style={{ margin: "10px 0 0", fontSize: 13, fontWeight: 700, color: "#15803d" }}>{regMsg}</p>}
+          </div>
         </div>
       )}
+
+      {/* Notas emitidas armazenadas */}
+      <div style={{ background: "#fff", borderRadius: 12, padding: 16 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: "0 0 10px" }}>📑 Notas emitidas ({emitidas.length})</h2>
+        {emitidas.length === 0
+          ? <p style={{ fontSize: 12, color: "#9ca3af" }}>Nenhuma NFS-e registrada ainda. Emita no portal gov.br e registre acima.</p>
+          : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <caption style={{ textAlign: "left", fontSize: 11, color: "#9ca3af", marginBottom: 6 }}>NFS-e armazenadas no sistema</caption>
+                <thead>
+                  <tr style={{ textAlign: "left", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>
+                    <th scope="col" style={{ padding: "6px 8px" }}>Número</th>
+                    <th scope="col" style={{ padding: "6px 8px" }}>Tomador</th>
+                    <th scope="col" style={{ padding: "6px 8px" }}>Competência</th>
+                    <th scope="col" style={{ padding: "6px 8px" }}>Valor</th>
+                    <th scope="col" style={{ padding: "6px 8px" }}>ISS</th>
+                    <th scope="col" style={{ padding: "6px 8px" }}>Status</th>
+                    <th scope="col" style={{ padding: "6px 8px" }}>PDF</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {emitidas.map((n) => (
+                    <tr key={n.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <td style={{ padding: "6px 8px", fontWeight: 700 }}>{n.number}{n.accessKey ? <span title={n.accessKey} style={{ color: "#9ca3af", fontWeight: 400 }}> 🔑</span> : null}</td>
+                      <td style={{ padding: "6px 8px" }}>{n.receiverName || n.client?.name || "—"}</td>
+                      <td style={{ padding: "6px 8px" }}>{n.competence}</td>
+                      <td style={{ padding: "6px 8px" }}>{brl(n.serviceValue)}</td>
+                      <td style={{ padding: "6px 8px" }}>{brl(n.issAmount)} {n.issRetained ? "(ret.)" : ""}</td>
+                      <td style={{ padding: "6px 8px" }}>
+                        <span style={{ background: n.status === "emitida" ? "#dcfce7" : "#f3f4f6", color: n.status === "emitida" ? "#15803d" : "#374151", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700 }}>{n.status}</span>
+                      </td>
+                      <td style={{ padding: "6px 8px" }}>{n.pdfLink ? <a href={n.pdfLink} target="_blank" rel="noopener noreferrer" style={{ color: "#1d4ed8", fontWeight: 700 }}>abrir</a> : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+      </div>
     </div>
   );
 }

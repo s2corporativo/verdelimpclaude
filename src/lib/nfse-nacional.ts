@@ -35,6 +35,21 @@ export const ENDPOINTS: Record<Ambiente, { sefin: string; adn: string; label: st
   },
 };
 
+/**
+ * Portal Nacional NFS-e (gov.br). A Verdelimp emite a nota diretamente no
+ * Emissor Nacional (login gov.br ou certificado) e depois registra no ERP a
+ * nota emitida (número + chave de acesso + link do PDF). Não transmitimos por
+ * API — evita a complexidade de assinatura/mTLS e o risco de nota inválida.
+ */
+export const PORTAL_NACIONAL = {
+  /** Emissor Nacional: onde a nota é efetivamente emitida. */
+  emissor: "https://www.nfse.gov.br/EmissorNacional",
+  /** Consulta pública de NFS-e (validar a nota pela chave de acesso). */
+  consulta: "https://www.nfse.gov.br/consultapublica",
+  /** Painel de gestão / primeiro acesso. */
+  primeiroAcesso: "https://www.nfse.gov.br/EmissorNacional/Acesso/PrimeiroAcesso",
+} as const;
+
 /** tpAmb da DPS: 1 = produção, 2 = homologação/produção restrita. */
 export const tpAmbDe = (a: Ambiente): 1 | 2 => (a === "producao" ? 1 : 2);
 

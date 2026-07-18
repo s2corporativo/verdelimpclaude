@@ -369,6 +369,9 @@ model FiscalNfse {
   issueDate       DateTime
   competence      String
   status          String   @default("lancada")
+  // Notas emitidas pelo Portal Nacional (gov.br): chave de acesso e link do PDF/DANFSE
+  accessKey       String?
+  pdfLink         String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
