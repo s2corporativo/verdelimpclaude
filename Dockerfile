@@ -22,13 +22,19 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder --chown=node:node /app/package.json ./package.json
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/.next ./.next
+# Build standalone: só o servidor compilado + node_modules mínimos do trace —
+# a imagem antiga carregava node_modules completo COM devDependencies (vitest,
+# eslint, prisma CLI) e o src/, triplicando o tamanho e a superfície de ataque.
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder --chown=node:node /app/public ./public
+# prisma/ para `migrate deploy` no deploy.sh (CLI vem do npx no host do deploy)
 COPY --from=builder --chown=node:node /app/prisma ./prisma
-COPY --from=builder --chown=node:node /app/src ./src
 
 USER node
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+# O Docker injeta HOSTNAME=<id do container>; o server.js standalone usa essa
+# env para o bind e quebraria o healthcheck em 127.0.0.1 — forçar 0.0.0.0.
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+CMD ["node", "server.js"]

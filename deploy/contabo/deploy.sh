@@ -33,7 +33,9 @@ echo "==> Subindo banco"
 docker compose up -d db
 
 echo "==> Aplicando migrations (antes de trocar a aplicação)"
-docker compose run --rm app npx prisma migrate deploy
+# O serviço "migrate" usa o estágio builder (tem o CLI do Prisma); a imagem
+# final do app é standalone e não carrega devDependencies.
+docker compose run --rm migrate
 
 echo "==> Subindo aplicação"
 docker compose up -d app

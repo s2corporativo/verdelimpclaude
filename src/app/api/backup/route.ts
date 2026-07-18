@@ -19,7 +19,6 @@ export async function GET(req: NextRequest) {
       const despesas = await prisma.expense.findMany({
         orderBy: { dueDate: "desc" },
         include: { category: { select: { name: true, type: true } } },
-        take: 5000,
       });
       const headers = "Descrição;Valor;Vencimento;Status;Categoria;Tipo;Competência\n";
       const rows = despesas.map(e =>
@@ -33,7 +32,11 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Backup JSON completo
+    // Exportação JSON completa — SEM limites `take`: os antigos cortes
+    // (500 clientes, 200 contratos...) perdiam registros silenciosamente e
+    // faziam a "exportação completa" mentir. O backup de verdade (restore de
+    // desastre) é o pg_dump + tar de uploads do deploy/contabo/backup.sh —
+    // este endpoint é uma exportação de dados para conferência/Drive.
     const [
       empresa, clientes, fornecedores, funcionarios,
       contratos, propostas, medicoes,
@@ -43,30 +46,31 @@ export async function GET(req: NextRequest) {
       retroJobs, dedetJobs, bidPipeline,
     ] = await Promise.all([
       prisma.companyConfig.findFirst(),
-      prisma.client.findMany({ where: { deletedAt: null }, take: 500 }),
-      prisma.supplier.findMany({ where: { deletedAt: null }, take: 200 }),
+      prisma.client.findMany({ where: { deletedAt: null } }),
+      prisma.supplier.findMany({ where: { deletedAt: null } }),
       prisma.employee.findMany({ where: { active: true } }),
-      prisma.contract.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
-      prisma.proposal.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
-      prisma.measurement.findMany({ orderBy: { createdAt: "desc" }, take: 500, include: { items: true } }),
-      prisma.expense.findMany({ orderBy: { dueDate: "desc" }, take: 2000 }),
-      prisma.fiscalTaxExpense.findMany({ orderBy: { competence: "desc" }, take: 1000 }),
-      prisma.fiscalNfse.findMany({ orderBy: { issueDate: "desc" }, take: 500 }),
+      prisma.contract.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.proposal.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.measurement.findMany({ orderBy: { createdAt: "desc" }, include: { items: true } }),
+      prisma.expense.findMany({ orderBy: { dueDate: "desc" } }),
+      prisma.fiscalTaxExpense.findMany({ orderBy: { competence: "desc" } }),
+      prisma.fiscalNfse.findMany({ orderBy: { issueDate: "desc" } }),
       prisma.inventoryItem.findMany({ where: { deletedAt: null } }),
-      prisma.inventoryEpiDelivery.findMany({ orderBy: { deliveryDate: "desc" }, take: 500 }),
+      prisma.inventoryEpiDelivery.findMany({ orderBy: { deliveryDate: "desc" } }),
       prisma.vehicle.findMany({ where: { active: true } }),
-      prisma.mobilization.findMany({ where: { status: "ativa" } }),
-      prisma.equipment.findMany({ where: { ativo: true }, include: { manutencoes: { take: 10 } } }),
-      prisma.training.findMany({ orderBy: { expiresAt: "asc" }, take: 500 }),
-      prisma.retroJob.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
-      prisma.dedetJob.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
-      prisma.bidPipeline.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
+      prisma.mobilization.findMany(),
+      prisma.equipment.findMany({ where: { ativo: true }, include: { manutencoes: true } }),
+      prisma.training.findMany({ orderBy: { expiresAt: "asc" } }),
+      prisma.retroJob.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.dedetJob.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.bidPipeline.findMany({ orderBy: { createdAt: "desc" } }),
     ]);
 
     const backup = {
       meta: {
         versao: "2.2",
         sistema: "Verdelimp ERP",
+        tipo: "exportacao_dados", // backup de desastre = pg_dump (deploy/contabo/backup.sh)
         exportadoEm: new Date().toISOString(),
         empresa: empresa?.razaoSocial || "VERDELIMP",
         totalRegistros: {
@@ -93,7 +97,8 @@ export async function GET(req: NextRequest) {
         "X-Backup-Records": String(Object.values(backup.meta.totalRegistros).reduce((s, v) => s + v, 0)),
       },
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    console.error("[api/backup]", e);
+    return NextResponse.json({ error: "Falha na exportação — veja os logs do servidor." }, { status: 500 });
   }
 }
