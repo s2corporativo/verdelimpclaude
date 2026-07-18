@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     const total = Number(b.liters) * Number(b.pricePerLiter);
     const log = await prisma.fuelLog.create({ data: { vehicleId: b.vehicleId, contractId: b.contractId||null, employeeId: b.employeeId||null, date: b.date ? new Date(b.date) : new Date(), odometer: Number(b.odometer), liters: Number(b.liters), pricePerLiter: Number(b.pricePerLiter), totalCost: total, fuelType: b.fuelType||"Gasolina", station: b.station, notes: b.notes } });
     return NextResponse.json(log, { status: 201 });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/combustivel"); }
 }
 
 const DEMO_VEIC = [

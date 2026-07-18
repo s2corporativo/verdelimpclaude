@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -30,5 +31,5 @@ export async function GET() {
       totalUsuarios, ativos, inativos: totalUsuarios - ativos,
       bloqueados, pendentesTroca, totalPapeis, eventos7d, ultimosLogins,
     });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/admin/resumo"); }
 }

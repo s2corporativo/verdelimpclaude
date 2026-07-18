@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin, registrarAuditoria, gerarSenhaProvisoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export async function GET() {
     return NextResponse.json({
       data: usuarios.map((u) => ({ ...u, roles: u.roles.map((r) => r.role) })),
     });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/admin/usuarios"); }
 }
 
 export async function POST(req: NextRequest) {
@@ -56,6 +57,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: novo.id, senhaProvisoria }, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 409 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/admin/usuarios");
   }
 }

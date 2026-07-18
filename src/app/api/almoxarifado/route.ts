@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(item, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "Código interno já existe" }, { status: 409 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/almoxarifado");
   }
 }
 

@@ -2,6 +2,7 @@
 // Módulo Retroescavadeira — gestão de serviços, custos operacionais e viabilidade
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 // ── Configuração padrão de custos (se não houver RetroConfig no banco) ──
 const CONFIG_DEFAULT = {
@@ -120,7 +121,7 @@ export async function POST(req: NextRequest) {
           : await prisma.retroConfig.create({ data: body.config });
         return NextResponse.json({ success: true, config: cfg });
       } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        return erroInterno(e, "api/retro");
       }
     }
 
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, job, calculos });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/retro");
   }
 }
 

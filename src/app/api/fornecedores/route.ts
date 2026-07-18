@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { registrarAuditoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(fornecedor, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado" }, { status: 409 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/fornecedores");
   }
 }
 
@@ -62,7 +63,7 @@ export async function PUT(req: NextRequest) {
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado em outro fornecedor" }, { status: 409 });
     if (e.code === "P2025") return NextResponse.json({ error: "Fornecedor não encontrado" }, { status: 404 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/fornecedores");
   }
 }
 
@@ -76,7 +77,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (e: any) {
     if (e.code === "P2025") return NextResponse.json({ error: "Fornecedor não encontrado" }, { status: 404 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/fornecedores");
   }
 }
 

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { registrarAuditoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
     await registrarAuditoria({ userId: (session?.user as any)?.id || null, action: "CRIAR", module: "sst", entityType: "InventoryEpiDelivery", entityId: entrega.id, newValues: { itemId: b.itemId, employeeId: b.employeeId, caNumber: b.caNumber } });
     return NextResponse.json(entrega, { status: 201 });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/epi");
   }
 }
 

@@ -6,6 +6,7 @@
 // - Otimiza por janelas climáticas favoráveis
 import { NextRequest, NextResponse } from "next/server";
 import { groqChat } from "@/lib/groq";
+import { erroInterno } from "@/lib/authz";
 
 // Feriados nacionais 2026 (inclui movimentos)
 const FERIADOS_2026 = [
@@ -207,6 +208,6 @@ Responda em texto corrido com bullets, sem markdown. Seja prático e direto.` },
       },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/cronograma-contrato");
   }
 }

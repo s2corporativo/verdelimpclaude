@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { registrarAuditoria } from "@/lib/admin";
 import { exigirPapel, erroInterno } from "@/lib/authz";
+import { validar, FuncionarioSchema } from "@/lib/validacao";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +21,11 @@ export async function POST(req: NextRequest) {
   const { user, erro } = await exigirPapel("ADMIN", "RH");
   if (erro) return erro;
   try {
-    const body = await req.json();
-    if (!body.name || !body.cpf || !body.admissionDate || !body.salary) {
-      return NextResponse.json({ error: "Nome, CPF, data de admissão e salário obrigatórios" }, { status: 400 });
-    }
+    const bruto = await req.json();
+    const { data: body, erro: erroVal } = validar(FuncionarioSchema, bruto);
+    if (erroVal) return erroVal;
     const emp = await prisma.employee.create({
-      data: { name: body.name, role: body.role || "", cpf: body.cpf, admissionDate: new Date(body.admissionDate), salary: Number(body.salary), dependentes: Number(body.dependentes || 0), bank: body.bank, bankAgency: body.bankAgency, bankAccount: body.bankAccount },
+      data: { name: body.name, role: body.role || "", cpf: body.cpf, admissionDate: new Date(body.admissionDate), salary: body.salary, dependentes: body.dependentes ?? 0, bank: body.bank, bankAgency: body.bankAgency, bankAccount: body.bankAccount },
     });
     await registrarAuditoria({ userId: user!.id, action: "CRIAR", module: "rh", entityType: "Employee", entityId: emp.id, newValues: { name: emp.name, role: emp.role, salary: Number(emp.salary) } });
     return NextResponse.json(emp, { status: 201 });

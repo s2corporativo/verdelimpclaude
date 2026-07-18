@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { MODELOS, statusPorValidade } from "@/lib/monitor-docs";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
       resumo: { vencidos, aVencer, faltantes, funcionarios: funcionarios.length },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/monitor-docs");
   }
 }
 
@@ -159,7 +160,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/monitor-docs");
   }
 }
 
@@ -171,6 +172,6 @@ export async function DELETE(req: NextRequest) {
     await prisma.contractDocRequirement.delete({ where: { id: requisitoId } });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/monitor-docs");
   }
 }

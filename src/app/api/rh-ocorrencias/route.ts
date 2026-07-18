@@ -3,7 +3,7 @@
 // (11 meses após o fim do aquisitivo) alimenta a Central de Alertas.
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { exigirPapel } from "@/lib/authz";
+import { exigirPapel, erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +63,7 @@ export async function GET() {
       },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/rh-ocorrencias");
   }
 }
 
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "tipo deve ser 'ferias' ou 'ocorrencia'" }, { status: 400 });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/rh-ocorrencias");
   }
 }
 
@@ -124,7 +124,7 @@ export async function PUT(req: NextRequest) {
     }
     return NextResponse.json({ error: "tipo inválido" }, { status: 400 });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/rh-ocorrencias");
   }
 }
 
@@ -139,6 +139,6 @@ export async function DELETE(req: NextRequest) {
     else await prisma.disciplinaryAction.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/rh-ocorrencias");
   }
 }

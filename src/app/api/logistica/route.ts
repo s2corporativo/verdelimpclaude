@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { groqChat } from "@/lib/groq";
+import { erroInterno } from "@/lib/authz";
 
 // ── Tipos ─────────────────────────────────────────────────────────
 export interface OsLogistica {
@@ -178,7 +179,7 @@ Responda SOMENTE com JSON válido, sem markdown ou explicações.`;
 
     return NextResponse.json({ success: true, plano, geradoEm: new Date().toISOString() });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/logistica");
   }
 }
 

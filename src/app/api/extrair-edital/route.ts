@@ -2,6 +2,7 @@
 // Recebe texto de edital/contrato/cotação e extrai dados estruturados via GROQ
 import { NextRequest, NextResponse } from "next/server";
 import { groqChat } from "@/lib/groq";
+import { erroInterno } from "@/lib/authz";
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,6 +58,6 @@ ${texto.substring(0, 8000)}`,
 
     return NextResponse.json({ success: true, dados: extraido });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/extrair-edital");
   }
 }

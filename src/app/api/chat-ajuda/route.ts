@@ -2,6 +2,7 @@
 // Chat com assistente especializado do Verdelimp ERP — powered by GROQ
 import { NextRequest, NextResponse } from "next/server";
 import { groqChat, GroqMessage } from "@/lib/groq";
+import { erroInterno } from "@/lib/authz";
 
 const SYSTEM = `Assistente do Verdelimp ERP para VERDELIMP SERVICOS E TERCEIRIZACAO LTDA, CNPJ 30.198.776/0001-29, Betim/MG, Simples Nacional, CNAE 81.30-3-00 (Paisagismo), 8 funcionários. Sistema com módulos: contratos, fiscal (DAS 6,72%, ISS 5% Betim), logística, retroescavadeira, dedetização, pipeline licitações, precificação BDI (TCU 2369/2011), mobilizações, equipamentos, aging financeiro, backup JSON/CSV. Responda direto e prático em português, máx 3 parágrafos.`;
 
@@ -18,6 +19,6 @@ export async function POST(req: NextRequest) {
     const text = await groqChat(groqMsgs, 600);
     return NextResponse.json({ text });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/chat-ajuda");
   }
 }

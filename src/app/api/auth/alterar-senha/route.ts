@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { erroInterno } from "@/lib/authz";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,6 +21,6 @@ export async function POST(req: NextRequest) {
     await prisma.user.update({ where: { id: user.id }, data: { passwordHash: hash, mustChangePass: false, failedAttempts: 0 } });
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/auth/alterar-senha");
   }
 }

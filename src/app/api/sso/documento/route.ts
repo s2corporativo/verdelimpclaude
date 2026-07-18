@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { gerarHtmlSso, type SsoDocData, type FuncionarioSso } from "@/lib/sso-doc";
+import { erroInterno } from "@/lib/authz";
 
 const fmtData = (d?: Date | null) => (d ? new Date(d).toLocaleDateString("pt-BR") : undefined);
 
@@ -108,6 +109,6 @@ export async function GET(req: NextRequest) {
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/sso/documento");
   }
 }

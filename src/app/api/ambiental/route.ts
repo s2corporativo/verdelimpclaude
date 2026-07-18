@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { statusPorValidade } from "@/lib/monitor-docs";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export async function GET() {
     const aVencer = linhas.filter((l) => l.situacao === "a_vencer").length;
     return NextResponse.json({ linhas, contratos, resumo: { total: linhas.length, vencidos, aVencer } });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/ambiental");
   }
 }
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ok: true, id: r.id });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/ambiental");
   }
 }
 
@@ -49,6 +50,6 @@ export async function DELETE(req: NextRequest) {
     await prisma.environmentalRecord.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/ambiental");
   }
 }

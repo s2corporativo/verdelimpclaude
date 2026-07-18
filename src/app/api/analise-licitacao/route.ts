@@ -2,6 +2,7 @@
 // Análise de edital PNCP via GROQ — chamada server-side (seguro)
 import { NextRequest, NextResponse } from "next/server";
 import { groqChat } from "@/lib/groq";
+import { erroInterno } from "@/lib/authz";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +17,6 @@ export async function POST(req: NextRequest) {
     ], 600);
     return NextResponse.json({ text });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/analise-licitacao");
   }
 }

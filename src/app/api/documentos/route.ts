@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirPapel, erroInterno } from "@/lib/authz";
 import { registrarAuditoria } from "@/lib/admin";
+import { validar, DocumentoSchema } from "@/lib/validacao";
 
 // Papéis com acesso ao GED (o middleware aplica o mesmo conjunto; aqui é defesa em profundidade)
 const PAPEIS_GED = ["ADMIN", "GESTOR", "COMERCIAL", "RH", "FINANCEIRO", "FISCAL"];
@@ -192,34 +193,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, doc });
     }
 
-    // Criar novo documento
-    if (!body.nome || !body.categoria) {
-      return NextResponse.json({ error: "Nome e categoria obrigatórios" }, { status: 400 });
-    }
-
-    // Validar tamanho base64 (máx 2MB)
-    if (body.base64Data && body.base64Data.length > 2_800_000) {
-      return NextResponse.json({ error: "Arquivo muito grande para armazenamento direto. Use um link externo (Google Drive, etc.)" }, { status: 413 });
-    }
+    // Criar novo documento — shape validado (campos fora do schema são descartados)
+    const { data: docValido, erro: erroVal } = validar(DocumentoSchema, body);
+    if (erroVal) return erroVal;
 
     const doc = await prisma.document.create({
       data: {
-        nome: body.nome,
-        descricao: body.descricao || null,
-        categoria: body.categoria,
-        subcategoria: body.subcategoria || null,
-        tags: body.tags || null,
-        clienteId: body.clienteId || null,
-        contratoId: body.contratoId || null,
-        funcionarioId: body.funcionarioId || null,
-        estrategia: body.estrategia || "url",
-        urlArquivo: body.urlArquivo || null,
-        base64Data: body.base64Data || null,
-        mimeType: body.mimeType || null,
-        tamanhoKb: body.tamanhoKb || null,
-        validade: body.validade ? new Date(body.validade) : null,
+        nome: docValido.nome,
+        descricao: docValido.descricao || null,
+        categoria: docValido.categoria,
+        subcategoria: docValido.subcategoria || null,
+        tags: docValido.tags || null,
+        clienteId: docValido.clienteId || null,
+        contratoId: docValido.contratoId || null,
+        funcionarioId: docValido.funcionarioId || null,
+        estrategia: docValido.estrategia || "url",
+        urlArquivo: docValido.urlArquivo || null,
+        base64Data: docValido.base64Data || null,
+        mimeType: docValido.mimeType || null,
+        tamanhoKb: docValido.tamanhoKb || null,
+        validade: docValido.validade ? new Date(docValido.validade) : null,
         versao: 1,
-        confidencial: body.confidencial || false,
+        confidencial: docValido.confidencial || false,
         uploadBy: user!.name || user!.email || user!.id, // autoria sempre da sessão, nunca do body
       },
     });

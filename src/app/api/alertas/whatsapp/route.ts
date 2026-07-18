@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enviarWhatsApp, verificarAlertas } from "@/lib/whatsapp";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/alertas/whatsapp");
   }
 }

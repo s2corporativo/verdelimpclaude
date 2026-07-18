@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin, registrarAuditoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function GET() {
       })),
       permissoes,
     });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/admin/papeis"); }
 }
 
 export async function POST(req: NextRequest) {
@@ -49,6 +50,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(papel, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "Já existe papel com esse nome" }, { status: 409 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/admin/papeis");
   }
 }

@@ -1,6 +1,7 @@
 // Cronograma de serviços — programação de atividades por contrato.
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ itens, contratos });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/cronograma");
   }
 }
 
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ok: true, id: item.id });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/cronograma");
   }
 }
 
@@ -61,7 +62,7 @@ export async function PUT(req: NextRequest) {
     await prisma.scheduleItem.update({ where: { id: b.id }, data });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/cronograma");
   }
 }
 
@@ -72,6 +73,6 @@ export async function DELETE(req: NextRequest) {
     await prisma.scheduleItem.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/cronograma");
   }
 }

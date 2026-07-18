@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
     if (!b.location || !b.activitiesDone) return NextResponse.json({ error: "Local e atividades obrigatórios" }, { status: 400 });
     const d = await prisma.workDiary.create({ data: { date: b.date ? new Date(b.date) : new Date(), contractId: b.contractId||null, location: b.location, supervisor: b.supervisor||"", teamSize: Number(b.teamSize||1), weather: b.weather||"Bom", activitiesDone: b.activitiesDone, areasWorked: b.areasWorked, equipmentUsed: b.equipmentUsed, occurrences: b.occurrences } });
     return NextResponse.json(d, { status: 201 });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/diario"); }
 }
 
 const DEMO = [

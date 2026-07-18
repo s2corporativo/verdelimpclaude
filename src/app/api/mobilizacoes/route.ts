@@ -2,6 +2,7 @@
 // Controle de mobilização: quem está alocado em qual contrato, desde quando, com qual custo
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, criadas: criadas.length, mobilizacoes: criadas });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/mobilizacoes");
   }
 }
 

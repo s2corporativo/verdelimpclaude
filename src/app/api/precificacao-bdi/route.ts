@@ -2,6 +2,7 @@
 // Calculadora de BDI e composição de preço unitário para licitações públicas
 // Baseada nas diretrizes TCU/SINAPI para contratos públicos
 import { NextRequest, NextResponse } from "next/server";
+import { erroInterno } from "@/lib/authz";
 
 export async function POST(req: NextRequest) {
   try {
@@ -76,6 +77,6 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/precificacao-bdi");
   }
 }

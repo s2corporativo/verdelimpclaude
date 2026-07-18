@@ -2,6 +2,7 @@
 // serviceDate, serviceType, area(m²), cost, revenue por contractId
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     const b = await req.json();
     const d = await prisma.workDiary.create({ data: { contractId: b.contractId || null, date: b.serviceDate ? new Date(b.serviceDate) : new Date(), location: b.location || "", supervisor: b.supervisor || "", teamSize: Number(b.teamSize || 1), weather: b.weather || "Bom", activitiesDone: `[${b.serviceType}] ${b.description || ""}`, areasWorked: b.area ? `${b.area} m²` : null, occurrences: `Receita: R$${b.revenue || 0} | Custo: R$${b.cost || 0}` } });
     return NextResponse.json(d, { status: 201 });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/historico-servicos"); }
 }
 
 const DEMO = [

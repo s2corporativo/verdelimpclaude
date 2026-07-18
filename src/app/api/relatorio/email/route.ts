@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { enviarEmail, emailConfigurado } from "@/lib/email";
+import { erroInterno } from "@/lib/authz";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -64,6 +65,6 @@ export async function POST(req: NextRequest) {
     if (!resultado.ok) return NextResponse.json({ error: resultado.erro }, { status: 502 });
     return NextResponse.json({ ok: true, para: destinatario });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/relatorio/email");
   }
 }

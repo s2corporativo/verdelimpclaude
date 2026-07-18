@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 const POR_PAGINA = 50;
 
@@ -43,5 +44,5 @@ export async function GET(req: NextRequest) {
       paginas: Math.max(1, Math.ceil(total / POR_PAGINA)),
       modulos: modulos.map((m) => m.module),
     });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/admin/auditoria"); }
 }

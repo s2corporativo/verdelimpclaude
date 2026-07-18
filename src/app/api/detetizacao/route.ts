@@ -2,6 +2,7 @@
 // Módulo Dedetização — controle de pragas, produtos ANVISA, certificados, viabilidade
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 // ── Catálogo padrão de produtos (antes do banco ser populado) ────
 const CATALOGO_DEFAULT = [
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, job });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/detetizacao");
   }
 }
 
