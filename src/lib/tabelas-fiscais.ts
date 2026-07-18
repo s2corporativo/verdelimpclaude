@@ -83,14 +83,14 @@ export const TABELAS: Record<number, TabelaFiscalAno> = {
   },
   2026: {
     ano: 2026,
-    salarioMinimo: 1631.0,
-    // 1ª faixa = salário mínimo vigente. Faixas 2-4 reajustadas pela Portaria
-    // MPS/MF do exercício — CONFIRMAR os valores publicados e ajustar aqui.
+    salarioMinimo: 1621.0,
+    // Portaria Interministerial MPS/MF nº 13, de 09/01/2026 — vigência 01/01/2026.
+    // Teto de contribuição: R$ 8.475,55 (desconto máximo ≈ R$ 988,09).
     faixasINSS: [
-      { ate: 1631.0, aliq: 0.075 },
-      { ate: 2793.88, aliq: 0.09 },
-      { ate: 4190.83, aliq: 0.12 },
-      { ate: 8157.41, aliq: 0.14 },
+      { ate: 1621.0, aliq: 0.075 },
+      { ate: 2902.84, aliq: 0.09 },
+      { ate: 4354.27, aliq: 0.12 },
+      { ate: 8475.55, aliq: 0.14 },
     ],
     irrf: {
       // Tabela progressiva base mantida (mai/2025) + redutor da Lei 15.270/2025,
@@ -106,8 +106,7 @@ export const TABELAS: Record<number, TabelaFiscalAno> = {
       descontoSimplificado: 607.2,
       redutorLei15270: { isencaoAte: 5000, reducaoAte: 7350 },
     },
-    fonte: "Decreto do salário mínimo 2026; Lei 15.270/2025 (isenção IR até R$5.000). Faixas INSS 2-4 aguardam confirmação da Portaria 2026.",
-    pendenteConfirmacao: true,
+    fonte: "Portaria Interministerial MPS/MF 13/2026 (mínimo R$1.621, teto INSS R$8.475,55); Lei 15.270/2025 (isenção IR até R$5.000)",
   },
 };
 

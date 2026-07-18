@@ -28,6 +28,9 @@ export default withAuth(
       ["/dashboard/diagnostico", ["ADMIN"]],
       ["/api/alertas/whatsapp", ["ADMIN"]],
       ["/dashboard/configuracoes", ["ADMIN"]],
+      // E-mail — cotações/contratos recebidos + análise IA
+      ["/api/email-analise", [...GES, "FINANCEIRO"]],
+      ["/dashboard/email-analise", [...GES, "FINANCEIRO"]],
       // Financeiro & fiscal (as rotas reais não começam todas com /api/fiscal)
       ["/api/fiscal", FIN], ["/dashboard/fiscal", FIN],
       ["/api/financeiro", ["ADMIN", "FINANCEIRO"]], ["/dashboard/financeiro", ["ADMIN", "FINANCEIRO"]],
