@@ -1,6 +1,7 @@
 // CRM — funil de oportunidades com clientes privados (condomínios, indústrias…).
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export async function GET() {
       .reduce((s, o) => s + Number(o.estimatedValue || 0), 0);
     return NextResponse.json({ oportunidades, valorEmAberto: total });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/oportunidades");
   }
 }
 
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ok: true, id: o.id });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/oportunidades");
   }
 }
 
@@ -47,7 +48,7 @@ export async function PUT(req: NextRequest) {
     await prisma.opportunity.update({ where: { id: b.id }, data });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/oportunidades");
   }
 }
 
@@ -58,6 +59,6 @@ export async function DELETE(req: NextRequest) {
     await prisma.opportunity.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/oportunidades");
   }
 }

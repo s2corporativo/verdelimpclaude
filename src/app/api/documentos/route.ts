@@ -6,6 +6,24 @@
 //   "gdrive" — link Google Drive com metadados
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { exigirPapel, erroInterno } from "@/lib/authz";
+import { registrarAuditoria } from "@/lib/admin";
+import { validar, DocumentoSchema } from "@/lib/validacao";
+
+// Papéis com acesso ao GED (o middleware aplica o mesmo conjunto; aqui é defesa em profundidade)
+const PAPEIS_GED = ["ADMIN", "GESTOR", "COMERCIAL", "RH", "FINANCEIRO", "FISCAL"];
+
+// Documento confidencial só é visível/baixável por quem tem alçada na categoria.
+function podeVerConfidencial(roles: string[], categoria: string | null | undefined): boolean {
+  if (roles.includes("ADMIN") || roles.includes("GESTOR")) return true;
+  switch (categoria) {
+    case "rh":       return roles.includes("RH");
+    case "fiscal":   return roles.includes("FISCAL") || roles.includes("FINANCEIRO");
+    case "contrato":
+    case "licitacao": return roles.includes("COMERCIAL");
+    default:          return false; // juridico e demais: só ADMIN/GESTOR
+  }
+}
 
 // Categorias e subcategorias do GED
 const CATEGORIAS: Record<string, { label: string; icon: string; subs: string[] }> = {
@@ -19,6 +37,10 @@ const CATEGORIAS: Record<string, { label: string; icon: string; subs: string[] }
 };
 
 export async function GET(req: NextRequest) {
+  const { user, erro } = await exigirPapel(...PAPEIS_GED);
+  if (erro) return erro;
+  const roles = user!.roles || [];
+
   const { searchParams } = new URL(req.url);
   const categoria = searchParams.get("categoria");
   const busca = searchParams.get("busca");
@@ -35,6 +57,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const where: any = {};
+    // Confidenciais só aparecem para quem tem alçada na categoria
+    if (!roles.includes("ADMIN") && !roles.includes("GESTOR")) {
+      const categoriasPermitidas = Object.keys(CATEGORIAS).filter((c) => podeVerConfidencial(roles, c));
+      where.AND = [{ OR: [{ confidencial: false }, { categoria: { in: categoriasPermitidas } }] }];
+    }
     if (categoria) where.categoria = categoria;
     if (contratoId) where.contratoId = contratoId;
     if (clienteId) where.clienteId = clienteId;
@@ -85,12 +112,17 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({ docs, total, page, vencidos, vencendo30, statsCat, categorias: CATEGORIAS });
-  } catch {
-    return NextResponse.json({ docs: DEMO_DOCS, total: DEMO_DOCS.length, page: 1, vencidos: 2, vencendo30: 3, statsCat: DEMO_STATS, categorias: CATEGORIAS, _demo: true });
+  } catch (e) {
+    // Erro de banco nunca deve virar dado demo silencioso — o usuário precisa saber que falhou
+    return erroInterno(e, "api/documentos GET");
   }
 }
 
 export async function POST(req: NextRequest) {
+  const { user, erro } = await exigirPapel(...PAPEIS_GED);
+  if (erro) return erro;
+  const roles = user!.roles || [];
+
   try {
     const body = await req.json();
     const { action } = body;
@@ -99,10 +131,15 @@ export async function POST(req: NextRequest) {
     if (action === "download") {
       const doc = await prisma.document.findUnique({
         where: { id: body.id },
-        select: { id: true, nome: true, mimeType: true, base64Data: true, urlArquivo: true, estrategia: true },
+        select: { id: true, nome: true, mimeType: true, base64Data: true, urlArquivo: true, estrategia: true, confidencial: true, categoria: true },
       });
       if (!doc) return NextResponse.json({ error: "Documento não encontrado" }, { status: 404 });
-      return NextResponse.json({ doc });
+      if (doc.confidencial && !podeVerConfidencial(roles, doc.categoria)) {
+        return NextResponse.json({ error: "Documento confidencial — acesso restrito" }, { status: 403 });
+      }
+      await registrarAuditoria({ userId: user!.id, action: "download", module: "documentos", entityType: "Document", entityId: doc.id });
+      const { confidencial, categoria, ...docPublico } = doc;
+      return NextResponse.json({ doc: docPublico });
     }
 
     // Atualizar status / mover para arquivo
@@ -140,7 +177,7 @@ export async function POST(req: NextRequest) {
           validade: body.validade ? new Date(body.validade) : null,
           versao: (ant?.versao || 1) + 1,
           documentoPaiId: body.documentoPaiId,
-          uploadBy: body.uploadBy || null,
+          uploadBy: user!.name || user!.email || user!.id, // autoria sempre da sessão, nunca do body
           confidencial: body.confidencial || false,
         },
       });
@@ -156,41 +193,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, doc });
     }
 
-    // Criar novo documento
-    if (!body.nome || !body.categoria) {
-      return NextResponse.json({ error: "Nome e categoria obrigatórios" }, { status: 400 });
-    }
-
-    // Validar tamanho base64 (máx 2MB)
-    if (body.base64Data && body.base64Data.length > 2_800_000) {
-      return NextResponse.json({ error: "Arquivo muito grande para armazenamento direto. Use um link externo (Google Drive, etc.)" }, { status: 413 });
-    }
+    // Criar novo documento — shape validado (campos fora do schema são descartados)
+    const { data: docValido, erro: erroVal } = validar(DocumentoSchema, body);
+    if (erroVal) return erroVal;
 
     const doc = await prisma.document.create({
       data: {
-        nome: body.nome,
-        descricao: body.descricao || null,
-        categoria: body.categoria,
-        subcategoria: body.subcategoria || null,
-        tags: body.tags || null,
-        clienteId: body.clienteId || null,
-        contratoId: body.contratoId || null,
-        funcionarioId: body.funcionarioId || null,
-        estrategia: body.estrategia || "url",
-        urlArquivo: body.urlArquivo || null,
-        base64Data: body.base64Data || null,
-        mimeType: body.mimeType || null,
-        tamanhoKb: body.tamanhoKb || null,
-        validade: body.validade ? new Date(body.validade) : null,
+        nome: docValido.nome,
+        descricao: docValido.descricao || null,
+        categoria: docValido.categoria,
+        subcategoria: docValido.subcategoria || null,
+        tags: docValido.tags || null,
+        clienteId: docValido.clienteId || null,
+        contratoId: docValido.contratoId || null,
+        funcionarioId: docValido.funcionarioId || null,
+        estrategia: docValido.estrategia || "url",
+        urlArquivo: docValido.urlArquivo || null,
+        base64Data: docValido.base64Data || null,
+        mimeType: docValido.mimeType || null,
+        tamanhoKb: docValido.tamanhoKb || null,
+        validade: docValido.validade ? new Date(docValido.validade) : null,
         versao: 1,
-        confidencial: body.confidencial || false,
-        uploadBy: body.uploadBy || null,
+        confidencial: docValido.confidencial || false,
+        uploadBy: user!.name || user!.email || user!.id, // autoria sempre da sessão, nunca do body
       },
     });
 
     return NextResponse.json({ success: true, doc });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    return erroInterno(e, "api/documentos POST");
   }
 }
 

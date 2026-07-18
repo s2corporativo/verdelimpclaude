@@ -1,13 +1,15 @@
 // src/app/api/funcionarios/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { registrarAuditoria } from "@/lib/admin";
+import { exigirPapel, erroInterno } from "@/lib/authz";
+import { validar, FuncionarioSchema } from "@/lib/validacao";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const { erro } = await exigirPapel("ADMIN", "RH");
+  if (erro) return erro;
   try {
     const data = await prisma.employee.findMany({ where: { active: true }, orderBy: { name: "asc" }, include: { docs: true } });
     if (data.length === 0) return NextResponse.json({ data: DEMO_FUNC, _demo: true });
@@ -16,20 +18,20 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "RH");
+  if (erro) return erro;
   try {
-    const body = await req.json();
-    if (!body.name || !body.cpf || !body.admissionDate || !body.salary) {
-      return NextResponse.json({ error: "Nome, CPF, data de admissão e salário obrigatórios" }, { status: 400 });
-    }
+    const bruto = await req.json();
+    const { data: body, erro: erroVal } = validar(FuncionarioSchema, bruto);
+    if (erroVal) return erroVal;
     const emp = await prisma.employee.create({
-      data: { name: body.name, role: body.role || "", cpf: body.cpf, admissionDate: new Date(body.admissionDate), salary: Number(body.salary), dependentes: Number(body.dependentes || 0), bank: body.bank, bankAgency: body.bankAgency, bankAccount: body.bankAccount },
+      data: { name: body.name, role: body.role || "", cpf: body.cpf, admissionDate: new Date(body.admissionDate), salary: body.salary, dependentes: body.dependentes ?? 0, bank: body.bank, bankAgency: body.bankAgency, bankAccount: body.bankAccount },
     });
-    const session = await getServerSession(authOptions);
-    await registrarAuditoria({ userId: (session?.user as any)?.id || null, action: "CRIAR", module: "rh", entityType: "Employee", entityId: emp.id, newValues: { name: emp.name, role: emp.role, salary: Number(emp.salary) } });
+    await registrarAuditoria({ userId: user!.id, action: "CRIAR", module: "rh", entityType: "Employee", entityId: emp.id, newValues: { name: emp.name, role: emp.role, salary: Number(emp.salary) } });
     return NextResponse.json(emp, { status: 201 });
   } catch (e: any) {
-    if (e.code === "P2002") return NextResponse.json({ error: "CPF já cadastrado" }, { status: 409 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    if (e?.code === "P2002") return NextResponse.json({ error: "CPF já cadastrado" }, { status: 409 });
+    return erroInterno(e, "api/funcionarios POST");
   }
 }
 

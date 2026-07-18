@@ -4,11 +4,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { linhaFolha, totaisDe, AVISO_FOLHA } from "@/lib/folha";
+import { exigirPapel, erroInterno } from "@/lib/authz";
 
 // Sempre executar no servidor — nunca pré-renderizar com dados demo no build
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const { erro } = await exigirPapel("ADMIN", "RH", "FINANCEIRO");
+  if (erro) return erro;
   try {
     const funcionarios = await prisma.employee.findMany({ where: { active: true }, orderBy: { name: "asc" } });
     if (!funcionarios.length) { const folha = DEMO_EMPLOYEES.map(f => linhaFolha(f)); return NextResponse.json({ folha, totais: totaisDe(folha), _demo: true }); }
@@ -23,14 +26,16 @@ export async function GET() {
 // Recalcula a folha aplicando horas extras por funcionário no mês.
 // body: { extras: { [employeeId]: { he50, he100 } } }
 export async function POST(req: Request) {
+  const { erro } = await exigirPapel("ADMIN", "RH", "FINANCEIRO");
+  if (erro) return erro;
   try {
     const { extras } = await req.json().catch(() => ({ extras: {} }));
     const funcionarios = await prisma.employee.findMany({ where: { active: true }, orderBy: { name: "asc" } });
     const base = funcionarios.length ? funcionarios : DEMO_EMPLOYEES;
     const folha = base.map((f: any) => linhaFolha(f, extras?.[f.id]));
     return NextResponse.json({ folha, totais: totaisDe(folha), _demo: !funcionarios.length, aviso: AVISO_FOLHA });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    return erroInterno(e, "api/folha-detalhada POST");
   }
 }
 

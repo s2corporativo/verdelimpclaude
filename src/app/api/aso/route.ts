@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { statusPorValidade } from "@/lib/monitor-docs";
 import { registrarAuditoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export async function GET() {
 
     return NextResponse.json({ linhas, resumo: { total: linhas.length, semAso, vencidos, aVencer } });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/aso");
   }
 }
 
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     await registrarAuditoria({ userId: (session?.user as any)?.id || null, action: "CRIAR", module: "sst", entityType: "AsoExam", entityId: exame.id, newValues: { employeeId: b.employeeId, examType: b.examType, result: b.result } });
     return NextResponse.json({ ok: true, id: exame.id });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/aso");
   }
 }
 
@@ -67,6 +68,6 @@ export async function DELETE(req: NextRequest) {
     await prisma.asoExam.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/aso");
   }
 }

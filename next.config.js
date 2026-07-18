@@ -27,8 +27,10 @@ const securityHeaders = [
 const nextConfig = {
   // Next 14 usa a chave experimental; a raiz "serverExternalPackages" só existe no Next 15
   experimental: { serverComponentsExternalPackages: ["@prisma/client", "bcryptjs"] },
+  // Imagem final enxuta: copia só .next/standalone (sem devDependencies)
+  output: "standalone",
   typescript: { ignoreBuildErrors: false },
-  eslint: { ignoreDuringBuilds: true },
+  eslint: { ignoreDuringBuilds: false }, // lint agora é gate — passa limpo
   poweredByHeader: false, // não vazar "X-Powered-By: Next.js"
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

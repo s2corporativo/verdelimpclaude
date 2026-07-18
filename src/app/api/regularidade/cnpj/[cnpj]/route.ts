@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { fetchWithCache } from "@/lib/api-cache";
+import { erroInterno } from "@/lib/authz";
 
 /* ─── Fontes de CND disponíveis publicamente ─────────────────────
    CND Federal:    https://solucoes.receita.fazenda.gov.br/Servicos/certidaointernet/PJ/Emitir
@@ -298,6 +299,6 @@ export async function POST(req: NextRequest, { params }: { params: { cnpj: strin
       mensagem: `✅ ${salvos.length} certidão(ões) salvas no GED com vencimento calculado automaticamente`,
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/regularidade/cnpj/[cnpj]");
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin, registrarAuditoria, gerarSenhaProvisoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 // PATCH — editar dados, papéis, ativar/desativar, desbloquear, resetar senha
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -70,6 +71,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 409 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/admin/usuarios/[id]");
   }
 }

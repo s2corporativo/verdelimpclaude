@@ -1,6 +1,7 @@
 // src/app/api/fiscal/despesas/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(despesa, { status: 201 });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/fiscal/despesas");
   }
 }
 

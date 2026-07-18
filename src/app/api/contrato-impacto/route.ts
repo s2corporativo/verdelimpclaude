@@ -3,6 +3,7 @@
 // Mostra ANTES de salvar — para o usuário ver e confirmar
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 interface ContratoInput {
   valorMensal: number;
@@ -259,7 +260,7 @@ export async function POST(req: NextRequest) {
       recomendacoes,
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/contrato-impacto");
   }
 }
 

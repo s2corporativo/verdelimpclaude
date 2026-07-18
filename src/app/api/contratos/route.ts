@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { registrarAuditoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     const c = await prisma.contract.create({ data: { number, clientId: b.clientId||null, object: b.object, value: Number(b.value), monthlyValue: Number(b.monthlyValue||0), startDate: new Date(b.startDate), endDate: new Date(b.endDate), status: b.status||"Ativo", notes: b.notes } });
     await registrarAuditoria({ userId: await userId(), action: "CRIAR", module: "contratos", entityType: "Contract", entityId: c.id, newValues: { number: c.number, value: Number(c.value) } });
     return NextResponse.json(c, { status: 201 });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/contratos"); }
 }
 
 // Editar contrato
@@ -56,7 +57,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(c);
   } catch (e: any) {
     if (e.code === "P2025") return NextResponse.json({ error: "Contrato não encontrado" }, { status: 404 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/contratos");
   }
 }
 
@@ -70,7 +71,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true, contrato: c });
   } catch (e: any) {
     if (e.code === "P2025") return NextResponse.json({ error: "Contrato não encontrado" }, { status: 404 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/contratos");
   }
 }
 

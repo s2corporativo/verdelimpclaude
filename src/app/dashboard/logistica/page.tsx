@@ -52,12 +52,18 @@ export default function LogisticaPage() {
   const [mostrarForm, setMostrarForm] = useState(false);
 
   useEffect(() => {
-    fetch("/api/logistica").then(r=>r.json()).then(d=>{
-      // OS editadas localmente têm prioridade (persistidas no navegador até existir API própria)
-      let locais: OS[] | null = null;
-      try { const raw = localStorage.getItem("verdelimp_os"); if (raw) locais = JSON.parse(raw); } catch {}
-      setOs(locais && locais.length ? locais : (d.os||[])); setFuncs(d.funcionarios||[]); setDemo(!!d._demo);
-    });
+    const ctrl = new AbortController();
+    fetch("/api/logistica", { signal: ctrl.signal }).then(r=>r.json()).then(d=>{
+      // O SERVIDOR é a fonte de verdade: antes o localStorage vencia sempre e
+      // as OS divergiam entre celular/desktop e entre usuários do mesmo PC.
+      // O rascunho local só é usado quando o servidor não tem nada (demo/vazio).
+      const doServidor: OS[] = d.os || [];
+      let rascunhoLocal: OS[] | null = null;
+      try { const raw = localStorage.getItem("verdelimp_os"); if (raw) rascunhoLocal = JSON.parse(raw); } catch {}
+      const usarLocal = (d._demo || !doServidor.length) && rascunhoLocal?.length;
+      setOs(usarLocal ? rascunhoLocal! : doServidor); setFuncs(d.funcionarios||[]); setDemo(!!d._demo);
+    }).catch((e) => { if (e?.name !== "AbortError") setDemo(true); });
+    return () => ctrl.abort();
   }, []);
 
   useEffect(() => {

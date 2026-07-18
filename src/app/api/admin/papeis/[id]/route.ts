@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin, registrarAuditoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { user, erro } = await exigirAdmin();
@@ -21,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       newValues: { description: body.description, permissionIds: body.permissionIds },
     });
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/admin/papeis/[id]"); }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -43,5 +44,5 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
       oldValues: { name: papel.name },
     });
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/admin/papeis/[id]"); }
 }

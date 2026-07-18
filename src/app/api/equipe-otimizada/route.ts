@@ -1,6 +1,7 @@
 // src/app/api/equipe-otimizada/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 const PRODUTIVIDADE_M2_DIA: Record<string, number> = {
   "Roçada Manual": 800, "Roçada Mecanizada": 2500, "Jardinagem Mensal": 1200,
@@ -133,6 +134,6 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/equipe-otimizada");
   }
 }

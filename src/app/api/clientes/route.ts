@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { registrarAuditoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
+import { validar, ClienteSchema, ClienteUpdateSchema } from "@/lib/validacao";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +29,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    if (!body.name) return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 });
+    const bruto = await req.json();
+    const { data: body, erro } = validar(ClienteSchema, bruto);
+    if (erro) return erro;
 
     // Enriquecer com dados do CNPJ se não preenchido
     if (body.cnpjCpf && !body.municipio) {
@@ -66,27 +69,28 @@ export async function POST(req: NextRequest) {
     await registrarAuditoria({ userId: await userId(), action: "CRIAR", module: "clientes", entityType: "Client", entityId: cliente.id, newValues: { name: cliente.name } });
     return NextResponse.json(cliente, { status: 201 });
   } catch (e: any) {
-    if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado" }, { status: 409 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    if (e?.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado" }, { status: 409 });
+    return erroInterno(e, "api/clientes POST");
   }
 }
 
 // Editar cliente
 export async function PUT(req: NextRequest) {
   try {
-    const b = await req.json();
-    if (!b.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    const bruto = await req.json();
+    const { data: b, erro } = validar(ClienteUpdateSchema, bruto);
+    if (erro) return erro;
     if (b.name !== undefined && !String(b.name).trim()) return NextResponse.json({ error: "Nome não pode ficar vazio" }, { status: 400 });
-    const campos = ["name", "cnpjCpf", "type", "category", "email", "phone", "contact", "logradouro", "municipio", "uf", "cep", "situacao", "notes"];
+    const campos = ["name", "cnpjCpf", "type", "category", "email", "phone", "contact", "logradouro", "municipio", "uf", "cep", "situacao", "notes"] as const;
     const data: any = {};
-    for (const k of campos) if (b[k] !== undefined) data[k] = b[k] || null;
+    for (const k of campos) if ((b as any)[k] !== undefined) data[k] = (b as any)[k] || null;
     const cliente = await prisma.client.update({ where: { id: b.id }, data });
     await registrarAuditoria({ userId: await userId(), action: "EDITAR", module: "clientes", entityType: "Client", entityId: b.id, newValues: data });
     return NextResponse.json(cliente);
   } catch (e: any) {
-    if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado em outro cliente" }, { status: 409 });
-    if (e.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    if (e?.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado em outro cliente" }, { status: 409 });
+    if (e?.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+    return erroInterno(e, "api/clientes PUT");
   }
 }
 
@@ -101,8 +105,8 @@ export async function DELETE(req: NextRequest) {
     await registrarAuditoria({ userId: await userId(), action: "EXCLUIR", module: "clientes", entityType: "Client", entityId: id });
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    if (e.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    if (e?.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+    return erroInterno(e, "api/clientes DELETE");
   }
 }
 

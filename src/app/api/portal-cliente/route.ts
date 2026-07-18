@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
       });
       return NextResponse.json({ success: true, token: pt.token, expiresAt: pt.expiresAt });
     } catch (e: any) {
-      return NextResponse.json({ error: e.message }, { status: 500 });
+      return erroInterno(e, "api/portal-cliente");
     }
   }
 
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, medicao: med, mensagem: acao === "aprovar" ? "Medição aprovada com sucesso!" : "Contestação registrada. A equipe entrará em contato." });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/portal-cliente");
   }
 }
 

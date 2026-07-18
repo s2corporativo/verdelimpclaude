@@ -1,6 +1,7 @@
 "use client";
 // Componentes de UI reutilizáveis do Verdelimp — padronizam elementos que
 // antes eram repetidos com estilos inline levemente diferentes em cada tela.
+import { cloneElement, isValidElement, useId } from "react";
 import { CORES } from "@/lib/tema";
 import { estiloInput, estiloLabel } from "@/lib/estilos";
 
@@ -71,12 +72,19 @@ export function Input({ style, ...props }: React.InputHTMLAttributes<HTMLInputEl
   return <input {...props} style={{ ...estiloInput, ...style }} />;
 }
 
-/** Rótulo + campo em bloco. `label` opcional; `children` é o input/select/textarea. */
+/** Rótulo + campo em bloco. `label` opcional; `children` é o input/select/textarea.
+ *  Gera id/htmlFor automaticamente: sem o vínculo, leitores de tela não
+ *  anunciam o rótulo do campo (o <label> era só visual). */
 export function Campo({ label, children, style }: { label?: React.ReactNode; children: React.ReactNode; style?: React.CSSProperties }) {
+  const idAuto = useId();
+  const filhoComId = isValidElement(children) && !(children.props as any).id
+    ? cloneElement(children as React.ReactElement<any>, { id: idAuto })
+    : children;
+  const idDoFilho = isValidElement(filhoComId) ? (filhoComId.props as any).id : undefined;
   return (
     <div style={style}>
-      {label != null && <label style={estiloLabel}>{label}</label>}
-      {children}
+      {label != null && <label htmlFor={idDoFilho} style={estiloLabel}>{label}</label>}
+      {filhoComId}
     </div>
   );
 }
@@ -99,9 +107,15 @@ export function TabelaHead({ colunas, alinhar = "left" }: { colunas: string[]; a
     <thead>
       <tr style={{ background: CORES.verdeClaro }}>
         {colunas.map(h => (
-          <th key={h} style={{ padding: "9px 12px", textAlign: alinhar, fontSize: 11, fontWeight: 700, color: CORES.verdeEscuro }}>{h}</th>
+          <th key={h} scope="col" style={{ padding: "9px 12px", textAlign: alinhar, fontSize: 11, fontWeight: 700, color: CORES.verdeEscuro }}>{h}</th>
         ))}
       </tr>
     </thead>
   );
+}
+
+/** Wrapper de tabela com rolagem horizontal — tabelas largas não estouram
+ *  a tela no celular do pessoal de campo. Use em volta de <table>. */
+export function TabelaScroll({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", ...style }}>{children}</div>;
 }

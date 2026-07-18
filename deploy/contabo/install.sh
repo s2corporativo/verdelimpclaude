@@ -195,11 +195,15 @@ else
 fi
 
 # ── 9. Backup diário (02h20, deslocado dos outros sistemas) ─────────
-say "Backup automático do banco"
+# Backup COMPLETO: banco + uploads (GED/XML/fotos), com off-site opcional
+# via rclone (configure RCLONE_REMOTE). Ver deploy/contabo/backup.sh.
+say "Backup automático (banco + uploads)"
 mkdir -p /opt/backups
-LINHA_CRON="20 2 * * * cd $APP_DIR && docker compose exec -T db pg_dump -U verdelimp verdelimp_erp | gzip > /opt/backups/verdelimp_\$(date +\%F).sql.gz && find /opt/backups -name 'verdelimp_*.sql.gz' -mtime +14 -delete"
-( crontab -l 2>/dev/null | grep -v 'verdelimp_.*\.sql\.gz' ; echo "$LINHA_CRON" ) | crontab -
-echo "  Cron instalado: todo dia às 02h20, mantém 14 dias em /opt/backups."
+chmod +x "$APP_DIR/deploy/contabo/backup.sh"
+LINHA_CRON="20 2 * * * $APP_DIR/deploy/contabo/backup.sh $APP_DIR >> /var/log/verdelimp-backup.log 2>&1"
+( crontab -l 2>/dev/null | grep -v 'verdelimp_.*\.sql\.gz' | grep -v 'deploy/contabo/backup.sh' ; echo "$LINHA_CRON" ) | crontab -
+echo "  Cron instalado: todo dia às 02h20 (banco + uploads, retenção 14 dias)."
+echo "  ⚠️  Configure a cópia off-site: rclone config + RCLONE_REMOTE no cron."
 
 # ── 10. Verificação final ───────────────────────────────────────────
 say "Verificação final"

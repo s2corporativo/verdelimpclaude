@@ -2,6 +2,7 @@
 // passo em linguagem simples para o operador do sistema.
 import { NextRequest, NextResponse } from "next/server";
 import { groqChat } from "@/lib/groq";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,6 @@ export async function POST(req: NextRequest) {
     ], 600);
     return NextResponse.json({ text: texto });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/diagnostico/explicar");
   }
 }

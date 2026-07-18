@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin, registrarAuditoria } from "@/lib/admin";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export async function GET() {
   try {
     const config = await prisma.companyConfig.findFirst();
     return NextResponse.json({ data: config });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/configuracoes"); }
 }
 
 export async function PUT(req: NextRequest) {
@@ -62,6 +63,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ ok: true, data: config });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado em outra configuração" }, { status: 409 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/configuracoes");
   }
 }

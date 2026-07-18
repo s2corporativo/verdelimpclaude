@@ -60,10 +60,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [semLogo, setSemLogo] = useState(false);
+  const [menuAberto, setMenuAberto] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
+
+  // Navegar fecha a gaveta no mobile
+  useEffect(() => { setMenuAberto(false); }, [pathname]);
 
   if (status === "loading") return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: "#4a9410", fontSize: 18 }}>
@@ -76,7 +80,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      <aside style={{ width: 220, background: "#334532", color: "#fff", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      {menuAberto && <div className="vl-backdrop" onClick={() => setMenuAberto(false)} aria-hidden="true" />}
+      <aside className={`vl-sidebar${menuAberto ? " aberta" : ""}`} style={{ width: 220, background: "#334532", color: "#fff", display: "flex", flexDirection: "column", flexShrink: 0 }}>
         <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid rgba(255,255,255,.12)" }}>
           {!semLogo && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -117,11 +122,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-        <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "8px 20px", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
-          <NotificacoesWidget />
-          <span style={{ fontSize: 11, color: "#9ca3af" }}>🌿 Verdelimp ERP v2.2</span>
+        <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "8px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          <button className="vl-hamburger" onClick={() => setMenuAberto(true)} aria-label="Abrir menu de navegação">☰</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
+            <NotificacoesWidget />
+            <span style={{ fontSize: 11, color: "#9ca3af" }}>🌿 Verdelimp ERP v2.2</span>
+          </div>
         </div>
-        <main style={{ flex: 1, overflowY: "auto", padding: 22, background: "#f3f4f6" }}>
+        <main className="vl-main" style={{ flex: 1, overflowY: "auto", padding: 22, background: "#f3f4f6" }}>
         <SubNav />
         {children}
       </main>

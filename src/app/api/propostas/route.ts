@@ -1,6 +1,7 @@
 // src/app/api/propostas/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
       },
     });
     return NextResponse.json(prop, { status: 201 });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/propostas"); }
 }
 
 // Excluir proposta (exclusão lógica via deletedAt)
@@ -91,7 +92,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (e: any) {
     if (e.code === "P2025") return NextResponse.json({ error: "Proposta não encontrada" }, { status: 404 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/propostas");
   }
 }
 

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { groqChat } from "@/lib/groq";
+import { erroInterno } from "@/lib/authz";
 
 const SYSTEM_CONTEXT = `Você é especialista em licitações e serviços ambientais para a VERDELIMP SERVICOS E TERCEIRIZACAO LTDA (CNPJ 30.198.776/0001-29, Betim/MG, CNAE 81.30-3-00, Simples Nacional, EPP). Analise editais e gere propostas comerciais profissionais com memorial de cálculo e BDI. Valores em R$ para MG.`;
 
@@ -82,6 +83,6 @@ Seja específico com valores realistas para MG. Indique que é apoio gerencial.`
       propostaNumero: propostaSalva?.number, // compat com a tela (lia propostaNumero)
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/proposta-edital");
   }
 }

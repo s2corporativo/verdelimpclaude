@@ -7,6 +7,7 @@
 // - Cliente (se não existir)
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 export async function POST(req: NextRequest) {
   try {
@@ -235,6 +236,6 @@ export async function POST(req: NextRequest) {
         : `⚠️ Contrato ${contratoCriado.number} criado, mas houve avisos em alguns módulos — confira os detalhes.`,
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return erroInterno(e, "api/contrato-propagar");
   }
 }

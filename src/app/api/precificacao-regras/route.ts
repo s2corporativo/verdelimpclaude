@@ -2,6 +2,7 @@
 // Na primeira consulta, popula com os valores padrão de mercado MG
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno } from "@/lib/authz";
 
 // Sempre executar no servidor — nunca pré-renderizar com dados demo no build
 export const dynamic = "force-dynamic";
@@ -61,5 +62,5 @@ export async function PUT(req: NextRequest) {
       create: { serviceType: b.serviceType, unit: b.unit || "m²", ...dados },
     });
     return NextResponse.json({ success: true, updated: regra });
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch (e: any) { return erroInterno(e, "api/precificacao-regras"); }
 }
