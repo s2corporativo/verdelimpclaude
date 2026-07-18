@@ -87,6 +87,13 @@ export async function GET() {
     detalhe: "SMTP não configurado — o envio de e-mail (ex.: relatório ao contador) fica indisponível.",
     correcao: "Preencha SMTP_HOST/PORT/USER/PASS no .env.production se quiser enviar e-mails. (Opcional.)" });
 
+  // 7b. E-mail (IMAP) — busca de cotações/contratos + análise IA
+  if (process.env.EMAIL_IMAP_HOST && process.env.EMAIL_IMAP_USER && process.env.EMAIL_IMAP_PASS)
+    add({ id: "imap", area: "Integrações", titulo: "E-mail (IMAP — cotações/contratos)", status: "ok", detalhe: "IMAP configurado — busca de cotações e contratos na caixa de entrada disponível." });
+  else add({ id: "imap", area: "Integrações", titulo: "E-mail (IMAP — cotações/contratos)", status: "atencao",
+    detalhe: "IMAP não configurado — a busca de cotações/contratos no e-mail e a análise por IA ficam em modo demonstrativo.",
+    correcao: "Defina EMAIL_IMAP_HOST (ex.: imap.gmail.com), EMAIL_IMAP_PORT (993), EMAIL_IMAP_USER e EMAIL_IMAP_PASS (senha de app) no .env.production e reinicie o app." });
+
   // 8. Contratos ativos sem cliente vinculado
   try {
     const semCliente = await prisma.contract.count({ where: { status: "Ativo", clientId: null } });

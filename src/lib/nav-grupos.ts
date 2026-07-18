@@ -11,7 +11,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
     key: "alertas", titulo: "Alertas & Notificações",
     abas: [
       { href: "/dashboard/alertas", label: "🚨 Central de Alertas" },
-      { href: "/dashboard/whatsapp", label: "📱 WhatsApp" },
+      { href: "/dashboard/email-analise", label: "📧 Cotações & Contratos (E-mail)" },
     ],
   },
   {

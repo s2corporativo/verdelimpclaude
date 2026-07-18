@@ -19,7 +19,8 @@ export default function IntegracoesPage() {
     {nome:"Apuração Tributária",url:"api/fiscal/apuracao",status:"ativa",uso:"DAS/FGTS/INSS/ISS auto",modulos:"Central Fiscal",auth:"Sessão"},
     {nome:"NF-e SEFAZ",url:"nfe.fazenda.gov.br",status:"pendente",uso:"Consulta e manifestação",modulos:"Fiscal",auth:"Cert. A1"},
     {nome:"eSocial",url:"esocial.gov.br",status:"pendente",uso:"Obrigações trabalhistas",modulos:"RH",auth:"Cert. A1"},
-    {nome:"GROQ llama-3.3-70b",url:"api.groq.com",status:"ativa",uso:"IA: chat, análise de editais, precificação, cronogramas",modulos:"Ajuda · Licitações · Precificação · Logística",auth:"Server-side"},
+    {nome:"GROQ llama-3.3-70b",url:"api.groq.com",status:"ativa",uso:"IA: chat, análise de editais, precificação, cronogramas, cotações por e-mail",modulos:"Ajuda · Licitações · Precificação · Logística · E-mail",auth:"Server-side"},
+    {nome:"E-mail IMAP (leitura)",url:"EMAIL_IMAP_HOST",status:"pendente",uso:"Busca cotações e contratos recebidos + análise IA",modulos:"Alertas · Comercial",auth:"IMAP (senha de app)"},
   ];
   return (<div>
     <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Central de Integrações</h1>

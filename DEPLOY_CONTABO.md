@@ -160,7 +160,21 @@ GROQ_API_KEY=chave_do_console_groq
 
 A `GROQ_API_KEY` (plano gratuito em https://console.groq.com) habilita os recursos de IA:
 proposta por edital, análise de licitação/preço, cronograma, plano logístico, chat de
-ajuda e transcrição de voz. Sem ela, o restante do ERP funciona normalmente.
+ajuda, transcrição de voz e análise de cotações/contratos por e-mail. Sem ela, o
+restante do ERP funciona normalmente.
+
+Para o módulo **Cotações & Contratos por E-mail** (busca mensagens na caixa de
+entrada, somente leitura, e analisa com IA), configure também:
+
+```env
+EMAIL_IMAP_HOST=imap.gmail.com   # servidor IMAP da conta que recebe cotações
+EMAIL_IMAP_PORT=993              # porta TLS (padrão)
+EMAIL_IMAP_USER=comercial@verdelimp.com.br
+EMAIL_IMAP_PASS=senha_de_app     # Gmail/Outlook exigem senha de aplicativo
+```
+
+> O módulo WhatsApp foi **desativado** (jul/2026) — as variáveis `WHATSAPP_*`
+> não são mais necessárias; os alertas seguem na Central de Alertas.
 
 Para gerar segredo:
 

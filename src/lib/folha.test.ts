@@ -47,13 +47,20 @@ describe("INSS — tabela progressiva (por faixas, cumulativa)", () => {
     expect(calcINSS(8157.41, 2025)).toBeCloseTo(951.62, 1);
   });
 
+  it("2026: Portaria MPS/MF 13/2026 — 1ª faixa R$1.621 e teto ≈ R$988,09", () => {
+    expect(calcINSS(1621.0, 2026)).toBeCloseTo(121.575, 2); // 1621 × 7,5%
+    // 1621×7,5% + (2902,84−1621)×9% = 121,58 + 115,37 = 236,94
+    expect(calcINSS(2902.84, 2026)).toBeCloseTo(236.94, 2);
+    expect(calcINSS(8475.55, 2026)).toBeCloseTo(988.09, 1); // teto 2026
+  });
+
   it("NÃO tributa o salário inteiro pela alíquota da faixa (regressão do bug flat)", () => {
     expect(calcINSS(2500, 2025)).not.toBeCloseTo(225.0, 2);
   });
 
   it("acima do teto trava no desconto máximo (não cresce)", () => {
     expect(calcINSS(20000, 2025)).toBeCloseTo(calcINSS(8157.41, 2025), 2);
-    expect(calcINSS(20000, 2026)).toBeCloseTo(calcINSS(8157.41, 2026), 2);
+    expect(calcINSS(20000, 2026)).toBeCloseTo(calcINSS(8475.55, 2026), 2);
   });
 });
 

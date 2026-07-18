@@ -1,62 +1,21 @@
 // src/app/api/alertas/whatsapp/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { enviarWhatsApp, verificarAlertas } from "@/lib/whatsapp";
-import { prisma } from "@/lib/prisma";
-import { erroInterno } from "@/lib/authz";
+// Módulo WhatsApp DESATIVADO por decisão operacional (jul/2026).
+// A rota permanece para não quebrar clientes antigos, mas não lista nem envia
+// nada. Os alertas seguem na Central de Alertas (/api/alertas) e a análise de
+// cotações/contratos migrou para /api/email-analise.
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// GET — listar alertas pendentes
+const DESATIVADO = {
+  desativado: true,
+  message: "Módulo WhatsApp desativado. Use a Central de Alertas e o módulo de E-mail (Cotações & Contratos).",
+};
+
 export async function GET() {
-  try {
-    const alertas = await verificarAlertas(prisma);
-    return NextResponse.json({
-      total: alertas.length,
-      alertas,
-      provider: process.env.WHATSAPP_PROVIDER || "disabled",
-      configured: process.env.WHATSAPP_PROVIDER !== "disabled" && !!process.env.EVOLUTION_API_URL,
-    });
-  } catch (e: any) {
-    return NextResponse.json({ total: 0, alertas: [], provider: "disabled", configured: false, error: e.message });
-  }
+  return NextResponse.json({ ...DESATIVADO, total: 0, alertas: [], provider: "disabled", configured: false }, { status: 410 });
 }
 
-// POST — enviar alerta específico ou todos
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-
-    // Enviar alerta específico
-    if (body.tipo && body.destinatario && body.dados) {
-      const result = await enviarWhatsApp({ tipo: body.tipo, destinatario: body.destinatario, dados: body.dados });
-      return NextResponse.json(result);
-    }
-
-    // Enviar todos os alertas pendentes
-    if (body.enviarTodos) {
-      const alertas = await verificarAlertas(prisma);
-      const resultados = [];
-      for (const alerta of alertas) {
-        const r = await enviarWhatsApp(alerta);
-        resultados.push({ ...alerta, resultado: r });
-        // Rate limit: 1 mensagem por segundo
-        await new Promise(res => setTimeout(res, 1000));
-      }
-      return NextResponse.json({ enviados: resultados.length, resultados });
-    }
-
-    // Testar conexão
-    if (body.testar) {
-      const r = await enviarWhatsApp({
-        tipo: "proposta_aprovada",
-        destinatario: body.numero || process.env.WHATSAPP_ADMIN_NUMBER || "5531999990000",
-        dados: { numero: "TESTE", cliente: "Verdelimp ERP", valor: "0,00" },
-      });
-      return NextResponse.json(r);
-    }
-
-    return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
-  } catch (e: any) {
-    return erroInterno(e, "api/alertas/whatsapp");
-  }
+export async function POST() {
+  return NextResponse.json(DESATIVADO, { status: 410 });
 }
