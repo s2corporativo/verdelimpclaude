@@ -17,6 +17,7 @@ const MENU = [
 
   { s: "COMERCIAL" },
   { href: "/dashboard/oportunidades", label: "Oportunidades CRM", icon: "🎯" },
+  { href: "/dashboard/analise-rapida", label: "Análise Rápida com IA", icon: "🤖" },
   { href: "/dashboard/pipeline", label: "Licitações", icon: "🏆", grupo: "licitacoes" },
   { href: "/dashboard/propostas", label: "Propostas + PDF", icon: "📄" },
   { href: "/dashboard/precificacao-central", label: "Precificação", icon: "🧮", grupo: "precificacao" },

@@ -2,6 +2,21 @@
 
 Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gestão operacional, comercial, fiscal, financeira, trabalhista e administrativa.
 
+## ✨ NOVIDADE: Análise Rápida de Contratos com IA
+
+O sistema agora possui uma funcionalidade que **lê automaticamente contratos, cotações e editais** usando Inteligência Artificial (Groq):
+
+- Extrai dados do contrato (cliente, objeto, local, área, prazo)
+- Calcula equipe necessária (funções e quantidades)
+- Lista materiais e insumos necessários
+- Estima custos de mobilização/desmobilização
+- Identifica documentação exigida da EMPRESA
+- Identifica documentação exigida dos FUNCIONÁRIOS
+
+**Como usar**: Menu → COMERCIAL → Análise Rápida com IA
+
+Veja o guia completo em [GUIA_USUARIO.md](./GUIA_USUARIO.md).
+
 ## Módulos principais
 
 - Dashboard executivo
