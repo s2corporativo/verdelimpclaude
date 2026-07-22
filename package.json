@@ -21,7 +21,7 @@
     "imapflow": "^1.4.7",
     "mailparser": "^3.9.14",
     "next": "15.5.20",
-    "next-auth": "^4.24.14",
+    "next-auth": "4.24.15",
     "nodemailer": "^9.0.3",
     "pdf-parse": "^1.1.1",
     "react": "^19.2.6",
@@ -42,6 +42,10 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "vitest": "^2.1.9"
+  },
+  "overrides": {
+    "postcss": "8.5.10",
+    "sharp": "0.35.0"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
