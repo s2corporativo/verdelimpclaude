@@ -6,18 +6,20 @@ import { gerarHtmlPropostaCompleta, type PropostaCompletaData } from "@/lib/pdf-
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   // Exemplo/demo: renderiza a proposta modelo sem consultar o banco (antes
   // o id "demo" caía em findUnique → null → 404).
-  if (params.id === "demo") {
+  if (id === "demo") {
     return new NextResponse(gerarHtmlProposta(DEMO_PROPOSTA), {
       status: 200, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
   try {
     const proposta = await prisma.proposal.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         client: { select: { name: true, cnpjCpf: true, municipio: true, uf: true, email: true } },
         items: { orderBy: { ordem: "asc" } },
