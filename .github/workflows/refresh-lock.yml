@@ -36,5 +36,45 @@ jobs:
           git commit -m "chore: atualizar lockfile da migração Next.js 15"
           git push origin HEAD:${{ github.head_ref }}
 
-      - name: Auditoria de produção
-        run: npm audit --omit=dev --audit-level=high
+      - name: Gerar relatório JSON da auditoria
+        id: audit
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --json > npm-audit.json
+          STATUS=$?
+          node <<'NODE'
+          const fs = require('fs')
+          const audit = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'))
+          const rows = Object.entries(audit.vulnerabilities || {}).map(([name, item]) => ({
+            name,
+            severity: item.severity,
+            direct: item.isDirect,
+            range: item.range,
+            fixAvailable: item.fixAvailable,
+            via: (item.via || []).map(v => typeof v === 'string' ? v : ({
+              source: v.source,
+              title: v.title,
+              severity: v.severity,
+              range: v.range,
+              url: v.url
+            }))
+          }))
+          fs.writeFileSync('npm-audit-summary.json', JSON.stringify({ metadata: audit.metadata, vulnerabilities: rows }, null, 2))
+          console.log(JSON.stringify(rows, null, 2))
+          NODE
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publicar relatório de auditoria
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: |
+            npm-audit.json
+            npm-audit-summary.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Bloquear vulnerabilidades altas ou críticas
+        run: exit "${{ steps.audit.outputs.status }}"
