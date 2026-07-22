@@ -1,0 +1,4 @@
+Solicitação de deploy automático em produção.
+Data: 2026-07-22
+Modo: auto
+Origem: configuração administrativa via GitHub.
