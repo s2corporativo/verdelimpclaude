@@ -3,12 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { exigirAdmin, registrarAuditoria } from "@/lib/admin";
 import { erroInterno } from "@/lib/authz";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+type ContextoPapel = { params: Promise<{ id: string }> };
+
+export async function PATCH(req: NextRequest, { params }: ContextoPapel) {
   const { user, erro } = await exigirAdmin();
   if (erro) return erro;
   try {
+    const { id } = await params;
     const body = await req.json();
-    const papel = await prisma.role.findUnique({ where: { id: params.id } });
+    const papel = await prisma.role.findUnique({ where: { id } });
     if (!papel) return NextResponse.json({ error: "Papel não encontrado" }, { status: 404 });
 
     const dados: any = {};
@@ -25,12 +28,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } catch (e: any) { return erroInterno(e, "api/admin/papeis/[id]"); }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: ContextoPapel) {
   const { user, erro } = await exigirAdmin();
   if (erro) return erro;
   try {
+    const { id } = await params;
     const papel = await prisma.role.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { _count: { select: { userRoles: true } } },
     });
     if (!papel) return NextResponse.json({ error: "Papel não encontrado" }, { status: 404 });
