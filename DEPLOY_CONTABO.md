@@ -1,393 +1,325 @@
-# Deploy do Verdelimp ERP em VPS Contabo
+# Deploy do Verdelimp ERP v2.3 em VPS Contabo
 
-Este guia publica o Verdelimp ERP em uma VPS Contabo com Ubuntu, Docker, PostgreSQL local em container, Nginx e SSL.
+Este guia publica o Verdelimp ERP em uma VPS Ubuntu compartilhada com outros sistemas, usando Docker Compose, PostgreSQL interno, Nginx e SSL.
 
-> **⚠️ VPS COMPARTILHADA**: esta VPS também hospeda o **EJC**, o **S2** e o **site do escritório**.
-> Todos os passos abaixo foram desenhados para NÃO interferir no que já está no ar:
-> o ERP usa a porta local **3010** (configurável via `APP_PORT`), containers/volumes com
-> prefixo `verdelimp`, Postgres interno sem porta exposta no host e um site Nginx
-> adicional — os sites existentes não são tocados.
+A entrada em produção somente deve ocorrer após o cumprimento de [`HOMOLOGACAO_PRODUCAO.md`](HOMOLOGACAO_PRODUCAO.md).
 
-## ⚡ Opção A — Instalação automática (recomendada)
+## 1. Princípios obrigatórios
 
-Todo o roteiro abaixo (pré-voo, pacotes, Docker, banco, migrations, seed, Nginx,
-SSL e backup) pode ser executado de uma vez pelo instalador. Na VPS, como root:
+- o repositório deve ser privado;
+- o PostgreSQL não pode expor porta pública;
+- o ERP deve escutar apenas em `127.0.0.1`;
+- `.env.production` e `.env.ops` existem somente na VPS;
+- toda atualização exige backup prévio de banco e uploads;
+- migrations e seed usam serviços utilitários, nunca a imagem standalone da aplicação;
+- o seed é executado apenas na primeira instalação;
+- backup off-site e restore testado são bloqueadores de produção.
 
-```bash
-mkdir -p /opt && cd /opt
-git clone https://github.com/s2corporativo/verdelimpclaude.git verdelimp-erp
-cd /opt/verdelimp-erp
-chmod +x deploy/contabo/install.sh
-./deploy/contabo/install.sh
-```
-
-O instalador pergunta apenas o domínio (com opção `sslip.io` se o DNS ainda não
-estiver pronto), o e-mail do certificado e a chave GROQ (opcional); gera as
-senhas/segredos sozinho, escolhe uma porta livre automaticamente e **pode ser
-re-executado com segurança** — o que já estiver feito é pulado. Ao final,
-imprime a URL e a senha inicial do admin.
-
-As seções numeradas a seguir (**Opção B — manual**) fazem exatamente o mesmo,
-passo a passo, e servem de referência para diagnóstico.
-
-## 0. Pré-voo em VPS compartilhada (fazer ANTES de tudo)
-
-```bash
-# 1) Portas já em uso — anote-as; o ERP NÃO pode usar nenhuma delas
-ss -tlnp | grep LISTEN
-
-# 2) Containers/projetos Docker existentes (EJC, S2 etc.) — apenas para conhecer
-docker ps
-docker compose ls
-
-# 3) Memória livre — o build do ERP usa ~2 GB por alguns minutos
-free -h
-# Se houver menos de 2 GB livres, crie swap antes do primeiro build:
-#   fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
-#   echo '/swapfile none swap sw 0 0' >> /etc/fstab
-
-# 4) Sites Nginx existentes — para garantir que o novo site não conflita
-ls /etc/nginx/sites-enabled/
-```
-
-Se a porta **3010** aparecer ocupada no passo 1, escolha outra livre e ajuste em DOIS lugares:
-`APP_PORT` no `.env.production` e o `proxy_pass` no site Nginx do ERP.
-
-Arquitetura:
+## 2. Arquitetura
 
 ```text
-GitHub
+GitHub privado
   ↓
 VPS Contabo Ubuntu
   ↓
 Docker Compose
-  ↓
-Next.js + PostgreSQL
+  ├─ verdelimp-db      PostgreSQL 16
+  ├─ verdelimp-erp     Next.js standalone
+  ├─ migrate           serviço temporário
+  └─ seed              serviço temporário
   ↓
 Nginx + SSL
   ↓
-erp.seudominio.com.br
+https://erp.verdelimp.com.br
 ```
 
-## 1. Requisitos da VPS
+O projeto Compose usa o nome `verdelimp`, evitando colisão com EJC, S2 e outros serviços da VPS.
 
-Recomendado:
-
-- Ubuntu 22.04 LTS ou 24.04 LTS
-- 2 vCPU ou mais
-- 4 GB RAM ou mais
-- 80 GB SSD ou mais
-- domínio apontado para o IP da VPS
-
-## 2. Instalar pacotes básicos
-
-Como a VPS já roda outros sites, **git, nginx e certbot provavelmente já estão instalados** — o comando abaixo é seguro (só instala o que faltar):
+## 3. Pré-voo da VPS compartilhada
 
 ```bash
-apt update
-apt install -y git curl nginx certbot python3-certbot-nginx ca-certificates gnupg
+ss -tlnp | grep LISTEN
+docker ps
+docker compose ls
+free -h
+df -h
+ls /etc/nginx/sites-enabled/
 ```
 
-> Evite `apt upgrade -y` em horário comercial numa VPS com sistemas em produção —
-> faça em janela de manutenção.
+Requisitos recomendados:
 
-## 3. Instalar Docker (pule se já existir)
+- Ubuntu 22.04 ou 24.04 LTS;
+- 2 vCPU ou mais;
+- 4 GB de RAM ou mais;
+- espaço de disco compatível com banco, documentos e backups;
+- Docker e Docker Compose;
+- Nginx e Certbot;
+- domínio apontado para a VPS.
 
-```bash
-docker --version && docker compose version   # se ambos responderem, pule esta seção
-```
+A porta padrão do ERP no host é `3010`. Se estiver ocupada, escolha outra e ajuste `APP_PORT`.
 
-```bash
-curl -fsSL https://get.docker.com | sh
-systemctl enable docker
-systemctl start docker
-```
-
-Verificar:
-
-```bash
-docker --version
-docker compose version
-```
-
-## 4. Firewall
-
-A VPS já serve sites em produção — **primeiro verifique** o estado atual:
-
-```bash
-ufw status verbose
-```
-
-- Se o UFW **já estiver ativo** (provável, por causa do EJC/S2): não faça nada — as regras
-  `OpenSSH` e `Nginx Full` já atendem o ERP, que só escuta em 127.0.0.1.
-- Se estiver **inativo** e você quiser ativá-lo, garanta as regras ANTES de habilitar
-  (senão derruba seu SSH e os sites existentes):
-
-```bash
-ufw allow OpenSSH
-ufw allow 'Nginx Full'
-ufw enable
-```
-
-## 5. Clonar o repositório
+## 4. Clonar o repositório
 
 ```bash
 mkdir -p /opt
 cd /opt
-git clone https://github.com/s2corporativo/verdelimpclaude.git verdelimp-erp
+git clone git@github.com:s2corporativo/verdelimpclaude.git verdelimp-erp
 cd /opt/verdelimp-erp
 ```
 
-Se o repositório for privado, use autenticação do GitHub via token ou SSH deploy key.
+Para repositório privado, use deploy key SSH ou autenticação equivalente. Não grave token pessoal no código ou nos scripts.
 
-## 6. Criar variáveis de ambiente
+## 5. Preparar variáveis da aplicação
 
 ```bash
 cp .env.vps.example .env.production
+chmod 600 .env.production
 nano .env.production
-ln -sf .env.production .env   # o docker compose lê ${VARIÁVEIS} apenas do arquivo .env
+ln -sf .env.production .env
 ```
 
-Preencha pelo menos:
+Preencher, no mínimo:
 
 ```env
-POSTGRES_PASSWORD=senha_forte_aqui
-NEXTAUTH_URL=https://erp.seudominio.com.br
-NEXTAUTH_SECRET=gere_uma_string_forte
-SEED_ADMIN_PASSWORD=senha_inicial_dos_usuarios
-GROQ_API_KEY=chave_do_console_groq
+POSTGRES_DB=verdelimp_erp
+POSTGRES_USER=verdelimp
+POSTGRES_PASSWORD=
+NEXTAUTH_URL=https://erp.verdelimp.com.br
+NEXTAUTH_SECRET=
+APP_PORT=3010
+SEED_ADMIN_PASSWORD=
+FISCAL_ENVIRONMENT=homologacao
+GROQ_API_KEY=
 ```
 
-A `GROQ_API_KEY` (plano gratuito em https://console.groq.com) habilita os recursos de IA:
-proposta por edital, análise de licitação/preço, cronograma, plano logístico, chat de
-ajuda, transcrição de voz, análise de cotações/contratos por e-mail e **análise
-jurídica de documentos** (reconhece o tipo e lê como advogado especialista). Sem ela,
-o restante do ERP funciona normalmente.
-
-### Inserir / trocar chaves e senhas — Cofre de Credenciais (recomendado)
-
-O jeito preferido é **pela própria tela do sistema**, sem SSH e sem reiniciar:
-
-1. Entre como administrador → menu **Sistema → 🔑 Credenciais & APIs**.
-2. Cole a chave/senha no campo (GROQ, SMTP, IMAP…) e clique **Salvar**.
-3. O valor é gravado **criptografado (AES-256-GCM)** no banco e **todo o
-   sistema passa a usá-lo na hora** — a credencial do cofre tem prioridade
-   sobre a variável de ambiente correspondente.
-4. Confirme com **“Testar IA”** na mesma tela (ou `GET /api/ia-status`).
-
-As variáveis no `.env.production` continuam funcionando como *fallback* para
-quem preferir infra-como-código; o cofre depende do `NEXTAUTH_SECRET` (a chave
-de criptografia deriva dele — se o segredo mudar, recadastre as credenciais).
-
-Para o módulo **Cotações & Contratos por E-mail** (busca mensagens na caixa de
-entrada, somente leitura, e analisa com IA), configure também:
-
-```env
-EMAIL_IMAP_HOST=imap.gmail.com   # servidor IMAP da conta que recebe cotações
-EMAIL_IMAP_PORT=993              # porta TLS (padrão)
-EMAIL_IMAP_USER=comercial@verdelimp.com.br
-EMAIL_IMAP_PASS=senha_de_app     # Gmail/Outlook exigem senha de aplicativo
-```
-
-> O módulo WhatsApp foi **desativado** (jul/2026) — as variáveis `WHATSAPP_*`
-> não são mais necessárias; os alertas seguem na Central de Alertas.
-
-Para gerar segredo:
+Gerar segredos diretamente na VPS, sem enviá-los ao chat ou ao GitHub:
 
 ```bash
 openssl rand -base64 32
 ```
 
-Não envie `.env.production` para o GitHub.
+O `SEED_ADMIN_PASSWORD` só é necessário para a primeira instalação. Depois do primeiro acesso, a senha deve ser alterada.
 
-## 7. Subir banco e aplicação
+## 6. Preparar backup e monitoramento
 
 ```bash
-docker compose build app
+cp deploy/contabo/ops-config.example .env.ops
+chmod 600 .env.ops
+nano .env.ops
+```
+
+Parâmetros obrigatórios:
+
+```text
+BACKUP_DIR=/opt/backups/verdelimp
+RETENCAO_DIAS=14
+RCLONE_REMOTE=<remote real>
+REQUIRE_OFFSITE=true
+BACKUP_MAX_AGE_HOURS=30
+DISK_ALERT_PERCENT=85
+```
+
+Configure previamente o `rclone` e confirme o acesso ao destino externo. O valor de exemplo `gdrive:backups/verdelimp` não deve ser aceito sem que esse remote exista e esteja autenticado.
+
+## 7. Primeira instalação
+
+O instalador não gera nem imprime segredos. Ele exige os dois arquivos de ambiente já preparados.
+
+```bash
+chmod +x deploy/contabo/*.sh
+deploy/contabo/install-v23.sh
+```
+
+O fluxo executa:
+
+1. validação dos pré-requisitos;
+2. build da aplicação e dos serviços utilitários;
+3. subida e healthcheck do PostgreSQL;
+4. aplicação das migrations;
+5. seed inicial, uma única vez;
+6. subida e healthcheck da aplicação;
+7. configuração do site Nginx;
+8. instalação das rotinas de backup e monitoramento;
+9. backup inicial;
+10. ensaio de restauração;
+11. monitoramento final.
+
+O arquivo `deploy/contabo/install.sh` é apenas um encaminhador para o instalador v2.3.
+
+## 8. Instalação manual
+
+```bash
+cd /opt/verdelimp-erp
+ln -sf .env.production .env
+
+docker compose build --pull app migrate seed
 docker compose up -d db
-docker compose run --rm app npx prisma migrate deploy
+docker compose run --rm migrate
+docker compose run --rm seed       # apenas na primeira instalação
 docker compose up -d app
 ```
 
-Popular dados iniciais (**apenas na primeira instalação**, com `SEED_ADMIN_PASSWORD` definida no `.env.production`):
+Nunca use:
 
-```bash
+```text
+docker compose exec app npx prisma migrate deploy
 docker compose exec app npm run prisma:seed
 ```
 
-Ver logs:
+A imagem `app` é standalone e não contém Prisma CLI, código-fonte ou scripts de seed.
+
+## 9. Configurar Nginx
 
 ```bash
-docker compose logs -f app
+cp deploy/contabo/nginx-verdelimp.conf /etc/nginx/sites-available/verdelimp-erp
+nano /etc/nginx/sites-available/verdelimp-erp
+ln -sf /etc/nginx/sites-available/verdelimp-erp /etc/nginx/sites-enabled/verdelimp-erp
+nginx -t
+systemctl reload nginx
 ```
 
-A aplicação ficará localmente em (porta definida por `APP_PORT`, padrão **3010** para não
-colidir com EJC/S2):
+A configuração deve apontar para:
 
 ```text
 http://127.0.0.1:3010
 ```
 
-Conferir que subiu sem brigar com os outros sistemas:
+ou para a porta definida em `APP_PORT`.
+
+Confirme que os sites do EJC, S2 e escritório permanecem acessíveis antes e depois do reload.
+
+## 10. SSL
 
 ```bash
-curl -s http://127.0.0.1:3010/api/health   # esperado: {"ok":true,"db":"up"}
-docker ps                                   # verdelimp-erp e verdelimp-db "healthy"; EJC/S2 intactos
-```
-
-## 8. Configurar Nginx (site adicional — não mexa nos existentes)
-
-O ERP entra como **mais um** server block, ao lado dos sites do EJC, S2 e escritório.
-Copie o arquivo de exemplo:
-
-```bash
-cp deploy/contabo/nginx-verdelimp.conf /etc/nginx/sites-available/verdelimp-erp
-nano /etc/nginx/sites-available/verdelimp-erp
-```
-
-Troque:
-
-```text
-erp.seudominio.com.br
-```
-
-pelo domínio real, por exemplo:
-
-```text
-erp.verdelimp.com.br
-```
-
-Ative:
-
-```bash
-ln -s /etc/nginx/sites-available/verdelimp-erp /etc/nginx/sites-enabled/verdelimp-erp
-nginx -t          # OBRIGATÓRIO: se falhar, NÃO recarregue — os sites existentes continuam intactos
-systemctl reload nginx
-```
-
-Depois do reload, confirme que os outros sites continuam no ar (abra o site do
-escritório, EJC e S2 no navegador ou via curl).
-
-## 9. Emitir SSL
-
-```bash
-certbot --nginx -d erp.seudominio.com.br
-```
-
-Testar renovação:
-
-```bash
+certbot --nginx -d erp.verdelimp.com.br
 certbot renew --dry-run
 ```
 
-## 10. Atualizar o sistema depois
-
-Use o script:
-
-```bash
-chmod +x deploy/contabo/deploy.sh
-./deploy/contabo/deploy.sh
-```
-
-Ou manualmente:
+## 11. Atualizações posteriores
 
 ```bash
 cd /opt/verdelimp-erp
-git pull origin main
-docker compose build app
-docker compose run --rm app npx prisma migrate deploy
-docker compose up -d app
+chmod +x deploy/contabo/deploy.sh
+deploy/contabo/deploy.sh
 ```
 
-O seed **não** deve ser executado em atualizações — apenas na primeira instalação.
+O deploy seguro:
 
-## 11. Backup do banco
+- recusa árvore Git com alterações locais;
+- executa backup integral;
+- preserva a imagem anterior;
+- usa `git pull --ff-only`;
+- reconstrói a aplicação;
+- aplica migrations pelo serviço `migrate`;
+- aguarda o healthcheck;
+- valida `/api/health`;
+- restaura a imagem anterior quando a aplicação não fica saudável.
 
-Backup manual:
+As migrations não são revertidas automaticamente. Se houver incompatibilidade de schema, use o backup pré-deploy e restauração controlada.
+
+## 12. Rotinas operacionais
+
+Instalar cron e rotação de logs:
 
 ```bash
-docker compose exec db pg_dump -U verdelimp verdelimp_erp > backup_verdelimp_$(date +%F).sql
+deploy/contabo/configure-operations.sh
 ```
 
-Restaurar backup:
+Rotinas padrão:
+
+- backup diário às 02h20;
+- monitoramento a cada 10 minutos;
+- ensaio de restauração trimestral;
+- rotação semanal dos logs.
+
+Execução manual:
 
 ```bash
-cat backup_verdelimp_YYYY-MM-DD.sql | docker compose exec -T db psql -U verdelimp verdelimp_erp
+deploy/contabo/backup.sh
+deploy/contabo/restore-test.sh
+deploy/contabo/monitor.sh
 ```
 
-Backup automático diário (cron do root na VPS):
+Logs:
 
 ```bash
-mkdir -p /opt/backups
-crontab -e
-# adicionar a linha (todo dia às 02h20 — horário deslocado para não coincidir
-# com backups do EJC/S2, se houver; mantém 14 dias):
-20 2 * * * cd /opt/verdelimp-erp && docker compose exec -T db pg_dump -U verdelimp verdelimp_erp | gzip > /opt/backups/verdelimp_$(date +\%F).sql.gz && find /opt/backups -name 'verdelimp_*.sql.gz' -mtime +14 -delete
+ls -lh /var/log/verdelimp/
+tail -f /var/log/verdelimp/backup.log
+tail -f /var/log/verdelimp/monitor.log
+tail -f /var/log/verdelimp/restore-test.log
 ```
 
-Recomenda-se também copiar os backups para fora da VPS (rclone para Google Drive/S3, por exemplo) — se a VPS falhar, o backup local se perde junto.
-
-## 12. Segurança obrigatória
-
-Nunca subir para GitHub:
-
-- `.env.production`
-- certificados digitais
-- XMLs reais
-- documentos de funcionários
-- contratos reais
-- comprovantes bancários
-- chaves de API
-- senha do banco
-
-Para produção, mantenha:
-
-- SSH protegido
-- firewall ativo
-- Nginx com SSL
-- backups externos
-- usuários com senha forte
-- acesso ao ERP com login
-- módulos fiscais em homologação até validação contábil
-
-## 13. Comandos úteis
-
-Status:
+## 13. Verificações pós-deploy
 
 ```bash
+cd /opt/verdelimp-erp
+git rev-parse HEAD
 docker compose ps
+docker compose logs --tail=100 app
+curl -fsS http://127.0.0.1:${APP_PORT:-3010}/api/health
+deploy/contabo/monitor.sh
 ```
 
-Logs app:
+Conferir migrations:
 
 ```bash
-docker compose logs -f app
+docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c 'SELECT migration_name, finished_at FROM "_prisma_migrations" ORDER BY finished_at DESC LIMIT 10;'
 ```
 
-Logs banco:
+A migration do Dossiê Operacional v2.3 é:
+
+```text
+20260721210000_dossie_operacional
+```
+
+## 14. Backup e restore
+
+O script `backup.sh` gera:
+
+- dump PostgreSQL comprimido;
+- arquivo comprimido do volume de uploads;
+- manifesto SHA-256;
+- cópia off-site via rclone;
+- retenção local e remota.
+
+O `restore-test.sh`:
+
+- valida os arquivos comprimidos;
+- cria banco temporário;
+- restaura o dump;
+- confere tabelas e migrations;
+- extrai os uploads em diretório temporário;
+- remove o banco e os arquivos temporários ao final.
+
+Não confunda exportação JSON/CSV do sistema com backup restaurável.
+
+## 15. Segurança
+
+Nunca versionar:
+
+- `.env.production`;
+- `.env.ops`;
+- certificados digitais;
+- chaves privadas;
+- credenciais de API;
+- XMLs reais;
+- documentos de funcionários;
+- contratos reais;
+- comprovantes bancários;
+- dumps de banco;
+- arquivos de backup.
+
+Revise periodicamente:
 
 ```bash
-docker compose logs -f db
+npm audit --omit=dev --audit-level=high
+docker image ls
+docker system df
+ufw status verbose
+certbot certificates
 ```
 
-Reiniciar app:
+## 16. Observação fiscal
 
-```bash
-docker compose restart app
-```
-
-Parar tudo:
-
-```bash
-docker compose down
-```
-
-Subir tudo:
-
-```bash
-docker compose up -d
-```
-
-## 14. Observação fiscal
-
-O sistema opera como apoio gerencial. Transmissões oficiais para SEFAZ, Receita Federal, eSocial, EFD-Reinf ou NFS-e Nacional não devem ser ativadas sem certificado digital, homologação, contador responsável, validação técnica e autorização expressa.
+Os módulos fiscais, tributários e trabalhistas são ferramentas de apoio gerencial. Transmissões oficiais para SEFAZ, Receita Federal, eSocial, EFD-Reinf ou NFS-e Nacional não devem ser ativadas sem certificado digital, homologação, contador responsável, validação técnica e autorização expressa.
