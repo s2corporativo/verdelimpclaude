@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   gerar:
@@ -13,23 +13,28 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Regenerar package-lock
-        run: npm install --package-lock-only --legacy-peer-deps
+      - name: Regenerar package-lock sem executar scripts
+        run: npm install --package-lock-only --ignore-scripts --legacy-peer-deps --no-audit
+
+      - name: Gravar lockfile na branch
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "Lockfile já está atualizado."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: atualizar lockfile da migração Next.js 15"
+          git push origin HEAD:${{ github.head_ref }}
 
       - name: Auditoria de produção
         run: npm audit --omit=dev --audit-level=high
-
-      - name: Publicar lockfile como artefato
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-lock-security-upgrade
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 1
