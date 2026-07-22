@@ -1,6 +1,6 @@
 # 🗺️ Mapa do Sistema — Verdelimp ERP
 
-> Gerado no pente-fino de consolidação. Números: **52 páginas · 84 APIs · 61 tabelas · 17 bibliotecas**.
+> Gerado no pente-fino de consolidação. Números: **58 páginas de dashboard · 102 rotas de API · 70 modelos de dados**.
 > Stack: Next.js 14 (App Router) · PostgreSQL 16 + Prisma · NextAuth (JWT, 8 papéis × 44 permissões) · GROQ IA · Docker na VPS Contabo (porta interna configurável, padrão 3010/3011).
 
 ## Visão geral dos domínios
@@ -9,9 +9,9 @@
 flowchart TB
   subgraph COMERCIAL
     CRM[🎯 Oportunidades CRM]
-    LIC[🏆 Licitações\nPipeline · Radar PNCP · Proposta IA]
-    PROP[📄 Propostas + PDF Vallourec]
-    PRECO[🧮 Precificação\nCalculadora · BDI · Hora-Homem]
+    LIC[🏆 Licitações\nPipeline · Radar PNCP · Dossiê]
+    PROP[📄 Propostas versionadas\n3 alçadas + PDF]
+    PRECO[🧮 Precificação\nComposição · cenários · tributos]
   end
   subgraph CONTRATOS
     CTR[📋 Contratos\nLista · Wizard IA · Cronograma · Medição]
@@ -36,9 +36,9 @@ flowchart TB
   ALERTAS[🚨 Central de Alertas]
 
   CRM -->|ganho| PROP
-  LIC -->|edital| PROP
-  PRECO -->|preço mín/sugerido| PROP
-  PROP -->|aprovar = 1 clique| CTR
+  LIC -->|fatos + evidências| PRECO
+  PRECO -->|mínimo/recomendado/comercial| PROP
+  PROP -->|3 alçadas aprovadas| CTR
   CTR -->|requisitos SADA| DOCS
   CTR -->|centro de custos| RENT
   CTR -->|mobilização| RH
@@ -55,9 +55,18 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  A[Lead/Edital] --> B[Proposta com\npreço Hora-Homem]
-  B --> C[✅ Aprovar =\nContrato automático]
-  C --> D[Monitor de Docs\nSADA SST + cl. 6.12]
+  A[Lead/Edital] --> B[Dossiê\nvalidado]
+  B --> C[Dimensionamento\n+ cenários]
+  C --> D[Proposta\n3 alçadas]
+  D --> E[Contrato + docs\n+ cronograma]
+  E --> F[Mobilização\ncom bloqueios]
+  F --> G[Diário + produção\n+ alteração de escopo]
+```
+
+<!-- Fluxo legado detalhado preservado abaixo para referência operacional. -->
+```mermaid
+flowchart LR
+  C[Contrato] --> D[Monitor de Docs\nSST + perfil do cliente]
   C --> E[Cronograma\nsemanal]
   C --> F[Mobilizar\nequipe]
   E --> G[Execução +\nDiário de Obras]
@@ -72,10 +81,10 @@ flowchart LR
 | Hub (menu) | Abas (URLs preservadas) |
 |---|---|
 | 🚨 Central de Alertas | Alertas · WhatsApp |
-| 🏆 Licitações | Pipeline · Radar PNCP · Proposta por Edital IA |
-| 🧮 Precificação | Calculadora & BDI · Custo Hora-Homem |
-| 📋 Contratos | Contratos · ⚡ Novo Contrato · Cronograma · Medição |
-| 🚦 Docs & Conformidade | Arquivos (GED) · Checklist & Geração · Monitor · Dossiê SSO |
+| 🏆 Licitações | Pipeline · Radar PNCP · Dossiê Operacional |
+| 🧮 Precificação | Calculadora & BDI · Custo Hora-Homem · Perfis tributários |
+| 📋 Contratos | Contratos · Novo Contrato · Cronograma · Medição · Alterações de escopo |
+| 🚦 Docs & Conformidade | Arquivos (GED) · Checklist · Monitor · Dossiê SSO · Perfis por cliente |
 | 🚛 Operação de Campo | Logística · Diário de Obras |
 | 🔧 Frota & Equipamentos | Equipamentos · Combustível |
 | 🚜 Serviços Especiais | Retroescavadeira · Dedetização |
@@ -87,7 +96,10 @@ Definição central em `src/lib/nav-grupos.ts`; a barra de abas (`src/components
 
 ## Automações entre módulos
 
-- **Proposta aprovada** → contrato numerado + 19 requisitos SST no Monitor + 1º item do cronograma + centro de custos (`/api/proposta-contrato`)
+- **Dossiê validado e calculado** → proposta versionada com preço mínimo, recomendado e comercial
+- **Versão aprovada nas três alçadas** → contrato + matriz documental dinâmica + cronograma + reservas confirmadas, em uma transação (`/api/proposta-contrato`)
+- **Mobilização** → bloqueada se faltar documento aprovado com arquivo, houver validade insuficiente ou conflito de recurso; pode ser reavaliada após a correção
+- **Diário de obras** → produção e HH reais comparados ao planejamento; desvio pode abrir alteração de escopo
 - **ASO / Treinamento NR / entrega de EPI** cadastrados → preenchem automaticamente a matriz do Monitor de Docs (`autoSource`)
 - **Combustível lançado com contrato** → entra sozinho na Rentabilidade
 - **Tudo que vence** (contrato, ASO, NR, CNH, EPI/CA, licença ambiental, certidão, férias CLT) → agregado na Central de Alertas

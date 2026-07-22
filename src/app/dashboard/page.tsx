@@ -165,6 +165,10 @@ export default function DashboardPage() {
         <a href="/dashboard/alertas" style={{ textDecoration: "none" }}>
           <Kpi l="Alertas (30/90d)" v={alertas.total ?? 0} i="🚨" c={alertas.criticos > 0 ? "#dc2626" : "#4a9410"} alert={alertas.criticos > 0} />
         </a>
+        <a href="/dashboard/proposta-edital" style={{ textDecoration: "none" }}><Kpi l="Dossiês a validar" v={dados.dossiesPendentes ?? 0} i="🧭" c="#7c3aed" alert={dados.dossiesPendentes > 0} /></a>
+        <a href="/dashboard/mobilizacoes" style={{ textDecoration: "none" }}><Kpi l="Mobilizações bloqueadas" v={dados.mobilizacoesBloqueadas ?? 0} i="⛔" c="#dc2626" alert={dados.mobilizacoesBloqueadas > 0} /></a>
+        <a href="/dashboard/monitor-docs" style={{ textDecoration: "none" }}><Kpi l="Docs para revisar" v={dados.documentosAguardandoRevisao ?? 0} i="🔎" c="#d97706" alert={dados.documentosAguardandoRevisao > 0} /></a>
+        <a href="/dashboard/alteracoes-escopo" style={{ textDecoration: "none" }}><Kpi l="Alterações de escopo" v={dados.alteracoesEscopoPendentes ?? 0} i="🔁" c="#0891b2" alert={dados.alteracoesEscopoPendentes > 0} /></a>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, marginBottom: 14 }}>
@@ -200,7 +204,7 @@ export default function DashboardPage() {
         </div>
         <div style={{ background: "linear-gradient(135deg, #334532 0%, #4a9410 100%)", borderRadius: 12, padding: 16, color: "#fff" }}>
           <h3 style={{ fontSize: 13, marginBottom: 12 }}>🚀 Acesso rápido</h3>
-          {[["⚡ Novo Contrato (impacto auto)", "/dashboard/novo-contrato", "#fff", "#fbbf24"], ["💼 Apurar tributos", "/dashboard/fiscal", "#dcfce7", "#334532"], ["📄 Nova proposta + PDF", "/dashboard/propostas", "#dcfce7", "#334532"], ["🔍 Buscar licitações", "/dashboard/radar-licitacoes", "#dcfce7", "#334532"], ["🚛 Logística semana", "/dashboard/logistica", "#dcfce7", "#334532"], ["🤖 Ajuda com IA", "/dashboard/ajuda", "#dcfce7", "#334532"]].map(([l, h, bg, co]) => (
+          {[["🧭 Novo Dossiê Operacional", "/dashboard/proposta-edital", "#fff", "#fbbf24"], ["💼 Apurar tributos", "/dashboard/fiscal", "#dcfce7", "#334532"], ["📄 Aprovar propostas", "/dashboard/propostas", "#dcfce7", "#334532"], ["🔍 Buscar licitações", "/dashboard/radar-licitacoes", "#dcfce7", "#334532"], ["🚛 Logística semana", "/dashboard/logistica", "#dcfce7", "#334532"], ["🤖 Ajuda com IA", "/dashboard/ajuda", "#dcfce7", "#334532"]].map(([l, h, bg, co]) => (
             <a key={h} href={h} style={{ display: "block", background: "rgba(255,255,255,.15)", borderRadius: 8, padding: "8px 12px", marginBottom: 6, textDecoration: "none", color: "#fff", fontSize: 12, fontWeight: 600 }}>{l}</a>
           ))}
         </div>

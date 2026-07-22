@@ -21,6 +21,7 @@ export default function EquipamentosPage() {
   const [manut, setManut] = useState<any>({ tipo:"preventiva", status:"agendada" });
   const [showNovo, setShowNovo] = useState(false);
   const [novoEq, setNovoEq] = useState<any>({ tipo:"Roçadeira" });
+  const [msg, setMsg] = useState("");
   const fmt = (v:number) => v?.toLocaleString("pt-BR",{minimumFractionDigits:2});
   const IS: any = {width:"100%",padding:"7px 10px",border:"1px solid #d1d5db",borderRadius:8,fontSize:12};
   const LS = estiloLabel;
@@ -50,6 +51,40 @@ export default function EquipamentosPage() {
     if(d.success){ setData(p=>[...p,d.equipamento]); setShowNovo(false); setNovoEq({ tipo:"Roçadeira" }); }
   };
 
+  const registrarDocumento = async (eq:any) => {
+    const docType = window.prompt("Tipo do documento (ex.: CRLV, certificado, inspeção):");
+    if (!docType) return;
+    const expiresAt = window.prompt("Validade (AAAA-MM-DD) ou deixe vazio:") || null;
+    const file = await new Promise<File | null>((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx";
+      input.onchange = () => resolve(input.files?.[0] || null);
+      input.oncancel = () => resolve(null);
+      input.click();
+    });
+    if (!file) return setMsg("Seleção cancelada: o arquivo comprobatório é obrigatório.");
+    const payload = new FormData(); payload.append("file", file);
+    const uploadResponse = await fetch("/api/upload", { method: "POST", body: payload });
+    const upload = await uploadResponse.json();
+    if (!uploadResponse.ok) return setMsg(upload.error || "Falha ao enviar o arquivo.");
+    const response = await fetch("/api/equipamentos", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"documento",equipmentId:eq.id,docType,expiresAt,filePath:upload.url})});
+    const result = await response.json();
+    if (!response.ok) return setMsg(result.error || "Falha ao registrar o documento.");
+    setMsg("Documento enviado e aguardando revisão.");
+    const d = await fetch("/api/equipamentos").then(r=>r.json()); setData(d.equipamentos||[]); setStats(d.stats||{}); setSelecionado((d.equipamentos||[]).find((item:any)=>item.id===eq.id)||null);
+  };
+
+  const revisarDocumento = async (eq:any, documentId:string, status:string) => {
+    const rejectionReason = status === "rejeitado" ? window.prompt("Motivo da rejeição:") : null;
+    if (status === "rejeitado" && !rejectionReason) return;
+    const response = await fetch("/api/equipamentos", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"revisar_documento",documentId,status,rejectionReason})});
+    const result = await response.json();
+    if (!response.ok) return setMsg(result.error || "Falha na revisão.");
+    setMsg(status === "aprovado" ? "Documento aprovado." : "Documento rejeitado.");
+    const d = await fetch("/api/equipamentos").then(r=>r.json()); setData(d.equipamentos||[]); setStats(d.stats||{}); setSelecionado((d.equipamentos||[]).find((item:any)=>item.id===eq.id)||null);
+  };
+
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:10}}>
@@ -62,6 +97,7 @@ export default function EquipamentosPage() {
         </div>
         <button onClick={()=>setShowNovo(f=>!f)} style={{background:"#334532",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:13}}>+ Novo Equipamento</button>
       </div>
+      {msg&&<div style={{background:"#f8fafc",border:"1px solid #e5e7eb",padding:"8px 12px",borderRadius:8,fontSize:11,marginBottom:10}}>{msg}</div>}
 
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginBottom:16}}>
@@ -70,6 +106,7 @@ export default function EquipamentosPage() {
           ["Operacionais",stats.operacional||0,"✅","#15803d"],
           ["Em Manutenção",stats.manutencao||0,"🔧","#dc2626"],
           ["Alertas revisão",stats.alertas||0,"⚠️","#d97706"],
+          ["Docs pendentes",stats.documentosPendentes||0,"📄","#7c3aed"],
         ].map(([l,v,i,c])=>(
           <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"10px 14px",borderTop:`3px solid ${c}`}}>
             <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase"}}>{l}</span><span>{i}</span></div>
@@ -152,9 +189,14 @@ export default function EquipamentosPage() {
                   ))}
                 </div>
               )}
+              {sel && eq.documents?.length>0 && <div style={{background:"#f8fafc",borderRadius:7,padding:"7px 8px",marginBottom:8}}>
+                <strong style={{fontSize:10,color:"#334532"}}>Documentos do equipamento</strong>
+                {eq.documents.map((doc:any)=><div key={doc.id} style={{display:"flex",justifyContent:"space-between",gap:5,alignItems:"center",fontSize:9,borderTop:"1px solid #e5e7eb",padding:"5px 0"}}><span>{doc.filePath?<a href={doc.filePath} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}>{doc.docType}</a>:doc.docType} · {doc.expiresAt?new Date(doc.expiresAt).toLocaleDateString("pt-BR"):"sem validade"} · <b>{doc.status}</b></span>{doc.status==="pendente"&&<span><button onClick={e=>{e.stopPropagation();revisarDocumento(eq,doc.id,"aprovado");}} style={{border:0,color:"#15803d",cursor:"pointer"}}>✓</button><button onClick={e=>{e.stopPropagation();revisarDocumento(eq,doc.id,"rejeitado");}} style={{border:0,color:"#dc2626",cursor:"pointer"}}>✕</button></span>}</div>)}
+              </div>}
               {sel&&(
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                   <button onClick={e=>{e.stopPropagation();setShowMan(true);}} style={{background:"#fef9c3",color:"#92400e",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>🔧 Registrar Manutenção</button>
+                  <button onClick={e=>{e.stopPropagation();registrarDocumento(eq);}} style={{background:"#ede9fe",color:"#6d28d9",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>📄 Documento</button>
                   {eq.status==="operacional"&&<button onClick={e=>{e.stopPropagation();mudarStatus(eq.id,"manutencao");}} style={{background:"#fee2e2",color:"#dc2626",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11}}>→ Em Manutenção</button>}
                   {eq.status==="manutencao"&&<button onClick={e=>{e.stopPropagation();mudarStatus(eq.id,"operacional");}} style={{background:"#dcfce7",color:"#15803d",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11}}>→ Operacional</button>}
                 </div>

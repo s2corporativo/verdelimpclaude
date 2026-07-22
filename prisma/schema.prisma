@@ -139,10 +139,12 @@ model Client {
   updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
 
-  proposals          Proposal[]
-  nfse               FiscalNfse[]
-  contracts          Contract[]
-  clientPortalTokens ClientPortalToken[]
+  proposals           Proposal[]
+  serviceDossiers     ServiceDossier[]
+  requirementProfiles ClientRequirementProfile[]
+  nfse                FiscalNfse[]
+  contracts           Contract[]
+  clientPortalTokens  ClientPortalToken[]
 }
 
 model Supplier {
@@ -182,15 +184,16 @@ model Employee {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  docs          EmployeeDoc[]
-  laborCharges  FiscalLaborCharge[]
-  trainings     Training[]
-  epiDeliveries InventoryEpiDelivery[]
-  mobilizations Mobilization[]
-  asoExams      AsoExam[]
-  docRecords    ContractDocRecord[]
-  vacations     Vacation[]
-  disciplinary  DisciplinaryAction[]
+  docs                 EmployeeDoc[]
+  laborCharges         FiscalLaborCharge[]
+  trainings            Training[]
+  epiDeliveries        InventoryEpiDelivery[]
+  mobilizations        Mobilization[]
+  asoExams             AsoExam[]
+  docRecords           ContractDocRecord[]
+  vacations            Vacation[]
+  disciplinary         DisciplinaryAction[]
+  resourceReservations ResourceReservation[]
 }
 
 model EmployeeDoc {
@@ -208,41 +211,43 @@ model EmployeeDoc {
 }
 
 model Proposal {
-  id                  String         @id @default(cuid())
-  number              String         @unique
+  id                  String            @id @default(cuid())
+  number              String            @unique
   clientId            String?
-  client              Client?        @relation(fields: [clientId], references: [id])
+  client              Client?           @relation(fields: [clientId], references: [id])
   serviceType         String?
   object              String?
   location            String?
-  area                Decimal?       @db.Decimal(15, 3)
+  area                Decimal?          @db.Decimal(15, 3)
   unit                String?
   days                Int?
   workers             Int?
-  chargesRate         Decimal        @default(70) @db.Decimal(5, 2)
-  adminRate           Decimal        @default(10) @db.Decimal(5, 2)
-  riskRate            Decimal        @default(5) @db.Decimal(5, 2)
-  taxRate             Decimal        @default(8) @db.Decimal(5, 2)
-  marginRate          Decimal        @default(30) @db.Decimal(5, 2)
-  totalValue          Decimal        @default(0) @db.Decimal(15, 2)
-  validityDays        Int            @default(30)
+  chargesRate         Decimal           @default(70) @db.Decimal(5, 2)
+  adminRate           Decimal           @default(10) @db.Decimal(5, 2)
+  riskRate            Decimal           @default(5) @db.Decimal(5, 2)
+  taxRate             Decimal           @default(8) @db.Decimal(5, 2)
+  marginRate          Decimal           @default(30) @db.Decimal(5, 2)
+  totalValue          Decimal           @default(0) @db.Decimal(15, 2)
+  validityDays        Int               @default(30)
   paymentTerms        String?
   technicalNotes      String?
-  status              String         @default("Aberta")
+  status              String            @default("Aberta")
   approvedAt          DateTime?
   pdfPath             String?
   // Proposta completa (modelo Vallourec): planilha de preços + equipes + BDI
-  modelo              String         @default("simples") // simples | completa
+  modelo              String            @default("simples") // simples | completa
   vigenciaMeses       Int?
   premissas           Json? // string[] — premissas técnicas adotadas
   condicoesComerciais Json? // [{condicao, especificacao}]
   bdiEquipes          Json? // {total, componentes:[{nome, pct, obs}]}
   bdiSpot             Json? // {total, componentes:[{nome, pct, obs}]}
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   deletedAt           DateTime?
   items               ProposalItem[]
   teams               ProposalTeam[]
+  dossier             ServiceDossier?
+  versions            ProposalVersion[]
 }
 
 // Itens da planilha de preços da proposta completa (grupos 1.0, 2.0, 3.0…)
@@ -584,6 +589,10 @@ model Contract {
   scheduleItems    ScheduleItem[]
   costs            ContractCost[]
   environmental    EnvironmentalRecord[]
+  dossier          ServiceDossier?
+  scopeChanges     ScopeChange[]
+  workDiaries      WorkDiary[]
+  reservations     ResourceReservation[]
 
   @@index([clientId])
   @@index([status])
@@ -680,21 +689,39 @@ model MeasurementItem {
 
 // ═══ DIÁRIO DE OBRAS ═════════════════════════════════════════════
 model WorkDiary {
-  id             String         @id @default(cuid())
-  date           DateTime       @default(now())
+  id             String              @id @default(cuid())
+  date           DateTime            @default(now())
   contractId     String?
+  contract       Contract?           @relation(fields: [contractId], references: [id])
+  compositionId  String?
+  composition    ServiceComposition? @relation(fields: [compositionId], references: [id])
   location       String
   supervisor     String
-  teamSize       Int            @default(1)
-  weather        String         @default("Bom") // Bom | Nublado | Chuva | Suspensão
+  teamSize       Int                 @default(1)
+  weather        String              @default("Bom") // Bom | Nublado | Chuva | Suspensão
   activitiesDone String
   areasWorked    String?
   equipmentUsed  String?
   occurrences    String?
+  startTime      String?
+  endTime        String?
+  laborHours     Decimal?            @db.Decimal(10, 2)
+  quantityDone   Decimal?            @db.Decimal(15, 3)
+  quantityUnit   String?
+  inputCost      Decimal             @default(0) @db.Decimal(15, 2)
+  equipmentCost  Decimal             @default(0) @db.Decimal(15, 2)
+  transportCost  Decimal             @default(0) @db.Decimal(15, 2)
+  clientAccepted Boolean             @default(false)
+  acceptedBy     String?
+  acceptedAt     DateTime?
   photosPaths    String[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   photos         ServicePhoto[]
+  scopeChanges   ScopeChange[]
+
+  @@index([contractId, date])
+  @@index([compositionId])
 }
 
 // ═══ CONTRATOS (gestão completa) ════════════════════════════════
@@ -718,21 +745,25 @@ model InventoryEpiDelivery {
 
 // ═══ MOBILIZAÇÃO DE EQUIPE EM CONTRATO ═══════════════════════════
 model Mobilization {
-  id           String    @id @default(cuid())
-  contractId   String
-  contract     Contract  @relation(fields: [contractId], references: [id])
-  employeeId   String
-  employee     Employee  @relation(fields: [employeeId], references: [id])
-  role         String // "Supervisor" | "Operador Roçadeira" | "Auxiliar" | "Motorista"
-  startDate    DateTime
-  endDate      DateTime?
-  hoursDay     Int       @default(8)
-  daysWeek     Int       @default(5)
-  costPerMonth Decimal   @default(0) @db.Decimal(15, 2)
-  status       String    @default("ativa") // "ativa" | "encerrada" | "suspensa"
-  notes        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  contractId       String
+  contract         Contract  @relation(fields: [contractId], references: [id])
+  employeeId       String
+  employee         Employee  @relation(fields: [employeeId], references: [id])
+  role             String // "Supervisor" | "Operador Roçadeira" | "Auxiliar" | "Motorista"
+  startDate        DateTime
+  endDate          DateTime?
+  hoursDay         Int       @default(8)
+  daysWeek         Int       @default(5)
+  costPerMonth     Decimal   @default(0) @db.Decimal(15, 2)
+  status           String    @default("ativa") // "ativa" | "encerrada" | "suspensa"
+  complianceStatus String    @default("pendente") // pendente | liberada | bloqueada
+  blockedReason    String?
+  approvedBy       String?
+  approvedAt       DateTime?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([contractId, status])
   @@index([employeeId])
@@ -788,6 +819,8 @@ model Equipment {
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   manutencoes    EquipmentMaintenance[]
+  documents      EquipmentDoc[]
+  reservations   ResourceReservation[]
 }
 
 model EquipmentMaintenance {
@@ -1003,35 +1036,45 @@ model Document {
 // documentos por funcionário; aqui ficam os requisitos do contrato e
 // os registros (com validade) que alimentam a matriz de monitoramento.
 model ContractDocRequirement {
-  id           String              @id @default(cuid())
-  contractId   String
-  contract     Contract            @relation(fields: [contractId], references: [id])
-  name         String // "ASO", "Certificado NR-12", "Ficha de EPI"…
-  scope        String              @default("FUNCIONARIO") // FUNCIONARIO | EMPRESA
-  itemRef      String? // referência na relação da contratante ("item 5")
-  validityDays Int? // null = sem vencimento (documento estático)
-  required     Boolean             @default(true)
-  autoSource   String? // ASO | TREINAMENTO | EPI — busca automática em outros módulos
-  sourceHint   String? // ex.: "NR-12" para casar com Training.trainingType
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  records      ContractDocRecord[]
+  id            String              @id @default(cuid())
+  contractId    String
+  contract      Contract            @relation(fields: [contractId], references: [id])
+  name          String // "ASO", "Certificado NR-12", "Ficha de EPI"…
+  scope         String              @default("FUNCIONARIO") // FUNCIONARIO | EMPRESA
+  itemRef       String? // referência na relação da contratante ("item 5")
+  validityDays  Int? // null = sem vencimento (documento estático)
+  required      Boolean             @default(true)
+  autoSource    String? // ASO | TREINAMENTO | EPI — busca automática em outros módulos
+  sourceHint    String? // ex.: "NR-12" para casar com Training.trainingType
+  origin        String              @default("CONTRATO") // CONTRATO | CLIENTE | SERVICO
+  activity      String?
+  role          String?
+  equipmentType String?
+  blocking      Boolean             @default(true)
+  leadTimeDays  Int                 @default(0)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  records       ContractDocRecord[]
 
   @@index([contractId])
 }
 
 model ContractDocRecord {
-  id            String                 @id @default(cuid())
-  requirementId String
-  requirement   ContractDocRequirement @relation(fields: [requirementId], references: [id])
-  employeeId    String? // null quando scope = EMPRESA
-  employee      Employee?              @relation(fields: [employeeId], references: [id])
-  issuedAt      DateTime?
-  expiresAt     DateTime?
-  filePath      String?
-  notes         String?
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
+  id              String                 @id @default(cuid())
+  requirementId   String
+  requirement     ContractDocRequirement @relation(fields: [requirementId], references: [id])
+  employeeId      String? // null quando scope = EMPRESA
+  employee        Employee?              @relation(fields: [employeeId], references: [id])
+  issuedAt        DateTime?
+  expiresAt       DateTime?
+  filePath        String?
+  notes           String?
+  status          String                 @default("pendente") // pendente | aprovado | rejeitado
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   @@index([requirementId, employeeId])
 }
@@ -1085,6 +1128,227 @@ model ContractCost {
   updatedAt   DateTime @updatedAt
 
   @@index([contractId, date])
+}
+
+// ═══ DOSSIÊ OPERACIONAL — ORÇAMENTO, PROPOSTA E EXECUÇÃO ═════════
+model ServiceDossier {
+  id                   String                    @id @default(cuid())
+  code                 String                    @unique
+  title                String
+  status               String                    @default("rascunho") // rascunho | em_validacao | validado | calculado | em_aprovacao | convertido
+  sourceType           String                    @default("MANUAL") // PDF | TXT | MANUAL
+  sourceName           String?
+  sourceHash           String?
+  sourceText           String?                   @db.Text
+  extraction           Json?
+  evidence             Json?
+  extractionStatus     String                    @default("pendente") // pendente | extraido | parcial | erro
+  validationStatus     String                    @default("pendente") // pendente | validado | rejeitado
+  validatedBy          String?
+  validatedAt          DateTime?
+  clientId             String?
+  client               Client?                   @relation(fields: [clientId], references: [id])
+  proposalId           String?                   @unique
+  proposal             Proposal?                 @relation(fields: [proposalId], references: [id])
+  contractId           String?                   @unique
+  contract             Contract?                 @relation(fields: [contractId], references: [id])
+  taxProfileId         String?
+  taxProfile           TaxProfile?               @relation(fields: [taxProfileId], references: [id])
+  requirementProfileId String?
+  requirementProfile   ClientRequirementProfile? @relation(fields: [requirementProfileId], references: [id])
+  location             String?
+  startDate            DateTime?
+  deadlineDays         Int?
+  paymentTermDays      Int                       @default(30)
+  mobilizationCost     Decimal                   @default(0) @db.Decimal(15, 2)
+  demobilizationCost   Decimal                   @default(0) @db.Decimal(15, 2)
+  overheadRate         Decimal                   @default(10) @db.Decimal(7, 4)
+  riskRate             Decimal                   @default(5) @db.Decimal(7, 4)
+  marginRate           Decimal                   @default(20) @db.Decimal(7, 4)
+  workingCapitalRate   Decimal                   @default(0) @db.Decimal(7, 4)
+  calculation          Json?
+  riskMatrix           Json?
+  qualityScore         Int                       @default(0)
+  decisionScore        Int                       @default(0)
+  minimumPrice         Decimal                   @default(0) @db.Decimal(15, 2)
+  recommendedPrice     Decimal                   @default(0) @db.Decimal(15, 2)
+  commercialPrice      Decimal                   @default(0) @db.Decimal(15, 2)
+  discountLimit        Decimal                   @default(0) @db.Decimal(15, 2)
+  notes                String?                   @db.Text
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  compositions         ServiceComposition[]
+  reservations         ResourceReservation[]
+
+  @@index([clientId, status])
+  @@index([requirementProfileId])
+  @@index([validationStatus])
+}
+
+model ServiceComposition {
+  id                  String         @id @default(cuid())
+  dossierId           String
+  dossier             ServiceDossier @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  code                String
+  activity            String
+  laborRole           String?
+  quantity            Decimal        @db.Decimal(15, 3)
+  unit                String         @default("m²")
+  productivityPerHour Decimal        @default(1) @db.Decimal(15, 4)
+  teamSize            Int            @default(1)
+  hoursPerDay         Decimal        @default(8) @db.Decimal(8, 2)
+  workDaysPerWeek     Int            @default(5)
+  efficiencyFactor    Decimal        @default(1) @db.Decimal(7, 4)
+  setupHours          Decimal        @default(0) @db.Decimal(10, 2)
+  laborHourlyCost     Decimal        @default(0) @db.Decimal(15, 4)
+  inputUnitCost       Decimal        @default(0) @db.Decimal(15, 4)
+  equipmentDailyCost  Decimal        @default(0) @db.Decimal(15, 2)
+  transportCost       Decimal        @default(0) @db.Decimal(15, 2)
+  additionalCost      Decimal        @default(0) @db.Decimal(15, 2)
+  plannedLaborHours   Decimal        @default(0) @db.Decimal(15, 2)
+  plannedDays         Decimal        @default(0) @db.Decimal(10, 2)
+  plannedWorkers      Int            @default(1)
+  directCost          Decimal        @default(0) @db.Decimal(15, 2)
+  order               Int            @default(0)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  workDiaries         WorkDiary[]
+
+  @@unique([dossierId, code])
+  @@index([dossierId, order])
+}
+
+model TaxProfile {
+  id                         String           @id @default(cuid())
+  name                       String
+  version                    Int              @default(1)
+  active                     Boolean          @default(true)
+  regime                     String           @default("Simples Nacional")
+  effectiveRate              Decimal          @default(0) @db.Decimal(7, 4)
+  issRate                    Decimal          @default(0) @db.Decimal(7, 4)
+  issRetained                Boolean          @default(false)
+  issIncludedInEffectiveRate Boolean          @default(true)
+  inssRetentionRate          Decimal          @default(0) @db.Decimal(7, 4)
+  inssRecoverable            Boolean          @default(true)
+  irrfRetentionRate          Decimal          @default(0) @db.Decimal(7, 4)
+  csllPisCofinsRetentionRate Decimal          @default(0) @db.Decimal(7, 4)
+  otherRate                  Decimal          @default(0) @db.Decimal(7, 4)
+  validFrom                  DateTime         @default(now())
+  validUntil                 DateTime?
+  notes                      String?
+  createdAt                  DateTime         @default(now())
+  updatedAt                  DateTime         @updatedAt
+  dossiers                   ServiceDossier[]
+
+  @@unique([name, version])
+  @@index([active, validFrom])
+}
+
+model ClientRequirementProfile {
+  id           String           @id @default(cuid())
+  clientId     String
+  client       Client           @relation(fields: [clientId], references: [id])
+  name         String
+  version      Int              @default(1)
+  active       Boolean          @default(true)
+  serviceTypes String[]
+  requirements Json
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  dossiers     ServiceDossier[]
+
+  @@unique([clientId, name, version])
+  @@index([clientId, active])
+}
+
+model ProposalVersion {
+  id                  String    @id @default(cuid())
+  proposalId          String
+  proposal            Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  version             Int
+  snapshot            Json
+  price               Decimal   @db.Decimal(15, 2)
+  technicalStatus     String    @default("pendente")
+  technicalApprovedBy String?
+  technicalApprovedAt DateTime?
+  financialStatus     String    @default("pendente")
+  financialApprovedBy String?
+  financialApprovedAt DateTime?
+  directorStatus      String    @default("pendente")
+  directorApprovedBy  String?
+  directorApprovedAt  DateTime?
+  changeReason        String?
+  createdAt           DateTime  @default(now())
+
+  @@unique([proposalId, version])
+  @@index([proposalId, createdAt])
+}
+
+model ResourceReservation {
+  id           String          @id @default(cuid())
+  dossierId    String?
+  dossier      ServiceDossier? @relation(fields: [dossierId], references: [id])
+  contractId   String?
+  contract     Contract?       @relation(fields: [contractId], references: [id])
+  employeeId   String?
+  employee     Employee?       @relation(fields: [employeeId], references: [id])
+  equipmentId  String?
+  equipment    Equipment?      @relation(fields: [equipmentId], references: [id])
+  resourceType String // EMPLOYEE | EQUIPMENT
+  startDate    DateTime
+  endDate      DateTime
+  status       String          @default("provisoria") // provisoria | confirmada | cancelada
+  notes        String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([employeeId, startDate, endDate])
+  @@index([equipmentId, startDate, endDate])
+  @@index([dossierId, status])
+}
+
+model EquipmentDoc {
+  id              String    @id @default(cuid())
+  equipmentId     String
+  equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  docType         String
+  issuedAt        DateTime?
+  expiresAt       DateTime?
+  filePath        String?
+  status          String    @default("pendente") // pendente | aprovado | rejeitado
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([equipmentId, expiresAt])
+}
+
+model ScopeChange {
+  id          String     @id @default(cuid())
+  contractId  String
+  contract    Contract   @relation(fields: [contractId], references: [id])
+  workDiaryId String?
+  workDiary   WorkDiary? @relation(fields: [workDiaryId], references: [id])
+  number      Int
+  title       String
+  description String     @db.Text
+  reason      String?
+  requestedBy String?
+  impactDays  Int        @default(0)
+  impactValue Decimal    @default(0) @db.Decimal(15, 2)
+  status      String     @default("pendente") // pendente | aprovado | rejeitado | incorporado
+  approvedBy  String?
+  approvedAt  DateTime?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([contractId, number])
+  @@index([contractId, status])
 }
 
 // ═══ REGISTROS AMBIENTAIS ════════════════════════════════════════

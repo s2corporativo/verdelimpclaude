@@ -11,6 +11,13 @@ export default function PropostasPage() {
   const carregar = () => fetch("/api/propostas").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);});
   useEffect(()=>{ carregar(); },[]);
 
+  const aprovar = async (p:any, level:"technical"|"financial"|"director") => {
+    const r = await fetch("/api/propostas", {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({proposalId:p.id,action:"approve",level,approved:true})});
+    const j = await r.json();
+    setMsg(r.ok ? "✓ Aprovação registrada na versão atual." : `Erro: ${j.error}`);
+    if (r.ok) carregar();
+  };
+
   const excluir = async (p:any) => {
     if (!confirm(`Excluir a proposta ${p.number}?`)) return;
     const r = await fetch(`/api/propostas?id=${p.id}`,{method:"DELETE"});
@@ -18,7 +25,7 @@ export default function PropostasPage() {
     setMsg("✓ Proposta excluída."); carregar();
   };
   const gerarContrato = async (p:any) => {
-    if (!confirm(`Aprovar a proposta ${p.number} e gerar o contrato automaticamente?\n\nIsso cria: contrato + 19 requisitos de documentação (SST) + 1º item do cronograma + centro de custos.`)) return;
+    if (!confirm(`Converter a proposta aprovada ${p.number} em contrato?\n\nIsso cria contrato, matriz documental e cronograma e confirma as reservas em uma transação.`)) return;
     setConvertendo(p.id); setMsg("");
     const r = await fetch("/api/proposta-contrato",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({proposalId:p.id})});
     const j = await r.json();
@@ -28,7 +35,7 @@ export default function PropostasPage() {
     carregar();
   };
   const fmt = (v:number) => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
-  const STATUS_COLORS:any = {Aprovada:["#dcfce7","#15803d"],Aberta:["#fef9c3","#92400e"],Rejeitada:["#fee2e2","#991b1b"],Expirada:["#f3f4f6","#6b7280"]};
+  const STATUS_COLORS:any = {Aprovada:["#dcfce7","#15803d"],"Em aprovação":["#dbeafe","#1d4ed8"],Aberta:["#fef9c3","#92400e"],Rejeitada:["#fee2e2","#991b1b"],Convertida:["#ede9fe","#6d28d9"],Expirada:["#f3f4f6","#6b7280"]};
 
   const abrirPDF = (id:string, numero:string) => {
     setGerando(id);
@@ -53,7 +60,7 @@ export default function PropostasPage() {
     {msg && <div style={{background:msg.startsWith("Erro")?"#fee2e2":"#dcfce7",color:msg.startsWith("Erro")?"#991b1b":"#15803d",borderRadius:8,padding:"10px 13px",marginBottom:14,fontSize:12,fontWeight:600}}>{msg}</div>}
 
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
-      {[["Total",data.length,"📄","#4a9410"],["Aprovadas",data.filter((p:any)=>p.status==="Aprovada").length,"✅","#15803d"],["Em Aberto",data.filter((p:any)=>p.status==="Aberta").length,"⏳","#d97706"]].map(([l,v,i,c])=>(
+      {[["Total",data.length,"📄","#4a9410"],["Aprovadas",data.filter((p:any)=>p.status==="Aprovada").length,"✅","#15803d"],["Em aprovação",data.filter((p:any)=>p.status==="Em aprovação").length,"⏳","#1d4ed8"]].map(([l,v,i,c])=>(
         <div key={l as string} style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 14px",borderTop:"3px solid "+c}}>
           <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase"}}>{l}</span><span>{i}</span></div>
           <div style={{fontSize:20,fontWeight:700,color:c as string,marginTop:5}}>{v}</div>
@@ -72,6 +79,7 @@ export default function PropostasPage() {
         <TabelaHead colunas={["Número","Objeto","Cliente","Valor Total","Data","Status","Ações"]} />
         <tbody>{data.map((p:any)=>{
           const [bg,co]=STATUS_COLORS[p.status]||["#f3f4f6","#6b7280"];
+          const version=p.versions?.[0];
           return(<tr key={p.id} style={{borderBottom:"1px solid #f3f4f6"}}>
             <td style={{padding:"8px 12px",fontWeight:700,fontFamily:"monospace",color:"#334532"}}>{p.number}</td>
             <td style={{padding:"8px 12px",fontSize:12,maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.object}</td>
@@ -85,7 +93,7 @@ export default function PropostasPage() {
                   style={{background:gerando===p.id?"#6b7280":"#334532",color:"#fff",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>
                   {gerando===p.id?"⟳...":"📄 PDF"}
                 </button>
-                {!demo && p.status==="Aberta" && (
+                {!demo && p.status==="Aprovada" && (
                   <button onClick={()=>gerarContrato(p)} disabled={convertendo===p.id}
                     title="Aprova a proposta e gera contrato + requisitos de docs + cronograma"
                     style={{background:convertendo===p.id?"#6b7280":"#4a9410",color:"#fff",border:"none",padding:"5px 12px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>
@@ -97,6 +105,9 @@ export default function PropostasPage() {
                     style={{background:"#fff",color:"#991b1b",border:"1px solid #fca5a5",padding:"5px 10px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>🗑️</button>
                 )}
               </div>
+              {version && p.status !== "Convertida" && <div style={{display:"flex",gap:4,marginTop:5,flexWrap:"wrap"}}>
+                {[["technical","Técnica",version.technicalStatus],["financial","Financeira",version.financialStatus],["director","Diretoria",version.directorStatus]].map(([level,label,status])=><button key={level} onClick={()=>aprovar(p,level as any)} disabled={status==="aprovado"} title={`Aprovação ${label} da versão ${version.version}`} style={{border:"1px solid #d1d5db",background:status==="aprovado"?"#dcfce7":"#fff",color:status==="aprovado"?"#15803d":"#374151",borderRadius:5,padding:"3px 6px",fontSize:9,cursor:status==="aprovado"?"default":"pointer"}}>{status==="aprovado"?"✓ ":""}{label}</button>)}
+              </div>}
             </td>
           </tr>);
         })}</tbody>

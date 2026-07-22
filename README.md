@@ -1,4 +1,4 @@
-# Verdelimp ERP v2.2
+# Verdelimp ERP v2.3
 
 Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gestão operacional, comercial, fiscal, financeira, trabalhista e administrativa.
 
@@ -9,7 +9,11 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 - Pipeline de licitações
 - Radar PNCP
 - Propostas comerciais e PDF
-- Proposta por edital com IA
+- Dossiê Operacional: PDF/TXT → evidências → folha e reservas → dimensionamento → preço → proposta
+- Perfis tributários versionados e cenários de preço
+- Perfil documental escolhido por serviço, arquivos de empresa/funcionário/equipamento e reavaliação da mobilização
+- Aprovação técnica, financeira e diretoria por versão da proposta
+- Alterações de escopo e produtividade planejada × realizada
 - Precificação
 - Contratos
 - GED / documentos
@@ -50,6 +54,10 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 - Docker
 - Nginx
 - VPS Contabo
+
+## Fluxo operacional v2.3
+
+O fluxo completo e as regras de cálculo estão em [`DOSSIE_OPERACIONAL.md`](DOSSIE_OPERACIONAL.md). A IA não define o preço: ela extrai fatos e evidências; o motor determinístico calcula trabalhadores, HH, duração, custos, retenções, capital de giro e cenários.
 
 ## Deploy recomendado
 
