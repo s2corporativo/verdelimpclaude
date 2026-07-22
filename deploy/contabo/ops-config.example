@@ -1,0 +1,15 @@
+# Copie este arquivo para /opt/verdelimp-erp/.env.ops e ajuste na VPS.
+# Nunca versione o arquivo real .env.ops.
+
+BACKUP_DIR=/opt/backups/verdelimp
+RETENCAO_DIAS=14
+RCLONE_REMOTE=gdrive:backups/verdelimp
+REQUIRE_OFFSITE=true
+BACKUP_MAX_AGE_HOURS=30
+
+DISK_ALERT_PERCENT=85
+ALERT_WEBHOOK_URL=
+BACKUP_HEARTBEAT_URL=
+MONITOR_HEARTBEAT_URL=
+
+COMPOSE_PROJECT_NAME=verdelimp
