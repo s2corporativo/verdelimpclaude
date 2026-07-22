@@ -48,6 +48,15 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Sintaxe dos scripts operacionais
+        run: bash -n deploy/contabo/*.sh
+
+      - name: Validar Docker Compose
+        run: |
+          cp .env.vps.example .env.production
+          ln -sf .env.production .env
+          docker compose config --quiet
+
       - name: Auditoria de dependências de produção (alta+)
         run: npm audit --omit=dev --audit-level=high
 
