@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 // CSP: mantém 'unsafe-inline' porque o app usa estilos/atributos inline e o
-// Next 14 injeta scripts de hidratação inline (sem nonce). connect-src libera
+// Next.js injeta scripts de hidratação inline (sem nonce). connect-src libera
 // só as APIs externas realmente usadas (BrasilAPI, ViaCEP, IBGE, GROQ, BCB).
 const csp = [
   "default-src 'self'",
@@ -25,12 +25,12 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
-  // Next 14 usa a chave experimental; a raiz "serverExternalPackages" só existe no Next 15
-  experimental: { serverComponentsExternalPackages: ["@prisma/client", "bcryptjs", "imapflow", "mailparser", "pdf-parse"] },
+  // No Next.js 15, pacotes externos de componentes/rotas de servidor ficam na raiz.
+  serverExternalPackages: ["@prisma/client", "bcryptjs", "imapflow", "mailparser", "pdf-parse"],
   // Imagem final enxuta: copia só .next/standalone (sem devDependencies)
   output: "standalone",
   typescript: { ignoreBuildErrors: false },
-  eslint: { ignoreDuringBuilds: false }, // lint agora é gate — passa limpo
+  eslint: { ignoreDuringBuilds: false }, // lint é gate obrigatório no CI
   poweredByHeader: false, // não vazar "X-Powered-By: Next.js"
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
