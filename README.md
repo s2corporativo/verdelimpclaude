@@ -67,6 +67,7 @@ A entrada em produção deve seguir obrigatoriamente [`HOMOLOGACAO_PRODUCAO.md`]
 
 Arquivos principais:
 
+- `deploy/contabo/install-v23.sh` — bootstrap da primeira instalação sem gerar ou imprimir segredos;
 - `deploy/contabo/deploy.sh` — backup prévio, build, migrations, healthcheck e rollback da imagem;
 - `deploy/contabo/backup.sh` — banco, uploads, checksum e cópia off-site;
 - `deploy/contabo/restore-test.sh` — ensaio de restauração em banco temporário;
@@ -101,6 +102,7 @@ erp.verdelimp.com.br
 - `.env.vps.example`
 - `DEPLOY_CONTABO.md`
 - `deploy/contabo/nginx-verdelimp.conf`
+- `deploy/contabo/install-v23.sh`
 - `deploy/contabo/deploy.sh`
 
 ## Comandos principais locais
@@ -116,6 +118,16 @@ npm run start
 
 ## Comandos principais na VPS
 
+Primeira instalação automatizada, após preparar `.env.production` e `.env.ops`:
+
+```bash
+cd /opt/verdelimp-erp
+chmod +x deploy/contabo/*.sh
+deploy/contabo/install-v23.sh
+```
+
+Fluxo manual equivalente:
+
 ```bash
 cd /opt/verdelimp-erp
 cp .env.vps.example .env.production
@@ -123,11 +135,12 @@ nano .env.production
 cp deploy/contabo/ops-config.example .env.ops
 nano .env.ops
 chmod 600 .env.production .env.ops
-docker compose build app
+ln -sf .env.production .env
+docker compose build --pull app migrate seed
 docker compose up -d db
 docker compose run --rm migrate
+docker compose run --rm seed   # apenas na primeira instalação
 docker compose up -d app
-docker compose exec app npm run prisma:seed   # apenas na primeira instalação
 ```
 
 Para atualização posterior:
