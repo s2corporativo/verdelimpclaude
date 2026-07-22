@@ -1,0 +1,4 @@
+Solicitação de teste de compatibilidade das credenciais da VPS.
+Data: 2026-07-22
+Modo: auto
+Objetivo: resolver nomes alternativos de Secrets/Variables sem expor valores.

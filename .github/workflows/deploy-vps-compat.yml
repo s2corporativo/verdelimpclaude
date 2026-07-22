@@ -1,0 +1,146 @@
+name: Deploy VPS Contabo — compatibilidade de Secrets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/deploy-trigger/compat-production.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-producao-verdelimp
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Resolver credenciais e implantar produção
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST || secrets.SSH_HOST || secrets.SERVER_HOST || secrets.CONTABO_HOST || vars.VPS_HOST || vars.SSH_HOST || vars.SERVER_HOST || vars.CONTABO_HOST }}
+      VPS_PORT: ${{ secrets.VPS_PORT || secrets.SSH_PORT || secrets.SERVER_PORT || secrets.CONTABO_PORT || vars.VPS_PORT || vars.SSH_PORT || vars.SERVER_PORT || vars.CONTABO_PORT || '22' }}
+      VPS_USER: ${{ secrets.VPS_USER || secrets.SSH_USER || secrets.SERVER_USER || secrets.CONTABO_USER || vars.VPS_USER || vars.SSH_USER || vars.SERVER_USER || vars.CONTABO_USER || 'root' }}
+      VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY || secrets.SERVER_SSH_KEY || secrets.CONTABO_SSH_KEY || secrets.SSH_KEY }}
+      VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS || secrets.SSH_KNOWN_HOSTS || secrets.SERVER_KNOWN_HOSTS || secrets.CONTABO_KNOWN_HOSTS || vars.VPS_KNOWN_HOSTS || vars.SSH_KNOWN_HOSTS }}
+      APP_DIR_CONFIG: ${{ vars.VPS_APP_DIR || vars.APP_DIR || '/opt/verdelimp-erp' }}
+
+    steps:
+      - name: Validar credenciais resolvidas
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          missing=0
+          if [ -z "$VPS_HOST" ]; then
+            echo "Host ausente. Nomes aceitos: VPS_HOST, SSH_HOST, SERVER_HOST ou CONTABO_HOST (Secret ou Variable)." >&2
+            missing=1
+          fi
+          if [ -z "$VPS_SSH_PRIVATE_KEY" ]; then
+            echo "Chave ausente. Nomes aceitos: VPS_SSH_PRIVATE_KEY, SSH_PRIVATE_KEY, SERVER_SSH_KEY, CONTABO_SSH_KEY ou SSH_KEY (Secret)." >&2
+            missing=1
+          fi
+          [ "$missing" -eq 0 ] || exit 1
+          echo "Configuração lógica resolvida: host=presente, porta=${VPS_PORT:-22}, usuário=${VPS_USER:-root}, chave=presente."
+
+      - name: Configurar SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+
+          if [ -n "$VPS_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -T 15 -p "${VPS_PORT:-22}" -H "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Testar SSH e executar deploy
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${VPS_PORT:-22}"
+          USER="${VPS_USER:-root}"
+          APP_DIR="${APP_DIR_CONFIG:-/opt/verdelimp-erp}"
+
+          ssh -i ~/.ssh/id_deploy -p "$PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$USER@$VPS_HOST" \
+            "APP_DIR='$APP_DIR' bash -se" <<'REMOTE'
+          set -Eeuo pipefail
+          fail() { echo "ERRO: $*" >&2; exit 1; }
+
+          echo "host=$(hostname)"
+          echo "usuario=$(whoami)"
+          [ "$(id -u)" -eq 0 ] || fail "o bootstrap inicial exige root"
+          command -v git >/dev/null 2>&1 || fail "git não instalado"
+          command -v docker >/dev/null 2>&1 || fail "docker não instalado"
+          docker compose version >/dev/null 2>&1 || fail "Docker Compose não instalado"
+
+          if [ ! -d "$APP_DIR/.git" ]; then
+            mkdir -p "$(dirname "$APP_DIR")"
+            git clone https://github.com/s2corporativo/verdelimpclaude.git "$APP_DIR"
+          fi
+
+          cd "$APP_DIR"
+          git fetch --prune origin
+          git checkout main
+          git pull --ff-only origin main
+
+          [ -f .env.production ] || fail ".env.production ausente em $APP_DIR"
+          [ -f .env.ops ] || fail ".env.ops ausente em $APP_DIR"
+          chmod 600 .env.production .env.ops
+          chmod +x deploy/contabo/*.sh
+
+          if [ -f .verdelimp-seeded ] && docker compose ps db --status running --quiet | grep -q .; then
+            deploy/contabo/deploy.sh
+          else
+            deploy/contabo/install-v23.sh
+          fi
+
+          echo "commit=$(git rev-parse HEAD)"
+          docker compose ps
+          REMOTE
+
+  registrar_resultado:
+    name: Registrar resultado de compatibilidade
+    if: ${{ always() }}
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Comentar na issue 37
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = '${{ needs.deploy.result }}';
+            const icon = result === 'success' ? '✅' : result === 'cancelled' ? '⚠️' : '❌';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `${icon} **Deploy VPS — teste de aliases: ${result}**`,
+              '',
+              `- Commit: \`${context.sha}\``,
+              `- Execução: ${runUrl}`,
+              `- Data UTC: ${new Date().toISOString()}`,
+              '',
+              result === 'success'
+                ? 'As credenciais foram resolvidas por um dos nomes compatíveis e o deploy terminou.'
+                : 'Nenhum alias válido foi resolvido ou uma etapa posterior falhou. Os logs indicam a causa exata.'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 37,
+              body
+            });
