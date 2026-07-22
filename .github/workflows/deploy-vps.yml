@@ -1,0 +1,205 @@
+name: Deploy VPS Contabo
+
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "Modo de execução"
+        required: true
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - instalar
+          - atualizar
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-producao-verdelimp
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Instalar ou atualizar produção
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+      VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+      APP_DIR_CONFIG: ${{ vars.VPS_APP_DIR }}
+      DEPLOY_MODE: ${{ inputs.modo }}
+
+    steps:
+      - name: Validar configuração protegida
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ -n "$VPS_HOST" ] || { echo "Secret VPS_HOST ausente" >&2; exit 1; }
+          [ -n "$VPS_USER" ] || { echo "Secret VPS_USER ausente" >&2; exit 1; }
+          [ -n "$VPS_SSH_PRIVATE_KEY" ] || { echo "Secret VPS_SSH_PRIVATE_KEY ausente" >&2; exit 1; }
+
+      - name: Configurar SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${VPS_PORT:-22}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+
+          if [ -n "$VPS_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -T 15 -p "$PORT" -H "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Testar conexão e identidade da VPS
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${VPS_PORT:-22}"
+          ssh -i ~/.ssh/id_deploy -p "$PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            'set -e; echo "host=$(hostname)"; echo "usuario=$(whoami)"; docker --version; docker compose version'
+
+      - name: Executar instalação ou deploy seguro
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${VPS_PORT:-22}"
+          APP_DIR="${APP_DIR_CONFIG:-/opt/verdelimp-erp}"
+          REMOTE_ARCHIVE="/tmp/verdelimp-evidencias-${GITHUB_RUN_ID}.tar.gz"
+
+          ssh -i ~/.ssh/id_deploy -p "$PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "APP_DIR='$APP_DIR' DEPLOY_MODE='$DEPLOY_MODE' RUN_ID='$GITHUB_RUN_ID' REMOTE_ARCHIVE='$REMOTE_ARCHIVE' bash -se" <<'REMOTE'
+          set -Eeuo pipefail
+
+          log() { echo "[$(date '+%F %T')] $*"; }
+          fail() { echo "ERRO: $*" >&2; exit 1; }
+
+          [ "$(id -u)" -eq 0 ] || fail "o workflow exige usuário root nesta primeira configuração"
+          command -v git >/dev/null 2>&1 || fail "git não instalado"
+          command -v docker >/dev/null 2>&1 || fail "docker não instalado"
+          docker compose version >/dev/null 2>&1 || fail "Docker Compose não instalado"
+
+          if [ ! -d "$APP_DIR/.git" ]; then
+            log "Clonando repositório em $APP_DIR"
+            mkdir -p "$(dirname "$APP_DIR")"
+            git clone https://github.com/s2corporativo/verdelimpclaude.git "$APP_DIR"
+          fi
+
+          cd "$APP_DIR"
+          git fetch --prune origin
+          git checkout main
+          git pull --ff-only origin main
+
+          [ -f .env.production ] || fail ".env.production ausente em $APP_DIR"
+          [ -f .env.ops ] || fail ".env.ops ausente em $APP_DIR"
+          chmod 600 .env.production .env.ops
+          chmod +x deploy/contabo/*.sh
+
+          case "$DEPLOY_MODE" in
+            instalar)
+              log "Modo solicitado: primeira instalação"
+              deploy/contabo/install-v23.sh
+              ;;
+            atualizar)
+              log "Modo solicitado: atualização"
+              deploy/contabo/deploy.sh
+              ;;
+            auto)
+              if [ -f .verdelimp-seeded ] && docker compose ps db --status running --quiet | grep -q .; then
+                log "Instalação existente detectada; executando atualização"
+                deploy/contabo/deploy.sh
+              else
+                log "Primeira instalação detectada; executando bootstrap v2.3"
+                deploy/contabo/install-v23.sh
+              fi
+              ;;
+            *)
+              fail "modo inválido: $DEPLOY_MODE"
+              ;;
+          esac
+
+          EVIDENCE_DIR="/tmp/verdelimp-evidencias-$RUN_ID"
+          rm -rf "$EVIDENCE_DIR"
+          mkdir -p "$EVIDENCE_DIR"
+
+          {
+            echo "data_utc=$(date -u '+%F %T UTC')"
+            echo "host=$(hostname -f 2>/dev/null || hostname)"
+            echo "usuario=$(whoami)"
+            echo "app_dir=$APP_DIR"
+            echo "commit=$(git rev-parse HEAD)"
+            echo "branch=$(git branch --show-current)"
+          } > "$EVIDENCE_DIR/resumo.txt"
+
+          docker compose ps > "$EVIDENCE_DIR/docker-compose-ps.txt"
+          docker compose images > "$EVIDENCE_DIR/docker-compose-images.txt"
+          curl -fsS --max-time 15 "http://127.0.0.1:${APP_PORT:-3010}/api/health" \
+            > "$EVIDENCE_DIR/api-health.json"
+
+          docker compose run --rm --entrypoint sh migrate -lc 'npx prisma migrate status' \
+            > "$EVIDENCE_DIR/prisma-migrate-status.txt" 2>&1 || true
+
+          deploy/contabo/monitor.sh \
+            > "$EVIDENCE_DIR/monitor.txt" 2>&1 || true
+
+          crontab -l > "$EVIDENCE_DIR/crontab-root.txt" 2>&1 || true
+
+          BACKUP_DIR="/opt/backups/verdelimp"
+          if [ -f .env.ops ]; then
+            set -a
+            # shellcheck disable=SC1091
+            source .env.ops
+            set +a
+            BACKUP_DIR="${BACKUP_DIR:-/opt/backups/verdelimp}"
+          fi
+
+          if [ -d "$BACKUP_DIR" ]; then
+            ls -lah "$BACKUP_DIR" > "$EVIDENCE_DIR/backups.txt"
+            LATEST_MANIFEST="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'manifest_*.sha256' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2-)"
+            if [ -n "$LATEST_MANIFEST" ] && [ -f "$LATEST_MANIFEST" ]; then
+              cp "$LATEST_MANIFEST" "$EVIDENCE_DIR/"
+              sha256sum -c "$LATEST_MANIFEST" > "$EVIDENCE_DIR/backup-checksum-validation.txt" 2>&1 || true
+            fi
+          fi
+
+          journalctl -u cron --since '24 hours ago' --no-pager \
+            > "$EVIDENCE_DIR/cron-journal.txt" 2>&1 || true
+
+          tar -C /tmp -czf "$REMOTE_ARCHIVE" "$(basename "$EVIDENCE_DIR")"
+          chmod 600 "$REMOTE_ARCHIVE"
+          log "Evidências geradas em $REMOTE_ARCHIVE"
+          REMOTE
+
+          mkdir -p evidencias
+          scp -i ~/.ssh/id_deploy -P "$PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST:$REMOTE_ARCHIVE" \
+            "evidencias/verdelimp-evidencias-${GITHUB_RUN_ID}.tar.gz"
+
+      - name: Publicar evidências técnicas
+        uses: actions/upload-artifact@v4
+        with:
+          name: verdelimp-evidencias-${{ github.run_id }}
+          path: evidencias/verdelimp-evidencias-${{ github.run_id }}.tar.gz
+          if-no-files-found: error
+          retention-days: 30
