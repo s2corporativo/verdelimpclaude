@@ -12,6 +12,10 @@ on:
           - auto
           - instalar
           - atualizar
+  push:
+    branches: [main]
+    paths:
+      - ".github/deploy-trigger/production.txt"
 
 permissions:
   contents: read
@@ -33,7 +37,7 @@ jobs:
       VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
       VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
       APP_DIR_CONFIG: ${{ vars.VPS_APP_DIR }}
-      DEPLOY_MODE: ${{ inputs.modo }}
+      DEPLOY_MODE: ${{ inputs.modo || 'auto' }}
 
     steps:
       - name: Validar configuração protegida
