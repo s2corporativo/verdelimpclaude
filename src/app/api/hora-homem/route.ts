@@ -4,10 +4,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PARAMETROS_PADRAO, PRODUTIVIDADES_PADRAO, custoHoraHomem } from "@/lib/hora-homem";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const { erro } = await exigirPapel();
+  if (erro) return erro;
   try {
     const [funcionarios, config, mercado] = await Promise.all([
       prisma.employee.findMany({ where: { active: true }, select: { role: true, salary: true } }),
@@ -46,7 +49,7 @@ export async function GET() {
       })),
       _semFolha: funcoes.length === 0,
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message, funcoes: [], parametros: PARAMETROS_PADRAO, produtividades: PRODUTIVIDADES_PADRAO, mercado: [] }, { status: 500 });
+  } catch (error) {
+    return erroInterno(error, "api/hora-homem:get");
   }
 }

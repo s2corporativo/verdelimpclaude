@@ -8,6 +8,7 @@ const UI: Record<string, { label: string; cor: string; fundo: string; icone: str
   a_vencer: { label: "A vencer", cor: "#92400e", fundo: "#fef3c7", icone: "🟡" },
   vencido:  { label: "Vencido",  cor: "#991b1b", fundo: "#fee2e2", icone: "🔴" },
   faltante: { label: "Faltante", cor: "#374151", fundo: "#f3f4f6", icone: "⚪" },
+  nao_aplicavel: { label: "N/A", cor: "#64748b", fundo: "#f8fafc", icone: "—" },
 };
 
 const fdata = (d?: string | null) => (d ? new Date(d).toLocaleDateString("pt-BR") : "—");
@@ -19,7 +20,8 @@ export default function MonitorDocsPage() {
   const [carregando, setCarregando] = useState(false);
   const [msg, setMsg] = useState("");
   const [celula, setCelula] = useState<any>(null); // célula/registro em edição
-  const [form, setForm] = useState({ issuedAt: "", expiresAt: "", notes: "" });
+  const [form, setForm] = useState({ issuedAt: "", expiresAt: "", notes: "", filePath: "", fileName: "" });
+  const [enviandoArquivo, setEnviandoArquivo] = useState(false);
   const [novoReq, setNovoReq] = useState({ name: "", scope: "FUNCIONARIO", validityDays: "" });
   const [mostrarNovoReq, setMostrarNovoReq] = useState(false);
 
@@ -49,12 +51,41 @@ export default function MonitorDocsPage() {
       issuedAt: c.issuedAt ? c.issuedAt.slice(0, 10) : "",
       expiresAt: c.expiresAt ? String(c.expiresAt).slice(0, 10) : "",
       notes: c.notes || "",
+      filePath: c.filePath || "",
+      fileName: c.filePath ? "Documento anexado" : "",
     });
+  };
+
+  const enviarArquivo = async (file: File | null) => {
+    if (!file) return;
+    setEnviandoArquivo(true);
+    const payload = new FormData();
+    payload.append("file", file);
+    const response = await fetch("/api/upload", { method: "POST", body: payload });
+    const result = await response.json();
+    setEnviandoArquivo(false);
+    if (!response.ok) return setMsg(`Erro: ${result.error || "Falha no envio"}`);
+    setForm((current) => ({ ...current, filePath: result.url, fileName: result.nome || file.name }));
   };
 
   const salvarRegistro = async () => {
     const ok = await post({ action: "registro", recordId: celula.recordId, requirementId: celula.requirementId, employeeId: celula.employeeId, ...form });
     if (ok) setCelula(null);
+  };
+
+  const revisarRegistro = async (status: "aprovado" | "rejeitado") => {
+    if (!celula?.recordId) return;
+    const rejectionReason = status === "rejeitado" ? window.prompt("Motivo da rejeição:") : "";
+    if (status === "rejeitado" && !rejectionReason) return;
+    const ok = await post({ action: "revisar", recordId: celula.recordId, status, rejectionReason });
+    if (ok) setCelula(null);
+  };
+
+  const reavaliarMobilizacao = async (id: string) => {
+    const response = await fetch("/api/mobilizacoes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "reavaliar" }) });
+    const result = await response.json();
+    setMsg(response.ok ? (result.data.complianceStatus === "liberada" ? "Mobilização liberada." : `Ainda bloqueada: ${result.data.blockedReason}`) : `Erro: ${result.error}`);
+    await carregar(contractId);
   };
 
   const card = (t: string, v: number | string, cor: string) => (
@@ -127,6 +158,26 @@ export default function MonitorDocsPage() {
 
       {dados && contractId && (
         <>
+          {dados.mobilizacoesBloqueadas?.length > 0 && (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", borderRadius: 10, padding: 12, marginBottom: 12, fontSize: 11 }}>
+              <strong>Mobilizações bloqueadas ({dados.mobilizacoesBloqueadas.length})</strong>
+              {dados.mobilizacoesBloqueadas.map((m: any) => <div key={m.id} style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center"}}><span>{m.employee.name}: {m.blockedReason || "documentação pendente"}</span><button onClick={() => reavaliarMobilizacao(m.id)} style={{border:"1px solid #991b1b",background:"#fff",color:"#991b1b",borderRadius:6,padding:"4px 8px",cursor:"pointer"}}>Reavaliar</button></div>)}
+            </div>
+          )}
+
+          {dados.equipamentos?.length > 0 && (
+            <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+              <h2 style={{ fontSize: 14, color: "#334532", margin: "0 0 10px" }}>Equipamentos reservados e documentos</h2>
+              {dados.equipamentos.map((row: any) => <div key={row.equipamento.id} style={{ borderTop: "1px solid #e5e7eb", padding: "9px 0" }}>
+                <strong style={{ fontSize: 11 }}>{row.equipamento.codigo} — {row.equipamento.descricao}</strong>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 6 }}>
+                  {row.documentos.length === 0 && <span style={{ fontSize: 10, color: "#6b7280" }}>Nenhum requisito específico para este tipo.</span>}
+                  {row.documentos.map((documento: any) => <span key={documento.requirementId} style={{ fontSize: 10, background: UI[documento.status].fundo, color: UI[documento.status].cor, borderRadius: 7, padding: "4px 7px" }}>{documento.filePath ? <a href={documento.filePath} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>{documento.name}</a> : documento.name}: {UI[documento.status].label}</span>)}
+                </div>
+              </div>)}
+              <a href="/dashboard/equipamentos" style={{ fontSize: 10 }}>Gerenciar arquivos dos equipamentos</a>
+            </div>
+          )}
           <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
             {card("Funcionários mobilizados", dados.resumo.funcionarios, "#4a9410")}
             {card("Vencidos", dados.resumo.vencidos, "#991b1b")}
@@ -152,7 +203,7 @@ export default function MonitorDocsPage() {
                         <td style={{ padding: 8 }}>{fdata(r.expiresAt)}</td>
                         <td style={{ padding: 8 }}>{badge(r.status)}</td>
                         <td style={{ padding: 8 }}>
-                          <button onClick={() => abrirCelula({ requirementId: r.id, recordId: r.recordId, issuedAt: r.issuedAt, expiresAt: r.expiresAt, notes: r.notes }, r, null)}
+                          <button onClick={() => abrirCelula({ requirementId: r.id, recordId: r.recordId, issuedAt: r.issuedAt, expiresAt: r.expiresAt, notes: r.notes, filePath: r.filePath, reviewStatus: r.reviewStatus, rejectionReason: r.rejectionReason }, r, null)}
                             style={{ background: "#f3f4f6", border: "none", padding: "5px 10px", borderRadius: 6, fontSize: 11, cursor: "pointer", fontWeight: 700 }}>Registrar</button>
                         </td>
                       </tr>
@@ -191,8 +242,8 @@ export default function MonitorDocsPage() {
                           const r = dados.requisitosFuncionario[i];
                           return (
                             <td key={r.id} style={{ padding: 4, textAlign: "center" }}>
-                              <button onClick={() => abrirCelula(c, r, linha.funcionario)} title={c.origem ? `Origem: ${c.origem}` : "Clique para registrar"}
-                                style={{ background: UI[c.status].fundo, color: UI[c.status].cor, border: "none", padding: "6px 8px", borderRadius: 6, fontSize: 10.5, fontWeight: 700, cursor: "pointer", width: "100%" }}>
+                              <button disabled={c.status === "nao_aplicavel"} onClick={() => abrirCelula(c, r, linha.funcionario)} title={c.origem ? `Origem: ${c.origem}` : "Clique para registrar"}
+                                style={{ background: UI[c.status].fundo, color: UI[c.status].cor, border: "none", padding: "6px 8px", borderRadius: 6, fontSize: 10.5, fontWeight: 700, cursor: c.status === "nao_aplicavel" ? "not-allowed" : "pointer", width: "100%" }}>
                                 {UI[c.status].icone} {c.expiresAt ? fdata(c.expiresAt) : UI[c.status].label}
                               </button>
                             </td>
@@ -217,6 +268,7 @@ export default function MonitorDocsPage() {
           <div style={{ background: "#fff", borderRadius: 14, padding: 24, width: 420, maxWidth: "92vw" }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 800, color: "#334532" }}>{celula.requisitoNome}</h3>
             <p style={{ margin: "0 0 14px", fontSize: 12, color: "#6b7280" }}>{celula.funcionarioNome}{celula.origem && celula.origem !== "manual" ? ` · hoje preenchido por: ${celula.origem}` : ""}</p>
+            {celula.recordId && <div style={{ background: celula.reviewStatus === "aprovado" ? "#dcfce7" : celula.reviewStatus === "rejeitado" ? "#fee2e2" : "#fef3c7", borderRadius: 7, padding: "6px 9px", marginBottom: 10, fontSize: 11 }}>Revisão: <strong>{celula.reviewStatus || "pendente"}</strong>{celula.rejectionReason ? ` — ${celula.rejectionReason}` : ""}</div>}
             <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Data de emissão</label>
             <input type="date" value={form.issuedAt} onChange={(e) => setForm({ ...form, issuedAt: e.target.value })}
               style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, marginBottom: 10 }} />
@@ -225,8 +277,16 @@ export default function MonitorDocsPage() {
               style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, marginBottom: 10 }} />
             <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Observações</label>
             <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ex.: nº do certificado, onde está arquivado…"
-              style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, marginBottom: 16 }} />
+              style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, marginBottom: 10 }} />
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Arquivo comprobatório</label>
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx" onChange={(e) => enviarArquivo(e.target.files?.[0] || null)}
+              style={{ width: "100%", padding: "8px 0", fontSize: 12, marginBottom: 6 }} />
+            <div style={{ minHeight: 20, marginBottom: 10, fontSize: 11, color: form.filePath ? "#166534" : "#92400e" }}>
+              {enviandoArquivo ? "Enviando arquivo..." : form.filePath ? <><a href={form.filePath} target="_blank" rel="noreferrer">Abrir documento</a> · {form.fileName}</> : "Nenhum arquivo anexado; o registro não poderá ser aprovado."}
+            </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              {celula.recordId && <button onClick={() => revisarRegistro("rejeitado")} style={{ background: "#dc2626", color: "#fff", border: "none", padding: "9px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer", fontWeight: 700 }}>Rejeitar</button>}
+              {celula.recordId && <button onClick={() => revisarRegistro("aprovado")} style={{ background: "#15803d", color: "#fff", border: "none", padding: "9px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer", fontWeight: 700 }}>Aprovar</button>}
               <button onClick={() => setCelula(null)} style={{ background: "#f3f4f6", border: "none", padding: "9px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Cancelar</button>
               <button onClick={salvarRegistro} style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 700 }}>Salvar</button>
             </div>

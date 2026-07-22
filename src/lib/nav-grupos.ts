@@ -19,7 +19,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
     abas: [
       { href: "/dashboard/pipeline", label: "🏆 Pipeline" },
       { href: "/dashboard/radar-licitacoes", label: "🏛️ Radar PNCP" },
-      { href: "/dashboard/proposta-edital", label: "📋 Proposta por Edital IA" },
+      { href: "/dashboard/proposta-edital", label: "🧭 Dossiê Operacional" },
     ],
   },
   {
@@ -27,6 +27,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
     abas: [
       { href: "/dashboard/precificacao-central", label: "🧮 Calculadora & BDI" },
       { href: "/dashboard/hora-homem", label: "👷 Custo Hora-Homem" },
+      { href: "/dashboard/perfis-tributarios", label: "🧾 Perfis Tributários" },
     ],
   },
   {
@@ -36,6 +37,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
       { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato" },
       { href: "/dashboard/cronograma", label: "📅 Cronograma" },
       { href: "/dashboard/medicao", label: "📏 Medição" },
+      { href: "/dashboard/alteracoes-escopo", label: "🔁 Alterações de Escopo" },
     ],
   },
   {
@@ -46,6 +48,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
       { href: "/dashboard/checklist-docs", label: "📑 Checklist & Geração" },
       { href: "/dashboard/monitor-docs", label: "🚦 Monitor" },
       { href: "/dashboard/sso", label: "🛟 Dossiê SSO" },
+      { href: "/dashboard/perfis-documentais", label: "🗂️ Perfis por Cliente" },
     ],
   },
   {

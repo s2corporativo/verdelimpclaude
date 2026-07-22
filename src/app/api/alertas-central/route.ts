@@ -3,6 +3,7 @@
 // documentos do GED, docs de funcionários e férias (período concessivo).
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +17,14 @@ interface Alerta {
 }
 
 export async function GET() {
+  const { erro } = await exigirPapel();
+  if (erro) return erro;
   try {
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     const em30 = new Date(hoje); em30.setDate(em30.getDate() + 30);
     const em90 = new Date(hoje); em90.setDate(em90.getDate() + 90);
 
-    const [contratos, funcionarios, treinamentos, epis, ambientais, gedDocs, empDocs, ferias] = await Promise.all([
+    const [contratos, funcionarios, treinamentos, epis, ambientais, gedDocs, empDocs, ferias, dossies, mobilizacoesBloqueadas, scopeChanges, recordsPending, equipmentDocs] = await Promise.all([
       prisma.contract.findMany({ where: { status: "Ativo", endDate: { lte: em90 } }, include: { client: { select: { name: true } } } }),
       prisma.employee.findMany({ where: { active: true }, select: { id: true, name: true, admissionDate: true, asoExams: { orderBy: { examDate: "desc" }, take: 1 } } }),
       prisma.training.findMany({ where: { expiresAt: { lte: em30 } }, include: { employee: { select: { name: true, active: true } } } }),
@@ -33,6 +36,11 @@ export async function GET() {
       prisma.document.findMany({ where: { status: "ativo", validade: { lte: em30, not: null } }, select: { nome: true, categoria: true, validade: true } }),
       prisma.employeeDoc.findMany({ where: { expiresAt: { lte: em30 } }, include: { employee: { select: { name: true, active: true } } } }),
       prisma.vacation.findMany({ include: { employee: { select: { id: true, name: true, active: true } } } }),
+      prisma.serviceDossier.findMany({ where: { OR: [{ validationStatus: "pendente" }, { status: "em_validacao" }] }, select: { code: true, title: true, updatedAt: true } }),
+      prisma.mobilization.findMany({ where: { complianceStatus: "bloqueada" }, include: { employee: { select: { name: true } }, contract: { select: { number: true } } } }),
+      prisma.scopeChange.findMany({ where: { status: "pendente" }, include: { contract: { select: { number: true } } } }),
+      prisma.contractDocRecord.findMany({ where: { status: "pendente" }, include: { requirement: { include: { contract: { select: { number: true } } } }, employee: { select: { name: true } } } }),
+      prisma.equipmentDoc.findMany({ where: { OR: [{ status: "pendente" }, { expiresAt: { lte: em30, not: null } }] }, include: { equipment: { select: { descricao: true } } } }),
     ]);
 
     const alertas: Alerta[] = [];
@@ -59,6 +67,28 @@ export async function GET() {
         alertas.push({ categoria: "ASO", nivel: nivelPorData(aso.expiresAt), titulo: f.name, detalhe: `ASO ${new Date(aso.expiresAt) < hoje ? "VENCIDO" : "vence"} em ${fdata(aso.expiresAt)}`, vence: aso.expiresAt, link: "/dashboard/aso" });
       }
     }
+
+    for (const dossier of dossies) alertas.push({
+      categoria: "Dossiê operacional", nivel: "atencao", titulo: `${dossier.code} — ${dossier.title}`,
+      detalhe: "aguarda validação humana ou correção dos dados", vence: dossier.updatedAt, link: "/dashboard/proposta-edital",
+    });
+    for (const mobilization of mobilizacoesBloqueadas) alertas.push({
+      categoria: "Mobilização", nivel: "critico", titulo: `${mobilization.employee.name} — ${mobilization.contract.number}`,
+      detalhe: mobilization.blockedReason || "bloqueada por documentação ou conflito de recurso", vence: mobilization.startDate, link: "/dashboard/mobilizacoes",
+    });
+    for (const change of scopeChanges) alertas.push({
+      categoria: "Alteração de escopo", nivel: "atencao", titulo: `${change.contract.number} · AE-${change.number} — ${change.title}`,
+      detalhe: `impacto informado: R$ ${Number(change.impactValue).toFixed(2)} e ${change.impactDays} dia(s)`, vence: change.createdAt, link: "/dashboard/alteracoes-escopo",
+    });
+    for (const record of recordsPending) alertas.push({
+      categoria: "Revisão documental", nivel: "atencao", titulo: `${record.requirement.contract.number} — ${record.requirement.name}`,
+      detalhe: record.employee ? `documento de ${record.employee.name} aguarda revisão` : "documento da empresa aguarda revisão", vence: record.createdAt, link: "/dashboard/monitor-docs",
+    });
+    for (const document of equipmentDocs) alertas.push({
+      categoria: "Documentos de equipamento", nivel: document.expiresAt && new Date(document.expiresAt) < hoje ? "critico" : "atencao",
+      titulo: `${document.equipment.descricao} — ${document.docType}`,
+      detalhe: document.status === "pendente" ? "aguarda revisão" : `vence em ${fdata(document.expiresAt)}`, vence: document.expiresAt || document.createdAt, link: "/dashboard/equipamentos",
+    });
 
     // Treinamentos e CNH
     for (const t of treinamentos) if (t.employee?.active) alertas.push({
@@ -136,7 +166,7 @@ export async function GET() {
         porCategoria,
       },
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message, alertas: [], resumo: { total: 0, criticos: 0, atencao: 0, porCategoria: {} } }, { status: 500 });
+  } catch (error) {
+    return erroInterno(error, "api/alertas-central");
   }
 }
