@@ -44,11 +44,14 @@ const SITUACAO_MAP: Record<string, { status: "regular" | "irregular" | "pendente
   "NULA": { status: "irregular", desc: "CNPJ nulo — situação crítica" },
 };
 
+type ContextoCnpj = { params: Promise<{ cnpj: string }> };
+
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { cnpj: string } }
+  { params }: ContextoCnpj
 ) {
-  const clean = params.cnpj.replace(/\D/g, "");
+  const { cnpj } = await params;
+  const clean = cnpj.replace(/\D/g, "");
 
   if (clean.length !== 14) {
     return NextResponse.json({ error: "CNPJ deve ter 14 dígitos" }, { status: 400 });
@@ -59,7 +62,6 @@ export async function GET(
   }
 
   try {
-    const start = Date.now();
     const { data, cached } = await fetchWithCache(
       `https://brasilapi.com.br/api/cnpj/v1/${clean}`,
       `regularidade:cnpj:${clean}`,
@@ -123,7 +125,7 @@ export async function GET(
       fontes: [
         {
           nome: "Receita Federal — Situação Cadastral (via BrasilAPI)",
-          url: `https://www.receita.fazenda.gov.br/pessoajuridica/cnpj/cnpjreva/cnpjreva_solicitacao.asp`,
+          url: "https://www.receita.fazenda.gov.br/pessoajuridica/cnpj/cnpjreva/cnpjreva_solicitacao.asp",
           obs: "Dados consultados com até 6h de cache. Verificar diretamente para fins oficiais."
         },
         {
@@ -196,11 +198,12 @@ function DEMO_RESULT(cnpj: string) {
 // POST /api/regularidade/cnpj/[cnpj] — corpo: { fontes, razaoSocial, salvarGed: true }
 // ══════════════════════════════════════════════════════════════════
 
-export async function POST(req: NextRequest, { params }: { params: { cnpj: string } }) {
+export async function POST(req: NextRequest, { params }: ContextoCnpj) {
   // Salva as certidões consultadas no GED automaticamente
   try {
+    const { cnpj } = await params;
     const body = await req.json();
-    const { fontes, razaoSocial, regularidade } = body;
+    const { fontes, razaoSocial } = body;
 
     if (!fontes?.length) {
       return NextResponse.json({ error: "Fontes obrigatórias" }, { status: 400 });
@@ -218,7 +221,7 @@ export async function POST(req: NextRequest, { params }: { params: { cnpj: strin
 
     const { prisma } = await import("@/lib/prisma");
     const hoje = new Date();
-    const cnpjFormatado = params.cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+    const cnpjFormatado = cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
 
     // Buscar se é o próprio CNPJ da empresa ou de cliente
     let clienteId: string | null = null;
@@ -270,7 +273,7 @@ export async function POST(req: NextRequest, { params }: { params: { cnpj: strin
         await prisma.document.create({
           data: {
             nome: nomeDoc,
-            descricao: fonte.obs || `Certidão consultada automaticamente via módulo de Regularidade Fiscal`,
+            descricao: fonte.obs || "Certidão consultada automaticamente via módulo de Regularidade Fiscal",
             categoria: "fiscal",
             subcategoria: meta.subcategoria,
             tags: `certidao,regularidade,${chave.toLowerCase().replace(/\//g,"-").replace(/ /g,"-")},${hoje.getFullYear()}`,

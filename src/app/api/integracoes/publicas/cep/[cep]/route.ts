@@ -2,8 +2,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchWithCache } from "@/lib/api-cache";
 
-export async function GET(_req: NextRequest, { params }: { params: { cep: string } }) {
-  const clean = params.cep.replace(/\D/g, "");
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ cep: string }> }
+) {
+  const { cep } = await params;
+  const clean = cep.replace(/\D/g, "");
   if (clean.length !== 8) return NextResponse.json({ error: "CEP inválido" }, { status: 400 });
   try {
     const { data, cached } = await fetchWithCache(

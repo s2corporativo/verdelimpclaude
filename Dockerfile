@@ -22,14 +22,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build standalone: só o servidor compilado + node_modules mínimos do trace —
-# a imagem antiga carregava node_modules completo COM devDependencies (vitest,
-# eslint, prisma CLI) e o src/, triplicando o tamanho e a superfície de ataque.
+# Build standalone: só o servidor compilado + node_modules mínimos do trace.
+# Prisma CLI, scripts de seed, código-fonte e devDependencies ficam apenas no
+# estágio builder, utilizado pelos serviços `migrate` e `seed` do Compose.
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder --chown=node:node /app/public ./public
-# prisma/ para `migrate deploy` no deploy.sh (CLI vem do npx no host do deploy)
-COPY --from=builder --chown=node:node /app/prisma ./prisma
 
 USER node
 EXPOSE 3000

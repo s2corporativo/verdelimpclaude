@@ -5,10 +5,23 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verificar:
-    name: Typecheck, testes, lint e schema
+    name: Typecheck, testes, lint, auditoria e build
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-secret-somente-testes-nao-usar-em-producao
+      SEED_ADMIN_PASSWORD: ci-somente-teste
     steps:
       - uses: actions/checkout@v4
 
@@ -20,10 +33,11 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Gerar cliente Prisma
+        run: npx prisma generate
+
       - name: Prisma validate (schema íntegro)
         run: npx prisma validate
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
       - name: TypeScript (tsc --noEmit)
         run: npx tsc --noEmit
@@ -34,12 +48,25 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Auditoria de dependências (produção, alta+)
-        run: npm audit --omit=dev --audit-level=high || echo "::warning::npm audit encontrou vulnerabilidades — revisar"
+      - name: Sintaxe dos scripts operacionais
+        run: bash -n deploy/contabo/*.sh
+
+      - name: Validar Docker Compose
+        run: |
+          cp .env.vps.example .env.production
+          ln -sf .env.production .env
+          docker compose config --quiet
+
+      - name: Auditoria de dependências de produção (alta+)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build de produção
+        run: npm run build
 
   migrations:
-    name: Migrations aplicam num Postgres real
+    name: Migrations aplicam num PostgreSQL real
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16-alpine
@@ -55,17 +82,28 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/verdelimp_ci
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-secret-somente-testes-nao-usar-em-producao
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Gerar cliente Prisma
+        run: npx prisma generate
+
       - name: migrate deploy (cadeia completa)
         run: npx prisma migrate deploy
-      - name: Sem drift entre migrations e schema
-        run: npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --exit-code
+
+      - name: Validar schema após migrations
+        run: npx prisma validate
+
       - name: Seed executa
         run: npm run prisma:seed
         env:

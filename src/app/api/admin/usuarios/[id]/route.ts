@@ -5,12 +5,16 @@ import { exigirAdmin, registrarAuditoria, gerarSenhaProvisoria } from "@/lib/adm
 import { erroInterno } from "@/lib/authz";
 
 // PATCH — editar dados, papéis, ativar/desativar, desbloquear, resetar senha
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { user, erro } = await exigirAdmin();
   if (erro) return erro;
   try {
+    const { id } = await params;
     const body = await req.json();
-    const alvo = await prisma.user.findUnique({ where: { id: params.id }, include: { roles: { include: { role: true } } } });
+    const alvo = await prisma.user.findUnique({ where: { id }, include: { roles: { include: { role: true } } } });
     if (!alvo) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
 
     // Reset de senha: gera provisória e força troca no próximo login

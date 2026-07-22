@@ -1,57 +1,139 @@
 #!/usr/bin/env bash
-# ──────────────────────────────────────────────────────────────────────
-# Backup completo do Verdelimp ERP: banco (pg_dump) + uploads (tar) +
-# cópia off-site opcional via rclone.
+# Backup completo do Verdelimp ERP: PostgreSQL + volume de uploads + checksums
+# + cópia off-site opcional/obrigatória.
 #
-# Por que este script existe: o cron antigo fazia só o pg_dump e deixava
-# tudo na própria VPS — perder a VPS significava perder banco E anexos
-# (GED, XMLs de NF-e, fotos de OS). Uploads NUNCA ficavam em backup.
+# Uso:
+#   ./deploy/contabo/backup.sh [diretorio_do_app]
 #
-# Uso:   ./backup.sh [dir_do_app]           (padrão: /opt/verdelimp)
-# Cron:  20 2 * * * /opt/verdelimp/deploy/contabo/backup.sh >> /var/log/verdelimp-backup.log 2>&1
-#
-# Off-site: configure um remote rclone (ex.: `rclone config` → Google Drive,
-# S3, Backblaze) e defina RCLONE_REMOTE abaixo ou via ambiente.
-#   RCLONE_REMOTE="gdrive:backups/verdelimp" ./backup.sh
-#
-# Restore (testar pelo menos 1× por trimestre!):
-#   gunzip -c /opt/backups/verdelimp_YYYY-MM-DD.sql.gz | \
-#     docker compose exec -T db psql -U verdelimp verdelimp_erp
-#   tar -xzf /opt/backups/uploads_YYYY-MM-DD.tar.gz -C /  # restaura o volume
-# ──────────────────────────────────────────────────────────────────────
-set -euo pipefail
+# Variáveis operacionais podem ficar em /opt/verdelimp-erp/.env.ops:
+#   BACKUP_DIR=/opt/backups/verdelimp
+#   RETENCAO_DIAS=14
+#   RCLONE_REMOTE=gdrive:backups/verdelimp
+#   REQUIRE_OFFSITE=true
+#   BACKUP_HEARTBEAT_URL=
+#   ALERT_WEBHOOK_URL=
+set -Eeuo pipefail
 
-APP_DIR="${1:-/opt/verdelimp}"
-BACKUP_DIR="${BACKUP_DIR:-/opt/backups}"
-RETENCAO_DIAS="${RETENCAO_DIAS:-14}"
-RCLONE_REMOTE="${RCLONE_REMOTE:-}"   # vazio = sem off-site (NÃO recomendado)
-DATA=$(date +%F)
+APP_DIR="${1:-/opt/verdelimp-erp}"
+OPS_ENV="${OPS_ENV:-$APP_DIR/.env.ops}"
 
-mkdir -p "$BACKUP_DIR"
-cd "$APP_DIR"
-
-echo "[$(date '+%F %T')] Backup do banco..."
-docker compose exec -T db pg_dump -U verdelimp verdelimp_erp | gzip > "$BACKUP_DIR/verdelimp_${DATA}.sql.gz"
-
-echo "[$(date '+%F %T')] Backup dos uploads (GED, XMLs, fotos de OS)..."
-# O volume nomeado é acessado por um container efêmero — não depende do app estar de pé
-docker run --rm -v verdelimp_uploads:/uploads:ro -v "$BACKUP_DIR":/backup alpine \
-  tar -czf "/backup/uploads_${DATA}.tar.gz" -C / uploads
-
-echo "[$(date '+%F %T')] Retenção local: ${RETENCAO_DIAS} dias"
-find "$BACKUP_DIR" -name 'verdelimp_*.sql.gz' -mtime +"$RETENCAO_DIAS" -delete
-find "$BACKUP_DIR" -name 'uploads_*.tar.gz'  -mtime +"$RETENCAO_DIAS" -delete
-
-if [ -n "$RCLONE_REMOTE" ] && command -v rclone >/dev/null 2>&1; then
-  echo "[$(date '+%F %T')] Cópia off-site → $RCLONE_REMOTE"
-  rclone copy "$BACKUP_DIR/verdelimp_${DATA}.sql.gz" "$RCLONE_REMOTE/" --transfers 2
-  rclone copy "$BACKUP_DIR/uploads_${DATA}.tar.gz"  "$RCLONE_REMOTE/" --transfers 2
-  # Retenção remota (mantém o dobro da local)
-  rclone delete "$RCLONE_REMOTE/" --min-age "$((RETENCAO_DIAS * 2))d" || true
-else
-  echo "[$(date '+%F %T')] ⚠️  SEM cópia off-site (RCLONE_REMOTE não configurado)."
-  echo "    Se a VPS falhar, banco E anexos se perdem juntos. Configure:"
-  echo "    apt install rclone && rclone config  → depois exporte RCLONE_REMOTE no cron."
+if [ -f "$OPS_ENV" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$OPS_ENV"
+  set +a
 fi
 
-echo "[$(date '+%F %T')] OK — $(du -sh "$BACKUP_DIR" | cut -f1) em $BACKUP_DIR"
+BACKUP_DIR="${BACKUP_DIR:-/opt/backups/verdelimp}"
+RETENCAO_DIAS="${RETENCAO_DIAS:-14}"
+RCLONE_REMOTE="${RCLONE_REMOTE:-}"
+REQUIRE_OFFSITE="${REQUIRE_OFFSITE:-false}"
+BACKUP_HEARTBEAT_URL="${BACKUP_HEARTBEAT_URL:-}"
+ALERT_WEBHOOK_URL="${ALERT_WEBHOOK_URL:-}"
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-verdelimp}"
+TIMESTAMP="$(date +%F_%H-%M-%S)"
+HOSTNAME_CURTO="$(hostname -s 2>/dev/null || hostname)"
+DB_FILE="$BACKUP_DIR/verdelimp_${TIMESTAMP}.sql.gz"
+UPLOAD_FILE="$BACKUP_DIR/uploads_${TIMESTAMP}.tar.gz"
+MANIFEST_FILE="$BACKUP_DIR/manifest_${TIMESTAMP}.sha256"
+
+send_alert() {
+  local message="$1"
+  [ -z "$ALERT_WEBHOOK_URL" ] && return 0
+  curl -fsS --max-time 15 \
+    -H 'Content-Type: application/json' \
+    -d "{\"text\":\"${message//\"/\\\"}\"}" \
+    "$ALERT_WEBHOOK_URL" >/dev/null || true
+}
+
+on_error() {
+  local line="$1"
+  local code="$2"
+  send_alert "Verdelimp: falha no backup em ${HOSTNAME_CURTO}, linha ${line}, código ${code}."
+  echo "[$(date '+%F %T')] ERRO — backup interrompido na linha $line (código $code)." >&2
+  exit "$code"
+}
+trap 'on_error "$LINENO" "$?"' ERR
+
+if [ ! -d "$APP_DIR" ] || [ ! -f "$APP_DIR/docker-compose.yml" ]; then
+  echo "Erro: diretório do ERP inválido: $APP_DIR" >&2
+  exit 1
+fi
+
+mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
+cd "$APP_DIR"
+
+if ! docker compose ps db --status running --quiet | grep -q .; then
+  echo "Erro: banco do Verdelimp não está em execução." >&2
+  exit 1
+fi
+
+echo "[$(date '+%F %T')] Backup do PostgreSQL..."
+docker compose exec -T db sh -lc 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+  | gzip -9 > "$DB_FILE"
+
+gzip -t "$DB_FILE"
+[ -s "$DB_FILE" ] || { echo "Erro: dump do banco ficou vazio." >&2; exit 1; }
+
+echo "[$(date '+%F %T')] Localizando volume real de uploads..."
+UPLOAD_VOLUME="$(
+  docker volume ls -q \
+    --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}" \
+    --filter "label=com.docker.compose.volume=verdelimp_uploads" \
+    | head -n 1
+)"
+
+if [ -z "$UPLOAD_VOLUME" ]; then
+  echo "Erro: volume de uploads do Compose não foi localizado." >&2
+  exit 1
+fi
+
+echo "[$(date '+%F %T')] Backup dos uploads: $UPLOAD_VOLUME"
+docker run --rm \
+  -v "$UPLOAD_VOLUME:/uploads:ro" \
+  -v "$BACKUP_DIR:/backup" \
+  alpine:3.20 \
+  tar -czf "/backup/$(basename "$UPLOAD_FILE")" -C / uploads
+
+tar -tzf "$UPLOAD_FILE" >/dev/null
+[ -s "$UPLOAD_FILE" ] || { echo "Erro: arquivo de uploads ficou vazio." >&2; exit 1; }
+
+sha256sum "$DB_FILE" "$UPLOAD_FILE" > "$MANIFEST_FILE"
+sha256sum -c "$MANIFEST_FILE"
+
+if [ -n "$RCLONE_REMOTE" ]; then
+  command -v rclone >/dev/null 2>&1 || {
+    echo "Erro: RCLONE_REMOTE foi definido, mas rclone não está instalado." >&2
+    exit 1
+  }
+
+  echo "[$(date '+%F %T')] Cópia off-site para $RCLONE_REMOTE"
+  rclone copy "$DB_FILE" "$RCLONE_REMOTE/" --checksum --transfers 2
+  rclone copy "$UPLOAD_FILE" "$RCLONE_REMOTE/" --checksum --transfers 2
+  rclone copy "$MANIFEST_FILE" "$RCLONE_REMOTE/" --checksum --transfers 2
+
+  rclone lsf "$RCLONE_REMOTE/$(basename "$DB_FILE")" | grep -q .
+  rclone lsf "$RCLONE_REMOTE/$(basename "$UPLOAD_FILE")" | grep -q .
+  rclone lsf "$RCLONE_REMOTE/$(basename "$MANIFEST_FILE")" | grep -q .
+
+  rclone delete "$RCLONE_REMOTE/" --min-age "$((RETENCAO_DIAS * 2))d" || true
+elif [ "$REQUIRE_OFFSITE" = "true" ]; then
+  echo "Erro: cópia off-site é obrigatória, mas RCLONE_REMOTE não foi definido." >&2
+  exit 1
+else
+  echo "[$(date '+%F %T')] AVISO: backup apenas local; configure RCLONE_REMOTE."
+fi
+
+echo "[$(date '+%F %T')] Aplicando retenção local de ${RETENCAO_DIAS} dias..."
+find "$BACKUP_DIR" -type f \
+  \( -name 'verdelimp_*.sql.gz' -o -name 'uploads_*.tar.gz' -o -name 'manifest_*.sha256' \) \
+  -mtime +"$RETENCAO_DIAS" -delete
+
+if [ -n "$BACKUP_HEARTBEAT_URL" ]; then
+  curl -fsS --max-time 15 "$BACKUP_HEARTBEAT_URL" >/dev/null
+fi
+
+send_alert "Verdelimp: backup concluído em ${HOSTNAME_CURTO} (${TIMESTAMP})."
+echo "[$(date '+%F %T')] OK — banco, uploads e checksum gerados."
+ls -lh "$DB_FILE" "$UPLOAD_FILE" "$MANIFEST_FILE"

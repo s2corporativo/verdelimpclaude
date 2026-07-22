@@ -2,6 +2,8 @@
 
 Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gestão operacional, comercial, fiscal, financeira, trabalhista e administrativa.
 
+> Este repositório contém a estrutura de um sistema interno e deve permanecer **privado**. Dados reais, documentos, credenciais, certificados e arquivos operacionais nunca devem ser versionados.
+
 ## Módulos principais
 
 - Dashboard executivo
@@ -39,7 +41,7 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 - Mobilizações
 - Treinamentos e NRs
 - Integrações
-- WhatsApp alertas
+- Central de Alertas
 - Administração (usuários, papéis, permissões e auditoria)
 - Configurações
 
@@ -58,6 +60,22 @@ Sistema ERP interno da **VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA** para gest�
 ## Fluxo operacional v2.3
 
 O fluxo completo e as regras de cálculo estão em [`DOSSIE_OPERACIONAL.md`](DOSSIE_OPERACIONAL.md). A IA não define o preço: ela extrai fatos e evidências; o motor determinístico calcula trabalhadores, HH, duração, custos, retenções, capital de giro e cenários.
+
+A entrada em produção deve seguir obrigatoriamente [`HOMOLOGACAO_PRODUCAO.md`](HOMOLOGACAO_PRODUCAO.md).
+
+## Operação segura
+
+Arquivos principais:
+
+- `deploy/contabo/install-v23.sh` — bootstrap da primeira instalação sem gerar ou imprimir segredos;
+- `deploy/contabo/deploy.sh` — backup prévio, build, migrations, healthcheck e rollback da imagem;
+- `deploy/contabo/backup.sh` — banco, uploads, checksum e cópia off-site;
+- `deploy/contabo/restore-test.sh` — ensaio de restauração em banco temporário;
+- `deploy/contabo/monitor.sh` — saúde da aplicação, banco, disco e backups;
+- `deploy/contabo/configure-operations.sh` — instalação dos crons e rotação de logs;
+- `deploy/contabo/ops-config.example` — modelo sem credenciais para `.env.ops`.
+
+A existência dos scripts no repositório não comprova que estejam instalados ou executando na VPS. A homologação exige logs, checksums, restore testado e identificação do commit implantado.
 
 ## Deploy recomendado
 
@@ -84,6 +102,7 @@ erp.verdelimp.com.br
 - `.env.vps.example`
 - `DEPLOY_CONTABO.md`
 - `deploy/contabo/nginx-verdelimp.conf`
+- `deploy/contabo/install-v23.sh`
 - `deploy/contabo/deploy.sh`
 
 ## Comandos principais locais
@@ -99,22 +118,36 @@ npm run start
 
 ## Comandos principais na VPS
 
+Primeira instalação automatizada, após preparar `.env.production` e `.env.ops`:
+
+```bash
+cd /opt/verdelimp-erp
+chmod +x deploy/contabo/*.sh
+deploy/contabo/install-v23.sh
+```
+
+Fluxo manual equivalente:
+
 ```bash
 cd /opt/verdelimp-erp
 cp .env.vps.example .env.production
 nano .env.production
-docker compose build app
+cp deploy/contabo/ops-config.example .env.ops
+nano .env.ops
+chmod 600 .env.production .env.ops
+ln -sf .env.production .env
+docker compose build --pull app migrate seed
 docker compose up -d db
-docker compose run --rm app npx prisma migrate deploy
+docker compose run --rm migrate
+docker compose run --rm seed   # apenas na primeira instalação
 docker compose up -d app
-docker compose exec app npm run prisma:seed   # apenas na primeira instalação
 ```
 
 Para atualização posterior:
 
 ```bash
 cd /opt/verdelimp-erp
-chmod +x deploy/contabo/deploy.sh
+chmod +x deploy/contabo/*.sh
 ./deploy/contabo/deploy.sh
 ```
 
@@ -133,12 +166,14 @@ SEED_ADMIN_PASSWORD=
 FISCAL_ENVIRONMENT=homologacao
 ```
 
+As variáveis de backup e monitoramento ficam em `.env.ops`, criado exclusivamente na VPS a partir de `deploy/contabo/ops-config.example`.
+
 ## Nginx e SSL
 
 O ERP roda internamente em:
 
 ```text
-http://127.0.0.1:3000
+http://127.0.0.1:3010
 ```
 
 O Nginx deve publicar o domínio externo com SSL:
@@ -155,6 +190,7 @@ Não enviar ao GitHub:
 
 - `.env` real
 - `.env.production`
+- `.env.ops`
 - certificado digital A1
 - senha de certificado
 - DATABASE_URL real

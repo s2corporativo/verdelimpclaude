@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchWithCache } from "@/lib/api-cache";
 
-export async function GET(_req: NextRequest, { params }: { params: { cnpj: string } }) {
-  const clean = params.cnpj.replace(/\D/g, "");
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ cnpj: string }> }
+) {
+  const { cnpj } = await params;
+  const clean = cnpj.replace(/\D/g, "");
   if (clean.length !== 14) return NextResponse.json({ error: "CNPJ inválido" }, { status: 400 });
   try {
     const { data, cached } = await fetchWithCache(

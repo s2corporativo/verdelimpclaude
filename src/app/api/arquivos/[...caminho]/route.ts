@@ -10,12 +10,16 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads")
 // (evita XML/HTML interpretado pelo navegador como conteúdo ativo).
 const INLINE_SEGURO = new Set([".pdf", ".png", ".jpg", ".jpeg", ".webp", ".gif"]);
 
-export async function GET(_req: NextRequest, { params }: { params: { caminho: string[] } }) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ caminho: string[] }> }
+) {
   const { erro } = await exigirPapel(); // defesa em profundidade além do middleware
   if (erro) return erro;
 
   try {
-    const relativo = (params.caminho || []).join("/");
+    const { caminho } = await params;
+    const relativo = (caminho || []).join("/");
     const completo = path.resolve(UPLOAD_DIR, relativo);
     // Proteção contra path traversal — o caminho resolvido deve ficar dentro de UPLOAD_DIR
     if (!completo.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) {
