@@ -1,0 +1,35 @@
+name: Refresh lockfile
+
+on:
+  push:
+    branches:
+      - agent/verdelimp-hardening-homologacao-20260722
+
+permissions:
+  contents: read
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Regenerar package-lock
+        run: npm install --package-lock-only --legacy-peer-deps
+
+      - name: Auditoria de produção
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Publicar lockfile como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock-security-upgrade
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 1
