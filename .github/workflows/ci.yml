@@ -39,8 +39,27 @@ jobs:
       - name: Prisma validate (schema íntegro)
         run: npx prisma validate
 
-      - name: TypeScript (tsc --noEmit)
-        run: npx tsc --noEmit
+      - name: TypeScript (capturar relatório)
+        run: |
+          set +e
+          npx tsc --noEmit > typescript-report.txt 2>&1
+          echo $? > typescript-exit-code.txt
+          cat typescript-report.txt
+          exit 0
+
+      - name: Preservar relatório TypeScript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-report
+          path: |
+            typescript-report.txt
+            typescript-exit-code.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validar resultado TypeScript
+        run: test "$(cat typescript-exit-code.txt)" = "0"
 
       - name: Testes (vitest)
         run: npm test
