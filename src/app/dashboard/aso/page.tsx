@@ -1,132 +1,18 @@
 "use client";
-// ASO — controle de exames ocupacionais por funcionário, com vencimento.
 import { useEffect, useState, useCallback } from "react";
-
-const TIPOS: Record<string, string> = { admissional: "Admissional", periodico: "Periódico", retorno_trabalho: "Retorno ao trabalho", mudanca_risco: "Mudança de risco", demissional: "Demissional" };
-const UI: Record<string, [string, string, string]> = { valido: ["Válido", "#dcfce7", "#15803d"], a_vencer: ["A vencer", "#fef3c7", "#92400e"], vencido: ["Vencido", "#fee2e2", "#991b1b"] };
-const fdata = (d?: string | null) => (d ? new Date(d).toLocaleDateString("pt-BR") : "—");
-
-export default function AsoPage() {
-  const [dados, setDados] = useState<any>(null);
-  const [form, setForm] = useState({ employeeId: "", examType: "periodico", examDate: "", expiresAt: "", result: "apto", doctor: "", crm: "", notes: "" });
-  const [msg, setMsg] = useState("");
-
-  const carregar = useCallback(async () => {
-    const r = await fetch("/api/aso");
-    setDados(await r.json());
-  }, []);
-  useEffect(() => { carregar(); }, [carregar]);
-
-  // Sugere validade de 1 ano ao preencher a data do exame
-  const setExamDate = (v: string) => {
-    const sugestao = v ? new Date(new Date(v).setFullYear(new Date(v).getFullYear() + 1)).toISOString().slice(0, 10) : "";
-    setForm((f) => ({ ...f, examDate: v, expiresAt: f.expiresAt || sugestao }));
-  };
-
-  const salvar = async () => {
-    setMsg("");
-    const r = await fetch("/api/aso", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    const j = await r.json();
-    if (j.error) { setMsg(`Erro: ${j.error}`); return; }
-    setForm({ employeeId: "", examType: "periodico", examDate: "", expiresAt: "", result: "apto", doctor: "", crm: "", notes: "" });
-    carregar();
-  };
-
-  const card = (t: string, v: any, cor: string) => (
-    <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", flex: 1, borderLeft: `4px solid ${cor}` }}>
-      <p style={{ margin: 0, fontSize: 11, color: "#6b7280", fontWeight: 600 }}>{t}</p>
-      <p style={{ margin: "4px 0 0", fontSize: 26, fontWeight: 900, color: cor }}>{v}</p>
-    </div>
-  );
-
-  const input = (k: string, label: string, type = "text", extra: any = {}) => (
-    <div>
-      <label style={{ fontSize: 11, fontWeight: 700, color: "#374151", display: "block" }}>{label}</label>
-      <input type={type} value={(form as any)[k]} onChange={(e) => (k === "examDate" ? setExamDate(e.target.value) : setForm({ ...form, [k]: e.target.value }))}
-        style={{ padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, width: extra.width || 150 }} />
-    </div>
-  );
-
-  if (!dados) return <p style={{ color: "#6b7280" }}>Carregando…</p>;
-
-  return (
-    <div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: "#334532", marginBottom: 4 }}>🩺 ASO — Saúde Ocupacional</h1>
-      <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 16 }}>Exame mais recente de cada funcionário. Alimenta automaticamente o Monitor de Documentação e o dossiê SSO.</p>
-
-      <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
-        {card("Funcionários ativos", dados.resumo.total, "#4a9410")}
-        {card("Sem ASO registrado", dados.resumo.semAso, "#374151")}
-        {card("Vencidos", dados.resumo.vencidos, "#991b1b")}
-        {card("A vencer (30 dias)", dados.resumo.aVencer, "#b45309")}
-      </div>
-
-      <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 18 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 800, color: "#334532", margin: "0 0 12px" }}>➕ Registrar exame</h2>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#374151", display: "block" }}>Funcionário</label>
-            <select value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-              style={{ padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 220, background: "#fff" }}>
-              <option value="">Selecione…</option>
-              {dados.linhas.map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#374151", display: "block" }}>Tipo</label>
-            <select value={form.examType} onChange={(e) => setForm({ ...form, examType: e.target.value })}
-              style={{ padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, background: "#fff" }}>
-              {Object.entries(TIPOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-          {input("examDate", "Data do exame", "date")}
-          {input("expiresAt", "Válido até", "date")}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#374151", display: "block" }}>Resultado</label>
-            <select value={form.result} onChange={(e) => setForm({ ...form, result: e.target.value })}
-              style={{ padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, background: "#fff" }}>
-              <option value="apto">Apto</option><option value="apto_restricoes">Apto c/ restrições</option><option value="inapto">Inapto</option>
-            </select>
-          </div>
-          {input("doctor", "Médico", "text", { width: 180 })}
-          {input("crm", "CRM", "text", { width: 100 })}
-          <button onClick={salvar} disabled={!form.employeeId || !form.examDate}
-            style={{ background: "#4a9410", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: !form.employeeId || !form.examDate ? 0.5 : 1 }}>
-            Salvar
-          </button>
-        </div>
-        {msg && <p style={{ color: "#991b1b", fontSize: 13, marginTop: 8 }}>{msg}</p>}
-      </div>
-
-      <div style={{ background: "#fff", borderRadius: 12, padding: 16 }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-            <thead><tr style={{ borderBottom: "2px solid #e5e7eb", textAlign: "left" }}>
-              <th style={{ padding: 8 }}>Funcionário</th><th style={{ padding: 8 }}>Função</th><th style={{ padding: 8 }}>Último exame</th><th style={{ padding: 8 }}>Tipo</th><th style={{ padding: 8 }}>Válido até</th><th style={{ padding: 8 }}>Resultado</th><th style={{ padding: 8 }}>Status</th>
-            </tr></thead>
-            <tbody>
-              {dados.linhas.map((l: any) => {
-                const st = l.atual?.status as string | undefined;
-                return (
-                  <tr key={l.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                    <td style={{ padding: 8, fontWeight: 700 }}>{l.name}</td>
-                    <td style={{ padding: 8, color: "#6b7280" }}>{l.role}</td>
-                    <td style={{ padding: 8 }}>{fdata(l.atual?.examDate)}</td>
-                    <td style={{ padding: 8 }}>{l.atual ? TIPOS[l.atual.examType] || l.atual.examType : "—"}</td>
-                    <td style={{ padding: 8 }}>{fdata(l.atual?.expiresAt)}</td>
-                    <td style={{ padding: 8 }}>{l.atual ? (l.atual.result === "apto" ? "Apto" : l.atual.result === "inapto" ? "Inapto" : "Apto c/ restrições") : "—"}</td>
-                    <td style={{ padding: 8 }}>
-                      {st && UI[st]
-                        ? <span style={{ background: UI[st][1], color: UI[st][2], padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{UI[st][0]}</span>
-                        : <span style={{ background: "#f3f4f6", color: "#374151", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>⚪ Sem ASO</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+import { estiloInput, estiloLabel } from "@/lib/estilos";
+const TIPOS:Record<string,string>={admissional:"Admissional",periodico:"Periódico",retorno_trabalho:"Retorno ao trabalho",mudanca_risco:"Mudança de risco/função",demissional:"Demissional"};
+const UI:Record<string,[string,string,string]>={valido:["Válido","#dcfce7","#15803d"],a_vencer:["A vencer","#fef3c7","#92400e"],vencido:["Vencido","#fee2e2","#991b1b"]};const fdata=(d?:string|null)=>d?new Date(d).toLocaleDateString("pt-BR"):"—";
+async function upload(file:File){const fd=new FormData();fd.append("file",file);const r=await fetch("/api/upload",{method:"POST",body:fd});const j=await r.json();if(!r.ok||!j.success)throw new Error(j.error||"Falha no upload");return j.url;}
+export default function AsoPage(){
+ const [dados,setDados]=useState<any>(null),[msg,setMsg]=useState(""),[aberto,setAberto]=useState("");const [form,setForm]=useState<any>({employeeId:"",examType:"periodico",examDate:"",expiresAt:"",result:"apto",doctor:"",crm:"",notes:"",filePath:""});
+ const carregar=useCallback(async()=>setDados(await fetch("/api/aso").then(r=>r.json())),[]);useEffect(()=>{carregar();},[carregar]);
+ const setExamDate=(v:string)=>{const sugestao=v?new Date(new Date(`${v}T12:00:00`).setFullYear(new Date(`${v}T12:00:00`).getFullYear()+1)).toISOString().slice(0,10):"";setForm((f:any)=>({...f,examDate:v,expiresAt:f.expiresAt||sugestao}));};
+ const file=async(e:any)=>{const x=e.target.files?.[0];if(!x)return;try{const path=await upload(x);setForm((p:any)=>({...p,filePath:path}));setMsg("✅ Arquivo do ASO enviado.");}catch(e:any){setMsg(e.message)}};
+ const salvar=async()=>{const r=await fetch("/api/aso",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});const j=await r.json();if(!r.ok){setMsg(j.error||"Erro");return;}setMsg("✅ ASO registrado e integrado ao monitor documental.");setForm({employeeId:"",examType:"periodico",examDate:"",expiresAt:"",result:"apto",doctor:"",crm:"",notes:"",filePath:""});carregar();};
+ const remove=async(id:string)=>{if(!confirm("Excluir este ASO?"))return;await fetch(`/api/aso?id=${id}`,{method:"DELETE"});carregar();};
+ if(!dados)return <p>Carregando...</p>;const card=(t:string,v:any,c:string)=><div style={{background:"#fff",borderRadius:12,padding:"14px 18px",flex:1,borderLeft:`4px solid ${c}`}}><p style={{margin:0,fontSize:11,color:"#6b7280",fontWeight:600}}>{t}</p><p style={{margin:"4px 0 0",fontSize:26,fontWeight:900,color:c}}>{v}</p></div>;
+ return <div><h1 style={{fontSize:22,fontWeight:900,color:"#334532",marginBottom:4}}>🩺 ASO — Saúde Ocupacional</h1><p style={{color:"#6b7280",fontSize:13,marginBottom:16}}>Exames, arquivos, histórico e vencimentos integrados à documentação e mobilização.</p>{msg&&<div style={{padding:8,background:"#fef9c3",color:"#92400e",borderRadius:8,marginBottom:10,fontSize:12}}>{msg}</div>}<div style={{display:"flex",gap:12,marginBottom:18,flexWrap:"wrap"}}>{card("Funcionários ativos",dados.resumo.total,"#4a9410")}{card("Sem ASO",dados.resumo.semAso,"#374151")}{card("Vencidos",dados.resumo.vencidos,"#991b1b")}{card("A vencer (30d)",dados.resumo.aVencer,"#b45309")}</div>
+ <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:18}}><h2 style={{fontSize:14,fontWeight:800,color:"#334532",margin:"0 0 12px"}}>➕ Registrar exame</h2><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:9}}><div><label style={estiloLabel}>Funcionário</label><select style={estiloInput} value={form.employeeId} onChange={e=>setForm((p:any)=>({...p,employeeId:e.target.value}))}><option value="">Selecione</option>{dados.linhas.map((l:any)=><option key={l.id} value={l.id}>{l.name}</option>)}</select></div><div><label style={estiloLabel}>Tipo</label><select style={estiloInput} value={form.examType} onChange={e=>setForm((p:any)=>({...p,examType:e.target.value}))}>{Object.entries(TIPOS).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></div><div><label style={estiloLabel}>Data do exame</label><input type="date" style={estiloInput} value={form.examDate} onChange={e=>setExamDate(e.target.value)}/></div><div><label style={estiloLabel}>Válido até</label><input type="date" style={estiloInput} value={form.expiresAt} onChange={e=>setForm((p:any)=>({...p,expiresAt:e.target.value}))}/></div><div><label style={estiloLabel}>Resultado</label><select style={estiloInput} value={form.result} onChange={e=>setForm((p:any)=>({...p,result:e.target.value}))}><option value="apto">Apto</option><option value="apto_restricoes">Apto com restrições</option><option value="inapto">Inapto</option></select></div><div><label style={estiloLabel}>Médico</label><input style={estiloInput} value={form.doctor} onChange={e=>setForm((p:any)=>({...p,doctor:e.target.value}))}/></div><div><label style={estiloLabel}>CRM</label><input style={estiloInput} value={form.crm} onChange={e=>setForm((p:any)=>({...p,crm:e.target.value}))}/></div><div><label style={estiloLabel}>Arquivo ASO</label><input type="file" accept="application/pdf,image/*" onChange={file} style={{fontSize:11}}/>{form.filePath&&<a href={form.filePath} target="_blank" style={{fontSize:10}}>Arquivo enviado</a>}</div></div><button onClick={salvar} disabled={!form.employeeId||!form.examDate} style={{marginTop:11,background:"#4a9410",color:"#fff",border:0,padding:"9px 18px",borderRadius:8,fontWeight:700}}>Salvar</button></div>
+ <div style={{background:"#fff",borderRadius:12,padding:16,overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}><thead><tr style={{borderBottom:"2px solid #e5e7eb",textAlign:"left"}}>{["Funcionário","Função","Último exame","Tipo","Válido até","Resultado","Arquivo","Status","Histórico"].map(x=><th key={x} style={{padding:8}}>{x}</th>)}</tr></thead><tbody>{dados.linhas.map((l:any)=>{const st=l.atual?.status;return <tr key={l.id} style={{borderBottom:"1px solid #f3f4f6"}}><td style={{padding:8,fontWeight:700}}>{l.name}</td><td style={{padding:8}}>{l.role}</td><td style={{padding:8}}>{fdata(l.atual?.examDate)}</td><td style={{padding:8}}>{l.atual?TIPOS[l.atual.examType]||l.atual.examType:"—"}</td><td style={{padding:8}}>{fdata(l.atual?.expiresAt)}</td><td style={{padding:8}}>{l.atual?.result||"—"}</td><td style={{padding:8}}>{l.atual?.filePath?<a href={l.atual.filePath} target="_blank">Abrir</a>:<span style={{color:"#991b1b"}}>Pendente</span>}</td><td style={{padding:8}}>{st&&UI[st]?<span style={{background:UI[st][1],color:UI[st][2],padding:"3px 8px",borderRadius:6,fontSize:11,fontWeight:700}}>{UI[st][0]}</span>:"Sem ASO"}</td><td style={{padding:8}}><button onClick={()=>setAberto(aberto===l.id?"":l.id)} style={{border:0,borderRadius:6,padding:"4px 8px"}}>{l.historico.length} anterior(es)</button></td></tr>})}</tbody></table>{dados.linhas.filter((l:any)=>l.id===aberto).map((l:any)=><div key={l.id} style={{marginTop:12,background:"#f9fafb",padding:10,borderRadius:8}}><strong style={{fontSize:12}}>Histórico de {l.name}</strong>{[l.atual,...l.historico].filter(Boolean).map((x:any)=><div key={x.id} style={{display:"flex",gap:10,padding:"6px 0",fontSize:11,borderBottom:"1px solid #e5e7eb"}}><span>{fdata(x.examDate)}</span><span>{TIPOS[x.examType]}</span><span>{fdata(x.expiresAt)}</span>{x.filePath&&<a href={x.filePath} target="_blank">Arquivo</a>}<button onClick={()=>remove(x.id)} style={{marginLeft:"auto",border:0,color:"#991b1b"}}>Excluir</button></div>)}</div>)}</div></div>;
 }
