@@ -32,6 +32,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
   ]},
   { key: "docs", titulo: "Documentos & Conformidade", abas: [
     { href: "/dashboard/documentos", label: "📁 Arquivos (GED)" },
+    { href: "/dashboard/pastas-digitais", label: "📂 Pastas Digitais" },
     { href: "/dashboard/analise-juridica", label: "⚖️ Análise Jurídica (IA)" },
     { href: "/dashboard/checklist-docs", label: "📑 Checklist & Geração" },
     { href: "/dashboard/monitor-docs", label: "🚦 Monitor" },
@@ -79,6 +80,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
     { href: "/dashboard/folha-detalhada", label: "📑 Simulação INSS/IRRF" },
     { href: "/dashboard/folha-13", label: "🎄 13º Salário" },
     { href: "/dashboard/folha-adiantamentos", label: "💸 Adiantamentos" },
+    { href: "/dashboard/rh-vale-alimentacao", label: "🍽️ Vale Alimentação VR" },
     { href: "/dashboard/rh-ocorrencias", label: "🏖️ Férias & Ocorrências" },
     { href: "/dashboard/mobilizacoes", label: "📋 Mobilizações" },
     { href: "/dashboard/treinamentos", label: "🎓 Treinamentos NR" },
