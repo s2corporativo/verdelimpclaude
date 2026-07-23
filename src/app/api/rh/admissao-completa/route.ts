@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { erroInterno, exigirPapel } from "@/lib/authz";
 import { registrarAuditoria } from "@/lib/admin";
+import { gerarPacoteDocs, type EmpresaDoc, type FuncionarioDoc, type EscopoDoc } from "@/lib/docs-funcionario";
 
 export const dynamic = "force-dynamic";
 
@@ -110,7 +111,58 @@ export async function POST(req: NextRequest) {
       entityType: "Employee", entityId: result.id,
       newValues: { name: result.name, role: result.role, status: result.status, operacao: b.terminationDate ? "desligamento" : "admissao" },
     });
-    return NextResponse.json({ success: true, employeeId: result.id, correlationId: randomUUID() }, { status: b.employeeId ? 200 : 201 });
+
+    // Geração automática de ficha de registro e ficha de EPI na admissão
+    let documentosGerados: string[] = [];
+    if (!b.employeeId && !b.terminationDate) {
+      try {
+        const config = await prisma.companyConfig.findFirst();
+        const empresa: EmpresaDoc = {
+          razaoSocial: config?.razaoSocial || "VERDELIMP SERVIÇOS E TERCEIRIZAÇÃO LTDA",
+          cnpj: config?.cnpj || "",
+          endereco: [config?.logradouro, config?.bairro, config?.municipio, config?.uf].filter(Boolean).join(", "),
+          telefone: config?.telefone || "",
+          email: config?.email || "",
+        };
+        const escopo: EscopoDoc = {
+          tipoServico: b.role,
+          local: [config?.municipio, config?.uf].filter(Boolean).join("/"),
+        };
+        const funcionario: FuncionarioDoc = {
+          nome: result.name,
+          cpf: result.cpf || undefined,
+          funcao: result.role,
+          admissao: new Date(result.admissionDate).toLocaleDateString("pt-BR"),
+          epis: [],
+          treinamentos: [],
+        };
+        const html = gerarPacoteDocs({
+          empresa, escopo,
+          funcionarios: [funcionario],
+          itens: ["ficha_registro", "ficha_epi"],
+        });
+        const docPath = `uploads/rh/admissao/${result.id}_admissao.html`;
+        const { writeFile, mkdir } = await import("fs/promises");
+        const { join } = await import("path");
+        const fullPath = join(process.cwd(), "public", docPath);
+        await mkdir(join(process.cwd(), "public", "uploads/rh/admissao"), { recursive: true });
+        await writeFile(fullPath, html, "utf-8");
+        documentosGerados.push(docPath);
+        await prisma.employeeDoc.createMany({
+          data: [
+            { employeeId: result.id, docType: "Ficha de Registro", expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), filePath: docPath },
+            { employeeId: result.id, docType: "Ficha de EPI", expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), filePath: docPath },
+          ],
+        });
+      } catch (err) {
+        console.error("Erro ao gerar documentos de admissão:", err);
+      }
+    }
+
+    return NextResponse.json({
+      success: true, employeeId: result.id, correlationId: randomUUID(),
+      documentosGerados: documentosGerados.length > 0 ? documentosGerados : undefined,
+    }, { status: b.employeeId ? 200 : 201 });
   } catch (e: any) {
     if (e?.code === "P2002") return NextResponse.json({ error: "CPF já cadastrado" }, { status: 409 });
     return erroInterno(e, "api/rh/admissao-completa POST");

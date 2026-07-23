@@ -75,10 +75,18 @@ export const GRUPOS_NAV: GrupoNav[] = [
     { href: "/dashboard/matriz-sst", label: "🛡️ Matriz PGR/PCMSO" },
     { href: "/dashboard/folha-competencias", label: "📆 Folha por Competência" },
     { href: "/dashboard/folha-detalhada", label: "📑 Simulação INSS/IRRF" },
+    { href: "/dashboard/folha-13", label: "🎄 13º Salário" },
+    { href: "/dashboard/folha-adiantamentos", label: "💸 Adiantamentos" },
     { href: "/dashboard/rh-ocorrencias", label: "🏖️ Férias & Ocorrências" },
     { href: "/dashboard/mobilizacoes", label: "📋 Mobilizações" },
     { href: "/dashboard/treinamentos", label: "🎓 Treinamentos NR" },
     { href: "/dashboard/aso", label: "🩺 ASO" },
+  ]},
+  { key: "ia", titulo: "Inteligência Artificial", abas: [
+    { href: "/dashboard/ajuda", label: "🤖 Chat de Ajuda" },
+    { href: "/dashboard/analise-juridica", label: "⚖️ Análise Jurídica" },
+    { href: "/dashboard/ia-ler-boleto", label: "📄 Ler Boleto (IA)" },
+    { href: "/dashboard/ia-resumir-contrato", label: "📋 Resumir Contrato (IA)" },
   ]},
 ];
 
