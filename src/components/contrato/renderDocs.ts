@@ -2,6 +2,8 @@
 // Geração de HTML completo para impressão/PDF de documentos do contrato
 // Extraído de novo-contrato/page.tsx para reduzir o bundle size
 
+const esc = (s: string) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 function renderDocsHtml(d: any, contrato: any): string {
   const dataAtual = new Date().toLocaleDateString("pt-BR");
   const empresa = d.empresa;
@@ -42,20 +44,20 @@ li{margin:3pt 0}
 </style></head><body>
 
 <div class="toolbar">
-  <h1>📄 Documentos do Contrato — ${empresa.razaoSocial}</h1>
+  <h1>📄 Documentos do Contrato — ${esc(empresa.razaoSocial)}</h1>
   <button onclick="window.print()">🖨️ Imprimir / PDF</button>
 </div>
 
 <!-- ÍNDICE GERAL -->
 <div class="page">
   <div class="header-empresa">
-    <h2>${empresa.razaoSocial}</h2>
-    <p>CNPJ: ${empresa.cnpj} · ${empresa.regime} · ${empresa.porte}</p>
-    <p>${empresa.endereco}</p>
-    <p>${empresa.telefone} · ${empresa.email}</p>
+    <h2>${esc(empresa.razaoSocial)}</h2>
+    <p>CNPJ: ${esc(empresa.cnpj)} · ${esc(empresa.regime)} · ${esc(empresa.porte)}</p>
+    <p>${esc(empresa.endereco)}</p>
+    <p>${esc(empresa.telefone)} · ${esc(empresa.email)}</p>
   </div>
   <h1>📋 Lista de Documentos do Contrato</h1>
-  <p style="margin-bottom:14pt">${contrato.objeto || "Contrato"} — ${contrato.clienteNome || ""}</p>
+  <p style="margin-bottom:14pt">${esc(contrato.objeto || "Contrato")} — ${esc(contrato.clienteNome || "")}</p>
 
   <h2>📊 Resumo</h2>
   <div class="box">
@@ -73,8 +75,8 @@ li{margin:3pt 0}
     ${d.documentos.filter((doc: any) => doc.categoria === "EMPRESA").map((doc: any, i: number) => `
       <tr>
         <td>${i+1}</td>
-        <td><strong>${doc.titulo}</strong><br><span style="font-size:9pt;color:#6b7280">${doc.descricao}</span></td>
-        <td>${doc.origem || "—"}</td>
+        <td><strong>${esc(doc.titulo)}</strong><br><span style="font-size:9pt;color:#6b7280">${esc(doc.descricao)}</span></td>
+        <td>${esc(doc.origem || "—")}</td>
         <td>${doc.validade_meses ? doc.validade_meses + " meses" : "—"}</td>
         <td style="font-size:8pt">${doc.como_obter || ""}</td>
       </tr>
@@ -89,8 +91,8 @@ li{margin:3pt 0}
     ${d.documentos.filter((doc: any) => doc.categoria === "FUNCIONARIO").map((doc: any, i: number) => `
       <tr>
         <td>${i+1}</td>
-        <td>${doc.funcionarioNome}</td>
-        <td>${doc.titulo.replace(" — " + doc.funcionarioNome, "")}</td>
+        <td>${esc(doc.funcionarioNome)}</td>
+        <td>${esc(doc.titulo.replace(" — " + doc.funcionarioNome, ""))}</td>
         <td>${doc.validade_meses ? doc.validade_meses + " meses" : "—"}</td>
       </tr>
     `).join("")}
@@ -104,7 +106,7 @@ li{margin:3pt 0}
     ${d.documentos.filter((doc: any) => doc.categoria === "CONTRATO").map((doc: any, i: number) => `
       <tr>
         <td>${i+1}</td>
-        <td><strong>${doc.titulo}</strong><br><span style="font-size:9pt;color:#6b7280">${doc.descricao}</span></td>
+        <td><strong>${esc(doc.titulo)}</strong><br><span style="font-size:9pt;color:#6b7280">${esc(doc.descricao)}</span></td>
         <td>${doc.tipo === "gerado" ? '<span class="tag">Gerado</span>' : '<span class="tag tag-info">Obtido externamente</span>'}</td>
       </tr>
     `).join("")}
@@ -115,16 +117,16 @@ li{margin:3pt 0}
 <!-- DECLARAÇÃO DE NÃO EMPREGO DE MENOR -->
 <div class="page">
   <div class="header-empresa">
-    <h2>${empresa.razaoSocial}</h2>
-    <p>CNPJ: ${empresa.cnpj}</p>
+    <h2>${esc(empresa.razaoSocial)}</h2>
+    <p>CNPJ: ${esc(empresa.cnpj)}</p>
   </div>
   <h1>DECLARAÇÃO — NÃO EMPREGO DE MENOR</h1>
-  <p style="margin:14pt 0">A <strong>${empresa.razaoSocial}</strong>, inscrita no CNPJ sob o nº ${empresa.cnpj}, com sede em ${empresa.endereco}, por intermédio de seu representante legal, <strong>DECLARA</strong>, para fins do disposto no inciso V do artigo 27 da Lei nº 8.666 de 21 de junho de 1993 e no inciso VI do art. 68 da Lei nº 14.133 de 1º de abril de 2021, acrescido pela Lei nº 9.854 de 27 de outubro de 1999, que NÃO emprega menor de dezoito anos em trabalho noturno, perigoso ou insalubre, e NÃO emprega menor de dezesseis anos.</p>
+  <p style="margin:14pt 0">A <strong>${esc(empresa.razaoSocial)}</strong>, inscrita no CNPJ sob o nº ${esc(empresa.cnpj)}, com sede em ${esc(empresa.endereco)}, por intermédio de seu representante legal, <strong>DECLARA</strong>, para fins do disposto no inciso V do artigo 27 da Lei nº 8.666 de 21 de junho de 1993 e no inciso VI do art. 68 da Lei nº 14.133 de 1º de abril de 2021, acrescido pela Lei nº 9.854 de 27 de outubro de 1999, que NÃO emprega menor de dezoito anos em trabalho noturno, perigoso ou insalubre, e NÃO emprega menor de dezesseis anos.</p>
   <p>Ressalva: ( ) emprega menor, a partir de quatorze anos, na condição de aprendiz.</p>
   <p style="margin-top:20pt">Betim/MG, ${dataAtual}</p>
   <div class="assinatura">
-    <div class="linha">${empresa.razaoSocial}</div>
-    <p style="font-size:9pt;color:#6b7280;margin-top:3pt">CNPJ: ${empresa.cnpj}</p>
+    <div class="linha">${esc(empresa.razaoSocial)}</div>
+    <p style="font-size:9pt;color:#6b7280;margin-top:3pt">CNPJ: ${esc(empresa.cnpj)}</p>
     <p style="font-size:9pt;color:#6b7280">Representante Legal</p>
   </div>
 </div>
@@ -132,11 +134,11 @@ li{margin:3pt 0}
 <!-- DECLARAÇÃO INEXISTÊNCIA FATO IMPEDITIVO -->
 <div class="page">
   <div class="header-empresa">
-    <h2>${empresa.razaoSocial}</h2>
-    <p>CNPJ: ${empresa.cnpj}</p>
+    <h2>${esc(empresa.razaoSocial)}</h2>
+    <p>CNPJ: ${esc(empresa.cnpj)}</p>
   </div>
   <h1>DECLARAÇÃO — INEXISTÊNCIA DE FATO IMPEDITIVO</h1>
-  <p style="margin:14pt 0">A <strong>${empresa.razaoSocial}</strong>, inscrita no CNPJ sob o nº ${empresa.cnpj}, por seu representante legal infra-assinado, <strong>DECLARA</strong>, sob as penas da lei, que:</p>
+  <p style="margin:14pt 0">A <strong>${esc(empresa.razaoSocial)}</strong>, inscrita no CNPJ sob o nº ${esc(empresa.cnpj)}, por seu representante legal infra-assinado, <strong>DECLARA</strong>, sob as penas da lei, que:</p>
   <ul style="margin:10pt 14pt">
     <li>Não está suspensa, declarada inidônea ou impedida de licitar e contratar com a Administração Pública;</li>
     <li>Inexistem fatos impeditivos para sua habilitação no presente certame, ciente da obrigatoriedade de declarar ocorrências posteriores;</li>
@@ -145,29 +147,29 @@ li{margin:3pt 0}
   </ul>
   <p style="margin-top:20pt">Betim/MG, ${dataAtual}</p>
   <div class="assinatura">
-    <div class="linha">${empresa.razaoSocial}</div>
-    <p style="font-size:9pt;color:#6b7280;margin-top:3pt">CNPJ: ${empresa.cnpj} · Representante Legal</p>
+    <div class="linha">${esc(empresa.razaoSocial)}</div>
+    <p style="font-size:9pt;color:#6b7280;margin-top:3pt">CNPJ: ${esc(empresa.cnpj)} · Representante Legal</p>
   </div>
 </div>
 
 <!-- ANEXO I — EQUIPE TÉCNICA -->
 <div class="page">
   <div class="header-empresa">
-    <h2>${empresa.razaoSocial}</h2>
-    <p>CNPJ: ${empresa.cnpj}</p>
+    <h2>${esc(empresa.razaoSocial)}</h2>
+    <p>CNPJ: ${esc(empresa.cnpj)}</p>
   </div>
   <h1>ANEXO I — EQUIPE TÉCNICA MOBILIZADA</h1>
-  <p style="margin-bottom:9pt"><strong>Contrato:</strong> ${contrato.objeto || "—"}</p>
-  <p style="margin-bottom:14pt"><strong>Cliente:</strong> ${contrato.clienteNome || "—"}</p>
+  <p style="margin-bottom:9pt"><strong>Contrato:</strong> ${esc(contrato.objeto || "—")}</p>
+  <p style="margin-bottom:14pt"><strong>Cliente:</strong> ${esc(contrato.clienteNome || "—")}</p>
   <table>
     <thead><tr><th>#</th><th>Nome</th><th>Função</th><th>CPF</th><th>Data Admissão</th></tr></thead>
     <tbody>
     ${d.funcionarios.map((f: any, i: number) => `
       <tr>
         <td>${i+1}</td>
-        <td>${f.name}</td>
-        <td>${f.role}</td>
-        <td>${f.cpf || "—"}</td>
+        <td>${esc(f.name)}</td>
+        <td>${esc(f.role)}</td>
+        <td>${esc(f.cpf || "—")}</td>
         <td>${f.admissionDate ? new Date(f.admissionDate).toLocaleDateString("pt-BR") : "—"}</td>
       </tr>
     `).join("")}
@@ -184,20 +186,20 @@ li{margin:3pt 0}
 ${d.funcionarios.map((f: any, idx: number) => `
 <div class="page">
   <div class="header-empresa">
-    <h2>${empresa.razaoSocial}</h2>
-    <p>CNPJ: ${empresa.cnpj}</p>
+    <h2>${esc(empresa.razaoSocial)}</h2>
+    <p>CNPJ: ${esc(empresa.cnpj)}</p>
   </div>
   <h1>FICHA DE REGISTRO DE EMPREGADO</h1>
-  <h2 style="margin-top:0">${f.name}</h2>
+  <h2 style="margin-top:0">${esc(f.name)}</h2>
   <table style="margin-top:9pt">
     <tbody>
-      <tr><td style="width:35%;background:#f9fafb;font-weight:700">Nome completo</td><td>${f.name}</td></tr>
-      <tr><td style="background:#f9fafb;font-weight:700">CPF</td><td>${f.cpf || "—"}</td></tr>
-      <tr><td style="background:#f9fafb;font-weight:700">Função</td><td>${f.role}</td></tr>
+      <tr><td style="width:35%;background:#f9fafb;font-weight:700">Nome completo</td><td>${esc(f.name)}</td></tr>
+      <tr><td style="background:#f9fafb;font-weight:700">CPF</td><td>${esc(f.cpf || "—")}</td></tr>
+      <tr><td style="background:#f9fafb;font-weight:700">Função</td><td>${esc(f.role)}</td></tr>
       <tr><td style="background:#f9fafb;font-weight:700">Data de admissão</td><td>${f.admissionDate ? new Date(f.admissionDate).toLocaleDateString("pt-BR") : "—"}</td></tr>
       <tr><td style="background:#f9fafb;font-weight:700">Salário base</td><td>R$ ${fmt(Number(f.salary || 0))}</td></tr>
       <tr><td style="background:#f9fafb;font-weight:700">Regime</td><td>CLT</td></tr>
-      <tr><td style="background:#f9fafb;font-weight:700">Treinamentos válidos</td><td>${(f.treinamentos || []).join(", ") || "Em regularização"}</td></tr>
+      <tr><td style="background:#f9fafb;font-weight:700">Treinamentos válidos</td><td>${esc((f.treinamentos || []).join(", ") || "Em regularização")}</td></tr>
     </tbody>
   </table>
   <h2>FICHA DE ENTREGA DE EPI — Conforme NR-06</h2>
@@ -214,7 +216,7 @@ ${d.funcionarios.map((f: any, idx: number) => `
   </table>
   <p style="margin-top:14pt;font-size:9pt">Declaro ter recebido os EPIs acima descritos em perfeito estado, comprometendo-me a usá-los, conservá-los e devolvê-los conforme orientações da empresa.</p>
   <div class="assinatura" style="margin-top:34pt">
-    <div class="linha">${f.name} — CPF ${f.cpf || ""}</div>
+    <div class="linha">${esc(f.name)} — CPF ${esc(f.cpf || "")}</div>
   </div>
 </div>
 `).join("")}
@@ -222,28 +224,28 @@ ${d.funcionarios.map((f: any, idx: number) => `
 <!-- PLANO DE TRABALHO -->
 <div class="page">
   <div class="header-empresa">
-    <h2>${empresa.razaoSocial}</h2>
-    <p>CNPJ: ${empresa.cnpj}</p>
+    <h2>${esc(empresa.razaoSocial)}</h2>
+    <p>CNPJ: ${esc(empresa.cnpj)}</p>
   </div>
   <h1>PLANO DE TRABALHO</h1>
-  <p style="margin-bottom:14pt"><strong>Objeto:</strong> ${contrato.objeto || "—"}</p>
+  <p style="margin-bottom:14pt"><strong>Objeto:</strong> ${esc(contrato.objeto || "—")}</p>
   <h2>1. Cliente</h2>
   <div class="box">
-    <p>${contrato.clienteNome || "—"} ${contrato.clienteCnpj ? "— CNPJ " + contrato.clienteCnpj : ""}</p>
-    <p>Local de execução: ${contrato.municipio || ""}/${contrato.uf || ""}</p>
+    <p>${esc(contrato.clienteNome || "—")} ${contrato.clienteCnpj ? "— CNPJ " + esc(contrato.clienteCnpj) : ""}</p>
+    <p>Local de execução: ${esc(contrato.municipio || "")}/${esc(contrato.uf || "")}</p>
   </div>
   <h2>2. Vigência</h2>
   <div class="box">
     <p><strong>Início:</strong> ${contrato.dataInicio ? new Date(contrato.dataInicio).toLocaleDateString("pt-BR") : "—"}</p>
     <p><strong>Vigência:</strong> ${contrato.vigenciaMeses} meses</p>
-    <p><strong>Reajuste:</strong> ${contrato.indiceReajuste || "INPC"} a partir do 13º mês</p>
+    <p><strong>Reajuste:</strong> ${esc(contrato.indiceReajuste || "INPC")} a partir do 13º mês</p>
   </div>
   <h2>3. Tipo de Serviço</h2>
-  <div class="box"><p>${contrato.tipoServico} ${contrato.areaM2 ? "— Área estimada: " + Number(contrato.areaM2).toLocaleString("pt-BR") + " m²" : ""}</p></div>
+  <div class="box"><p>${esc(contrato.tipoServico)} ${contrato.areaM2 ? "— Área estimada: " + Number(contrato.areaM2).toLocaleString("pt-BR") + " m²" : ""}</p></div>
   <h2>4. Equipe Técnica</h2>
   <div class="box">
     <p>Total de profissionais: <strong>${d.funcionarios.length}</strong></p>
-    <ul>${d.funcionarios.map((f: any) => `<li>${f.name} — ${f.role}</li>`).join("")}</ul>
+    <ul>${d.funcionarios.map((f: any) => `<li>${esc(f.name)} — ${esc(f.role)}</li>`).join("")}</ul>
   </div>
   <h2>5. Equipamentos e Veículos a Mobilizar</h2>
   <div class="box">
@@ -262,7 +264,7 @@ ${d.funcionarios.map((f: any, idx: number) => `
     <p>Frequência de execução: ${contrato.diasExecucao || 4} vez(es) por mês conforme cronograma físico-financeiro anexo.</p>
   </div>
   <p style="margin-top:20pt">Betim/MG, ${dataAtual}</p>
-  <div class="assinatura"><div class="linha">Responsável Técnico — ${empresa.razaoSocial}</div></div>
+  <div class="assinatura"><div class="linha">Responsável Técnico — ${esc(empresa.razaoSocial)}</div></div>
 </div>
 
 </body></html>`;

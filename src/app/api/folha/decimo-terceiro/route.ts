@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirPapel, erroInterno } from "@/lib/authz";
-import { calcINSS, calcIRRF, FGTS_RATE } from "@/lib/folha";
+import { calcINSS, calcIRRF, FGTS_RATE, calcAdicionais, salarioMinimo } from "@/lib/folha";
 
 export const dynamic = "force-dynamic";
 
@@ -15,38 +15,34 @@ export async function GET() {
     const anoAtual = hoje.getFullYear();
     const funcionarios = await prisma.employee.findMany({ where: { active: true }, orderBy: { name: "asc" } });
 
-    // Buscar lançamentos de 13º já registrados
+    // Buscar lançamentos de 13º já registrados via JSONB events
     const lancamentos = await prisma.$queryRaw<any[]>`
-      SELECT employee_id, competence, amount, status, payment_date
-      FROM erp_payroll_entry
-      WHERE event_type = 'decimo_terceiro' AND competence LIKE ${anoAtual + "%"}
+      SELECT pe.employee_id, pp.competence, pe.gross_amount, pe.paid_at, pe.events
+      FROM erp_payroll_entry pe
+      JOIN erp_payroll_period pp ON pp.id = pe.period_id
+      WHERE pe.events @> '{"tipo":"decimo_terceiro"}'::jsonb
+        AND pp.competence LIKE ${anoAtual + "%"}
     `;
     const lancMap = new Map(lancamentos.map(l => [`${l.employee_id}:${l.competence}`, l]));
 
     const folha13 = funcionarios.map(f => {
       const salarioBase = Number(f.salary);
-      const adicionais = f.periculosidade ? salarioBase * 0.3 : ((Number(f.insalubridadeGrau) || 0) / 100) * 1518;
+      const adicionais = calcAdicionais(salarioBase, f.insalubridadeGrau || 0, f.periculosidade || false, anoAtual);
       const brutoMensal = salarioBase + adicionais;
-      const bruto13 = brutoMensal; // 13º = 1/12 do bruto anual
+      const bruto13 = brutoMensal;
 
-      // Meses trabalhados no ano (admissão até hoje, máx 12)
       const dataAdmissao = new Date(f.admissionDate);
       const mesesTrabalhados = Math.min(12, Math.max(1, ((hoje.getFullYear() - dataAdmissao.getFullYear()) * 12) + hoje.getMonth() - dataAdmissao.getMonth() + 1));
       const valor13Proporcional = (bruto13 / 12) * mesesTrabalhados;
 
-      // 1ª parcela (até 30/nov): 50% do bruto proporcional - INSS
-      const inss1Parcela = calcINSS(valor13Proporcional * 0.5);
+      const inss1Parcela = calcINSS(valor13Proporcional * 0.5, anoAtual);
       const valor1Parcela = (valor13Proporcional * 0.5) - inss1Parcela;
 
-      // 2ª parcela (até 20/dez): bruto proporcional - 1ª parcela bruta - IRRF
-      const baseIRRF = valor13Proporcional - inss1Parcela;
-      const irrf13 = calcIRRF(valor13Proporcional, inss1Parcela, Number(f.dependentes || 0));
+      const irrf13 = calcIRRF(valor13Proporcional, inss1Parcela, Number(f.dependentes || 0), anoAtual);
       const valor2Parcela = valor13Proporcional - (valor13Proporcional * 0.5) - irrf13;
 
-      // FGTS sobre o bruto total (empresa paga)
       const fgts13 = valor13Proporcional * FGTS_RATE;
 
-      // Verificar se já foi pago
       const lanc1 = lancMap.get(`${f.id}:${anoAtual}-11`);
       const lanc2 = lancMap.get(`${f.id}:${anoAtual}-12`);
 
@@ -59,13 +55,13 @@ export async function GET() {
         valor13Bruto: Number(valor13Proporcional.toFixed(2)),
         parcela1: {
           valor: Number(valor1Parcela.toFixed(2)),
-          status: lanc1?.status || "prevista",
-          pagamento: lanc1?.payment_date || null,
+          status: lanc1?.paid_at ? "pago" : "prevista",
+          pagamento: lanc1?.paid_at || null,
         },
         parcela2: {
           valor: Number(Math.max(0, valor2Parcela).toFixed(2)),
-          status: lanc2?.status || "prevista",
-          pagamento: lanc2?.payment_date || null,
+          status: lanc2?.paid_at ? "pago" : "prevista",
+          pagamento: lanc2?.paid_at || null,
         },
         inssTotal: Number(inss1Parcela.toFixed(2)),
         irrfTotal: Number(irrf13.toFixed(2)),

@@ -10,6 +10,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
   { key: "alertas", titulo: "Alertas & Notificações", abas: [
     { href: "/dashboard/alertas", label: "🚨 Central de Alertas" },
     { href: "/dashboard/email-analise", label: "📧 Cotações & Contratos (E-mail)" },
+    { href: "/dashboard/email-integration", label: "📬 Integração de E-mail" },
   ]},
   { key: "licitacoes", titulo: "Licitações", abas: [
     { href: "/dashboard/pipeline", label: "🏆 Pipeline" },
@@ -72,6 +73,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
   { key: "rh", titulo: "RH & SST", abas: [
     { href: "/dashboard/rh", label: "👷 RH & Folha" },
     { href: "/dashboard/rh-admissao", label: "🪪 Admissão & Desligamento" },
+    { href: "/dashboard/rh-attendance", label: "📋 Controle de Ponto" },
     { href: "/dashboard/matriz-sst", label: "🛡️ Matriz PGR/PCMSO" },
     { href: "/dashboard/folha-competencias", label: "📆 Folha por Competência" },
     { href: "/dashboard/folha-detalhada", label: "📑 Simulação INSS/IRRF" },
@@ -85,8 +87,10 @@ export const GRUPOS_NAV: GrupoNav[] = [
   { key: "assistente", titulo: "Assistente Administrativa", abas: [
     { href: "/dashboard/rotinas", label: "📋 Rotinas" },
     { href: "/dashboard/sada", label: "🚛 Controle SADA" },
+    { href: "/dashboard/rh-attendance", label: "📋 Ponto & Attendance" },
     { href: "/dashboard/folha-adiantamentos", label: "💸 Adiantamentos" },
     { href: "/dashboard/folha-13", label: "🎄 13º Salário" },
+    { href: "/dashboard/email-integration", label: "📬 E-mail Integration" },
   ]},
   { key: "ia", titulo: "Inteligência Artificial", abas: [
     { href: "/dashboard/ajuda", label: "🤖 Chat de Ajuda" },

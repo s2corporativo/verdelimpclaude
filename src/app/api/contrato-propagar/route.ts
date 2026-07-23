@@ -7,9 +7,11 @@
 // - Cliente (se não existir)
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { erroInterno } from "@/lib/authz";
+import { exigirPapel, erroInterno } from "@/lib/authz";
 
 export async function POST(req: NextRequest) {
+  const { erro } = await exigirPapel("ADMIN", "COMERCIAL", "DIRETORIA");
+  if (erro) return erro;
   try {
     const body = await req.json();
     const c = body.contrato;
