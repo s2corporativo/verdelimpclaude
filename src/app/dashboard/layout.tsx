@@ -46,6 +46,10 @@ const MENU = [
   { s: "RH" },
   { href: "/dashboard/rh", label: "RH & Pessoas", icon: "👷", grupo: "rh" },
 
+  { s: "ASSISTENTE" },
+  { href: "/dashboard/rotinas", label: "Rotinas", icon: "📋", grupo: "assistente" },
+  { href: "/dashboard/sada", label: "Controle SADA", icon: "🚛" },
+
   { s: "SISTEMA" },
   { href: "/dashboard/diagnostico", label: "Central de Diagnóstico", icon: "🩺" },
   { href: "/dashboard/admin", label: "Administração", icon: "🛡️", roles: ["ADMIN"] },

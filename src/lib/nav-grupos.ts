@@ -82,6 +82,12 @@ export const GRUPOS_NAV: GrupoNav[] = [
     { href: "/dashboard/treinamentos", label: "🎓 Treinamentos NR" },
     { href: "/dashboard/aso", label: "🩺 ASO" },
   ]},
+  { key: "assistente", titulo: "Assistente Administrativa", abas: [
+    { href: "/dashboard/rotinas", label: "📋 Rotinas" },
+    { href: "/dashboard/sada", label: "🚛 Controle SADA" },
+    { href: "/dashboard/folha-adiantamentos", label: "💸 Adiantamentos" },
+    { href: "/dashboard/folha-13", label: "🎄 13º Salário" },
+  ]},
   { key: "ia", titulo: "Inteligência Artificial", abas: [
     { href: "/dashboard/ajuda", label: "🤖 Chat de Ajuda" },
     { href: "/dashboard/analise-juridica", label: "⚖️ Análise Jurídica" },
