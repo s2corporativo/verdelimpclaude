@@ -1,61 +1,21 @@
-
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge, Card, TabelaHead } from "@/components/ui";
+import { estiloInput, estiloLabel } from "@/lib/estilos";
 export default function EpiPage() {
-  const [epis, setEpis] = useState<any[]>([]);
-  const [entregas, setEntregas] = useState<any[]>([]);
-  const [demo, setDemo] = useState(false);
-  const [aba, setAba] = useState("estoque");
-  useEffect(() => {
-    fetch("/api/epi").then(r => r.json()).then(d => { setEpis(d.epis || []); setEntregas(d.entregas || []); setDemo(!!d._demo); });
-  }, []);
-  const SC: any = { ativo: ["#dcfce7", "#15803d", "✅ Ativo"], a_vencer: ["#fef9c3", "#92400e", "⚠️ A vencer"], vencido: ["#fee2e2", "#991b1b", "⛔ Vencido"] };
-  return (
-    <div>
-      <h1 style={{ color: "#334532", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Controle de EPI <DemoBadge mostrar={demo} /></h1>
-      <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 14 }}>Controle de estoque, entregas e validade do CA dos equipamentos de proteção individual.</p>
-      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-        {[["estoque", "Estoque de EPIs"], ["entregas", "Histórico de Entregas"]].map(([id, l]) => (
-          <button key={id} onClick={() => setAba(id)} style={{ background: aba === id ? "#334532" : "transparent", color: aba === id ? "#fff" : "#374151", border: `1px solid ${aba === id ? "#334532" : "#d1d5db"}`, padding: "7px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: aba === id ? 700 : 400 }}>{l}</button>
-        ))}
-      </div>
-      {aba === "estoque" && (
-        <Card>
-          <table style={{ borderCollapse: "collapse", width: "100%" }}>
-            <TabelaHead colunas={["Código", "EPI", "Qtd. Atual", "Mínimo", "Status"]} />
-            <tbody>{epis.map((e: any) => {
-              const critico = Number(e.currentQuantity) <= Number(e.minimumStock);
-              return (<tr key={e.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <td style={{ padding: "8px 12px", fontFamily: "monospace", fontWeight: 700, color: "#334532" }}>{e.internalCode}</td>
-                <td style={{ padding: "8px 12px", fontWeight: 600 }}>{e.description}</td>
-                <td style={{ padding: "8px 12px", fontWeight: 700, fontSize: 15, color: critico ? "#dc2626" : "#4a9410" }}>{Number(e.currentQuantity).toFixed(0)}</td>
-                <td style={{ padding: "8px 12px", color: "#6b7280" }}>{Number(e.minimumStock).toFixed(0)}</td>
-                <td style={{ padding: "8px 12px" }}><span style={{ background: critico ? "#fee2e2" : "#dcfce7", color: critico ? "#991b1b" : "#15803d", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700 }}>{critico ? "⛔ Crítico" : "✅ OK"}</span></td>
-              </tr>);
-            })}</tbody>
-          </table>
-        </Card>
-      )}
-      {aba === "entregas" && (
-        <Card>
-          <table style={{ borderCollapse: "collapse", width: "100%" }}>
-            <TabelaHead colunas={["Funcionário", "Função", "EPI", "Data", "Qtd", "Nº CA", "Status"]} />
-            <tbody>{entregas.map((e: any, i: number) => {
-              const [bg, co, txt] = SC[e.status] || ["#f3f4f6", "#374151", e.status];
-              return (<tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <td style={{ padding: "8px 12px", fontWeight: 600 }}>{e.employee?.name?.split(" ")[0]} {e.employee?.name?.split(" ").pop()}</td>
-                <td style={{ padding: "8px 12px", fontSize: 11, color: "#6b7280" }}>{e.employee?.role}</td>
-                <td style={{ padding: "8px 12px" }}>{e.item?.description || e.item?.internalCode}</td>
-                <td style={{ padding: "8px 12px", fontSize: 11 }}>{e.deliveryDate ? new Date(e.deliveryDate).toLocaleDateString("pt-BR") : "—"}</td>
-                <td style={{ padding: "8px 12px", fontWeight: 700 }}>{e.quantity}</td>
-                <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: 11 }}>{e.caNumber || "—"}</td>
-                <td style={{ padding: "8px 12px" }}><span style={{ background: bg, color: co, padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700 }}>{txt}</span></td>
-              </tr>);
-            })}</tbody>
-          </table>
-        </Card>
-      )}
-    </div>
-  );
+  const [epis, setEpis] = useState<any[]>([]), [entregas, setEntregas] = useState<any[]>([]), [funcs, setFuncs] = useState<any[]>([]);
+  const [demo, setDemo] = useState(false), [aba, setAba] = useState("estoque"), [msg,setMsg]=useState("");
+  const [f,setF]=useState<any>({itemId:"",employeeId:"",deliveryDate:new Date().toISOString().slice(0,10),quantity:1,reason:"Dotação periódica"});
+  const [ret,setRet]=useState<any>({deliveryId:"",quantity:1,condition:"USED",restocked:false,returnDate:new Date().toISOString().slice(0,10)});
+  const load=()=>fetch("/api/epi").then(r=>r.json()).then(d=>{setEpis(d.epis||[]);setEntregas(d.entregas||[]);setDemo(!!d._demo);});
+  useEffect(() => { load(); fetch("/api/funcionarios").then(r=>r.json()).then(d=>setFuncs(d.data||[])); }, []);
+  const save=async()=>{const r=await fetch("/api/epi",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)});const j=await r.json();setMsg(r.ok?"✅ EPI entregue e estoque baixado.":j.error||"Erro");if(r.ok){setF({itemId:"",employeeId:"",deliveryDate:new Date().toISOString().slice(0,10),quantity:1,reason:"Dotação periódica"});load();}};
+  const devolver=async()=>{const r=await fetch("/api/epi",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...ret,action:"return"})});const j=await r.json();setMsg(r.ok?"✅ Devolução registrada.":j.error||"Erro");if(r.ok){setRet({deliveryId:"",quantity:1,condition:"USED",restocked:false,returnDate:new Date().toISOString().slice(0,10)});load();}};
+  const SC:any={ativo:["#dcfce7","#15803d","✅ Ativo"],a_vencer:["#fef9c3","#92400e","⚠️ A vencer"],vencido:["#fee2e2","#991b1b","⛔ Vencido"],devolvido:["#e0e7ff","#3730a3","↩ Devolvido"]};
+  return <div><h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Controle de EPI <DemoBadge mostrar={demo}/></h1><p style={{color:"#6b7280",fontSize:13,marginBottom:14}}>Estoque, entrega, validade do CA, reposição e devolução com rastreabilidade.</p>{msg&&<div style={{padding:8,background:"#fef9c3",color:"#92400e",borderRadius:8,marginBottom:10,fontSize:12}}>{msg}</div>}<div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>{[["estoque","Estoque"],["entregas","Entregas"],["nova","+ Nova entrega"],["devolver","↩ Devolução"]].map(([id,l])=><button key={id} onClick={()=>setAba(id)} style={{background:aba===id?"#334532":"transparent",color:aba===id?"#fff":"#374151",border:"1px solid #d1d5db",padding:"7px 14px",borderRadius:8}}>{l}</button>)}</div>
+  {aba==="estoque"&&<Card><table style={{borderCollapse:"collapse",width:"100%"}}><TabelaHead colunas={["Código","EPI","Qtd. atual","Mínimo","Status"]}/><tbody>{epis.map((e:any)=>{const critico=Number(e.currentQuantity)<=Number(e.minimumStock);return <tr key={e.id} style={{borderBottom:"1px solid #f3f4f6"}}><td style={{padding:"8px 12px",fontFamily:"monospace",fontWeight:700}}>{e.internalCode}</td><td style={{padding:"8px 12px",fontWeight:600}}>{e.description}</td><td style={{padding:"8px 12px",fontWeight:700,color:critico?"#dc2626":"#4a9410"}}>{Number(e.currentQuantity)}</td><td style={{padding:"8px 12px"}}>{Number(e.minimumStock)}</td><td style={{padding:"8px 12px",color:critico?"#991b1b":"#15803d",fontWeight:700}}>{critico?"⛔ Crítico":"✅ OK"}</td></tr>})}</tbody></table></Card>}
+  {aba==="entregas"&&<Card><table style={{borderCollapse:"collapse",width:"100%"}}><TabelaHead colunas={["Funcionário","Função","EPI","Entrega","Qtd","Devolvido","CA","Reposição","Status"]}/><tbody>{entregas.map((e:any)=>{const [bg,co,txt]=SC[e.status]||["#f3f4f6","#374151",e.status];return <tr key={e.id} style={{borderBottom:"1px solid #f3f4f6"}}><td style={{padding:"8px 12px",fontWeight:600}}>{e.employee?.name}</td><td style={{padding:"8px 12px",fontSize:11}}>{e.employee?.role}</td><td style={{padding:"8px 12px"}}>{e.item?.description}</td><td style={{padding:"8px 12px"}}>{new Date(e.deliveryDate).toLocaleDateString("pt-BR")}</td><td style={{padding:"8px 12px"}}>{e.quantity}</td><td style={{padding:"8px 12px"}}>{e.returnedQuantity||0}</td><td style={{padding:"8px 12px"}}>{e.caNumber||"—"}</td><td style={{padding:"8px 12px"}}>{e.expectedReplacementDate?new Date(e.expectedReplacementDate).toLocaleDateString("pt-BR"):"—"}</td><td style={{padding:"8px 12px"}}><span style={{background:bg,color:co,padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{txt}</span></td></tr>})}</tbody></table></Card>}
+  {aba==="nova"&&<Card><h3 style={{fontSize:13,color:"#334532"}}>Registrar entrega</h3><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:9}}><div><label style={estiloLabel}>Funcionário</label><select style={estiloInput} value={f.employeeId} onChange={e=>setF((p:any)=>({...p,employeeId:e.target.value}))}><option value="">Selecione</option>{funcs.map(x=><option key={x.id} value={x.id}>{x.name} — {x.role}</option>)}</select></div><div><label style={estiloLabel}>EPI</label><select style={estiloInput} value={f.itemId} onChange={e=>setF((p:any)=>({...p,itemId:e.target.value}))}><option value="">Selecione</option>{epis.map(x=><option key={x.id} value={x.id}>{x.description} · estoque {Number(x.currentQuantity)}</option>)}</select></div>{[["deliveryDate","Data","date"],["quantity","Quantidade","number"],["caNumber","Nº CA","text"],["caExpirationDate","Validade CA","date"],["replacementDate","Substituição prevista","date"],["reason","Motivo","text"]].map(([k,l,t])=><div key={k}><label style={estiloLabel}>{l}</label><input type={t} style={estiloInput} value={f[k]||""} onChange={e=>setF((p:any)=>({...p,[k]:t==="number"?Number(e.target.value):e.target.value}))}/></div>)}</div><button onClick={save} disabled={!f.itemId||!f.employeeId} style={{marginTop:11,background:"#4a9410",color:"#fff",border:0,borderRadius:8,padding:"9px 18px",fontWeight:700}}>Entregar e baixar estoque</button></Card>}
+  {aba==="devolver"&&<Card><h3 style={{fontSize:13,color:"#334532"}}>Registrar devolução</h3><div style={{display:"grid",gridTemplateColumns:"2fr repeat(4,1fr)",gap:9}}><div><label style={estiloLabel}>Entrega</label><select style={estiloInput} value={ret.deliveryId} onChange={e=>setRet((p:any)=>({...p,deliveryId:e.target.value}))}><option value="">Selecione</option>{entregas.filter(e=>(e.returnedQuantity||0)<e.quantity).map(e=><option key={e.id} value={e.id}>{e.employee?.name} — {e.item?.description} — saldo {e.quantity-(e.returnedQuantity||0)}</option>)}</select></div><div><label style={estiloLabel}>Data</label><input type="date" style={estiloInput} value={ret.returnDate} onChange={e=>setRet((p:any)=>({...p,returnDate:e.target.value}))}/></div><div><label style={estiloLabel}>Quantidade</label><input type="number" style={estiloInput} value={ret.quantity} onChange={e=>setRet((p:any)=>({...p,quantity:Number(e.target.value)}))}/></div><div><label style={estiloLabel}>Condição</label><select style={estiloInput} value={ret.condition} onChange={e=>setRet((p:any)=>({...p,condition:e.target.value}))}><option value="NEW">Novo</option><option value="GOOD">Bom</option><option value="USED">Usado</option><option value="DAMAGED">Danificado</option><option value="LOST">Perdido</option></select></div><div><label style={estiloLabel}>Motivo</label><input style={estiloInput} value={ret.reason||""} onChange={e=>setRet((p:any)=>({...p,reason:e.target.value}))}/></div></div><label style={{display:"block",fontSize:11,marginTop:9}}><input type="checkbox" checked={!!ret.restocked} onChange={e=>setRet((p:any)=>({...p,restocked:e.target.checked}))}/> Retornar ao estoque se estiver novo ou em bom estado</label><button onClick={devolver} disabled={!ret.deliveryId} style={{marginTop:11,background:"#3730a3",color:"#fff",border:0,borderRadius:8,padding:"9px 18px",fontWeight:700}}>Registrar devolução</button></Card>}
+  </div>;
 }
