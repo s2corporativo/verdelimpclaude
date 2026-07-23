@@ -1,59 +1,20 @@
-
 "use client";
 import { useEffect, useState } from "react";
 import { DemoBadge, TabelaHead, KpiGrid, KpiCard, Botao } from "@/components/ui";
 import { estiloInput, estiloLabel } from "@/lib/estilos";
+async function upload(file:File){const fd=new FormData();fd.append("file",file);const r=await fetch("/api/upload",{method:"POST",body:fd});const j=await r.json();if(!r.ok||!j.success)throw new Error(j.error||"Falha no upload");return j.url;}
 export default function TreinamentosPage() {
-  const [data,setData]=useState<any[]>([]);const [demo,setDemo]=useState(false);
-  const [form,setForm]=useState({employeeId:"",trainingType:"NR-06",issuedAt:"",expiresAt:"",institution:""});
-  const [funcs,setFuncs]=useState<any[]>([]);
-  useEffect(()=>{
-    fetch("/api/treinamentos").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);});
-    fetch("/api/funcionarios").then(r=>r.json()).then(d=>setFuncs(d.data||[]));
-  },[]);
-  const salvar=async()=>{ const r=await fetch("/api/treinamentos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)}); if(r.ok){ const d=await fetch("/api/treinamentos").then(x=>x.json()); setData(d.data||[]); } };
-  const NRS=["NR-06","NR-12","NR-35","NR-20","NR-10","ASO","CNH Cat. B","CNH Cat. C","Direção Defensiva","Primeiros Socorros","SIPAT","Outro"];
+  const [data,setData]=useState<any[]>([]),[demo,setDemo]=useState(false),[funcs,setFuncs]=useState<any[]>([]),[msg,setMsg]=useState("");
+  const [form,setForm]=useState<any>({employeeId:"",trainingType:"NR-06",issuedAt:"",expiresAt:"",institution:"",certificatePath:""});
+  const load=()=>fetch("/api/treinamentos").then(r=>r.json()).then(d=>{setData(d.data||[]);setDemo(!!d._demo);});
+  useEffect(()=>{load();fetch("/api/funcionarios").then(r=>r.json()).then(d=>setFuncs(d.data||[]));},[]);
+  const file=async(e:any)=>{const x=e.target.files?.[0];if(!x)return;try{const path=await upload(x);setForm((p:any)=>({...p,certificatePath:path}));setMsg("✅ Certificado enviado.");}catch(e:any){setMsg(e.message)}};
+  const salvar=async()=>{const r=await fetch("/api/treinamentos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});const j=await r.json();if(!r.ok){setMsg(j.error||"Erro");return;}setMsg("✅ Treinamento registrado e integrado ao monitor documental.");setForm({employeeId:"",trainingType:"NR-06",issuedAt:"",expiresAt:"",institution:"",certificatePath:""});load();};
+  const remove=async(id:string)=>{if(!confirm("Excluir este treinamento?"))return;await fetch(`/api/treinamentos?id=${id}`,{method:"DELETE"});load();};
+  const NRS=["NR-06","NR-10","NR-11","NR-12","NR-20","NR-33","NR-35","FISPQ","CNH Cat. B","CNH Cat. C","Direção Defensiva","Primeiros Socorros","Integração","Outro"];
   const SC:any={valido:["#dcfce7","#15803d","✅ Válido"],a_vencer:["#fef9c3","#92400e","⚠️ A vencer"],vencido:["#fee2e2","#991b1b","⛔ Vencido"]};
-  const IS = estiloInput;
-  const LS = estiloLabel;
-  const vencidos=data.filter((t:any)=>t.status==="vencido").length;
-  const aVencer=data.filter((t:any)=>t.status==="a_vencer").length;
-  return(<div>
-    <h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:14}}>Treinamentos & NRs <DemoBadge mostrar={demo} /></h1>
-    {(vencidos>0||aVencer>0)&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"10px 14px",marginBottom:14}}>
-      🚨 <strong>{vencidos} vencido(s)</strong> e <strong>{aVencer} a vencer</strong> — regularize para evitar autuação do MTE
-    </div>}
-    <KpiGrid colunas={3}>
-      {[["Válidos",data.filter((t:any)=>t.status==="valido").length,"✅","#4a9410"],["A vencer (30d)",aVencer,"⚠️","#d97706"],["Vencidos",vencidos,"⛔","#dc2626"]].map(([l,v,i,c])=>(
-        <KpiCard key={l as string} label={l as string} valor={v as any} cor={c as string} icone={i as string} />
-      ))}
-    </KpiGrid>
-    <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:14}}>
-      <h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>+ Registrar Treinamento</h3>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:9}}>
-        <div><label style={LS}>Funcionário*</label><select style={IS} value={form.employeeId} onChange={e=>setForm(p=>({...p,employeeId:e.target.value}))}><option value="">— Selecione —</option>{funcs.map((f:any)=><option key={f.id} value={f.id}>{f.name?.split(" ")[0]+" "+f.name?.split(" ").pop()}</option>)}</select></div>
-        <div><label style={LS}>Tipo</label><select style={IS} value={form.trainingType} onChange={e=>setForm(p=>({...p,trainingType:e.target.value}))}>{NRS.map(n=><option key={n}>{n}</option>)}</select></div>
-        <div><label style={LS}>Emissão*</label><input type="date" style={IS} value={form.issuedAt} onChange={e=>setForm(p=>({...p,issuedAt:e.target.value}))}/></div>
-        <div><label style={LS}>Vencimento*</label><input type="date" style={IS} value={form.expiresAt} onChange={e=>setForm(p=>({...p,expiresAt:e.target.value}))}/></div>
-        <div style={{display:"flex",flexDirection:"column",justifyContent:"flex-end"}}><label style={LS}>Instituição</label><input style={IS} value={form.institution} onChange={e=>setForm(p=>({...p,institution:e.target.value}))}/></div>
-      </div>
-      <Botao onClick={salvar} style={{padding:"8px 24px",marginTop:10}}>+ Registrar</Botao>
-    </div>
-    <table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
-      <TabelaHead colunas={["Funcionário","Função","Treinamento","Emissão","Vencimento","Dias","Instituição","Status"]} />
-      <tbody>{data.sort((a:any,b:any)=>a.diasVenc-b.diasVenc).map((t:any,i:number)=>{
-        const [bg,co,txt]=SC[t.status]||["#f3f4f6","#374151","—"];
-        return<tr key={i} style={{borderBottom:"1px solid #f3f4f6"}}>
-          <td style={{padding:"8px 12px",fontWeight:600,fontSize:12}}>{t.employee?.name?.split(" ")[0]+" "+t.employee?.name?.split(" ").pop()}</td>
-          <td style={{padding:"8px 12px",fontSize:11,color:"#6b7280"}}>{t.employee?.role}</td>
-          <td style={{padding:"8px 12px",fontWeight:600,color:"#4a9410"}}>{t.trainingType}</td>
-          <td style={{padding:"8px 12px",fontSize:11}}>{t.issuedAt?new Date(t.issuedAt).toLocaleDateString("pt-BR"):""}</td>
-          <td style={{padding:"8px 12px",fontSize:11,fontWeight:t.diasVenc<=30?700:400,color:t.diasVenc<0?"#dc2626":t.diasVenc<=30?"#d97706":"#374151"}}>{t.expiresAt?new Date(t.expiresAt).toLocaleDateString("pt-BR"):""}</td>
-          <td style={{padding:"8px 12px",fontWeight:700,color:t.diasVenc<0?"#dc2626":t.diasVenc<=30?"#d97706":"#15803d"}}>{t.diasVenc<0?"Venceu há "+Math.abs(t.diasVenc)+"d":t.diasVenc+" d"}</td>
-          <td style={{padding:"8px 12px",fontSize:11,color:"#6b7280"}}>{t.institution||"—"}</td>
-          <td style={{padding:"8px 12px"}}><span style={{background:bg,color:co,padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{txt}</span></td>
-        </tr>;
-      })}</tbody>
-    </table>
-  </div>);
+  const vencidos=data.filter((t:any)=>t.status==="vencido").length,aVencer=data.filter((t:any)=>t.status==="a_vencer").length;
+  return <div><h1 style={{color:"#334532",fontSize:20,fontWeight:700,marginBottom:4}}>Treinamentos & NRs <DemoBadge mostrar={demo}/></h1><p style={{fontSize:12,color:"#6b7280"}}>Certificados, vencimentos, reciclagens e histórico por colaborador.</p>{msg&&<div style={{padding:8,background:"#fef9c3",color:"#92400e",borderRadius:8,marginBottom:10,fontSize:12}}>{msg}</div>}{(vencidos>0||aVencer>0)&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"10px 14px",marginBottom:14}}>🚨 <b>{vencidos} vencido(s)</b> e <b>{aVencer} a vencer</b></div>}<KpiGrid colunas={3}>{[["Válidos",data.filter((t:any)=>t.status==="valido").length,"✅","#4a9410"],["A vencer (30d)",aVencer,"⚠️","#d97706"],["Vencidos",vencidos,"⛔","#dc2626"]].map(([l,v,i,c])=><KpiCard key={l as string} label={l as string} valor={v as any} cor={c as string} icone={i as string}/>)}</KpiGrid>
+  <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:16,marginBottom:14}}><h3 style={{color:"#334532",fontSize:13,marginBottom:12}}>+ Registrar treinamento</h3><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:9}}><div><label style={estiloLabel}>Funcionário</label><select style={estiloInput} value={form.employeeId} onChange={e=>setForm((p:any)=>({...p,employeeId:e.target.value}))}><option value="">Selecione</option>{funcs.map((f:any)=><option key={f.id} value={f.id}>{f.name} — {f.role}</option>)}</select></div><div><label style={estiloLabel}>Tipo</label><select style={estiloInput} value={form.trainingType} onChange={e=>setForm((p:any)=>({...p,trainingType:e.target.value}))}>{NRS.map(n=><option key={n}>{n}</option>)}</select></div><div><label style={estiloLabel}>Emissão</label><input type="date" style={estiloInput} value={form.issuedAt} onChange={e=>setForm((p:any)=>({...p,issuedAt:e.target.value}))}/></div><div><label style={estiloLabel}>Vencimento/reciclagem</label><input type="date" style={estiloInput} value={form.expiresAt} onChange={e=>setForm((p:any)=>({...p,expiresAt:e.target.value}))}/></div><div><label style={estiloLabel}>Instituição</label><input style={estiloInput} value={form.institution} onChange={e=>setForm((p:any)=>({...p,institution:e.target.value}))}/></div><div><label style={estiloLabel}>Certificado</label><input type="file" accept="application/pdf,image/*" onChange={file} style={{fontSize:11}}/>{form.certificatePath&&<a href={form.certificatePath} target="_blank" style={{fontSize:10}}>Arquivo enviado</a>}</div></div><Botao onClick={salvar} style={{padding:"8px 24px",marginTop:10}}>Registrar</Botao></div>
+  <div style={{overflowX:"auto"}}><table style={{borderCollapse:"collapse",width:"100%",background:"#fff",border:"1px solid #e5e7eb",borderRadius:12}}><TabelaHead colunas={["Funcionário","Função","Treinamento","Emissão","Vencimento","Dias","Instituição","Certificado","Status","Ação"]}/><tbody>{data.sort((a:any,b:any)=>a.diasVenc-b.diasVenc).map((t:any)=>{const [bg,co,txt]=SC[t.status]||["#f3f4f6","#374151","—"];return <tr key={t.id} style={{borderBottom:"1px solid #f3f4f6"}}><td style={{padding:"8px 12px",fontWeight:600}}>{t.employee?.name}</td><td style={{padding:"8px 12px",fontSize:11}}>{t.employee?.role}</td><td style={{padding:"8px 12px",fontWeight:600,color:"#4a9410"}}>{t.trainingType}</td><td style={{padding:"8px 12px"}}>{new Date(t.issuedAt).toLocaleDateString("pt-BR")}</td><td style={{padding:"8px 12px"}}>{new Date(t.expiresAt).toLocaleDateString("pt-BR")}</td><td style={{padding:"8px 12px",fontWeight:700,color:t.diasVenc<0?"#dc2626":t.diasVenc<=30?"#d97706":"#15803d"}}>{t.diasVenc<0?`Venceu há ${Math.abs(t.diasVenc)}d`:`${t.diasVenc}d`}</td><td style={{padding:"8px 12px"}}>{t.institution||"—"}</td><td style={{padding:"8px 12px"}}>{t.certificatePath?<a href={t.certificatePath} target="_blank">Abrir</a>:<span style={{color:"#991b1b"}}>Pendente</span>}</td><td style={{padding:"8px 12px"}}><span style={{background:bg,color:co,padding:"2px 8px",borderRadius:8,fontSize:10,fontWeight:700}}>{txt}</span></td><td style={{padding:"8px 12px"}}><button onClick={()=>remove(t.id)} style={{border:0,background:"transparent",color:"#991b1b"}}>Excluir</button></td></tr>})}</tbody></table></div></div>;
 }
