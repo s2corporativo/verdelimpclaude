@@ -42,7 +42,10 @@ export async function GET(req: NextRequest) {
       const period = await getPeriod(competence);
       if (period) return NextResponse.json({ period });
       const employees = await prisma.employee.findMany({ where: { active: true }, orderBy: { name: "asc" } });
-      return NextResponse.json({ period: null, preview: employees.map((e) => linhaFolha(e, {}, { ano: Number(competence.slice(0, 4)), anexoSimples: "IV" })) });
+      return NextResponse.json({
+        period: null,
+        preview: employees.map((e) => linhaFolha({ ...e, salary: Number(e.salary) }, {}, { ano: Number(competence.slice(0, 4)), anexoSimples: "IV" })),
+      });
     }
     const periods = await prisma.$queryRaw<any[]>`
       SELECT p.*, COUNT(e.id)::int AS employees,
@@ -71,7 +74,7 @@ export async function POST(req: NextRequest) {
       const year = Number(p.data.competence.slice(0, 4));
       for (const e of employees) {
         const extra = p.data.extras[e.id] || { he50: 0, he100: 0 };
-        const line = linhaFolha(e, extra, { ano: year, anexoSimples: "IV" });
+        const line = linhaFolha({ ...e, salary: Number(e.salary) }, extra, { ano: year, anexoSimples: "IV" });
         await prisma.$executeRaw`
           INSERT INTO erp_payroll_entry
             (id, period_id, employee_id, base_salary, overtime_50, overtime_100, gross_amount, net_amount, inss, irrf, fgts, company_cost, events, updated_at)
