@@ -35,6 +35,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
     abas: [
       { href: "/dashboard/contratos", label: "📋 Contratos" },
       { href: "/dashboard/novo-contrato", label: "⚡ Novo Contrato" },
+      { href: "/dashboard/contratos-eventos", label: "🔄 Eventos & Renovações" },
       { href: "/dashboard/cronograma", label: "📅 Cronograma" },
       { href: "/dashboard/medicao", label: "📏 Medição" },
       { href: "/dashboard/alteracoes-escopo", label: "🔁 Alterações de Escopo" },
@@ -54,6 +55,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
   {
     key: "campo", titulo: "Operação de Campo",
     abas: [
+      { href: "/dashboard/ordens-servico", label: "🧾 Ordens de Serviço" },
       { href: "/dashboard/logistica", label: "🚛 Logística" },
       { href: "/dashboard/diario-obras", label: "📝 Diário de Obras" },
     ],
@@ -81,6 +83,15 @@ export const GRUPOS_NAV: GrupoNav[] = [
     ],
   },
   {
+    key: "financeiro", titulo: "Financeiro",
+    abas: [
+      { href: "/dashboard/financeiro", label: "💰 Lançamentos & Aging" },
+      { href: "/dashboard/financeiro-avancado", label: "🔁 Recorrências & Importação" },
+      { href: "/dashboard/rentabilidade", label: "💹 Rentabilidade por Contrato" },
+      { href: "/dashboard/dre", label: "📊 DRE" },
+    ],
+  },
+  {
     key: "fiscal", titulo: "Fiscal & Contábil",
     abas: [
       { href: "/dashboard/fiscal", label: "💼 Central Fiscal" },
@@ -90,10 +101,13 @@ export const GRUPOS_NAV: GrupoNav[] = [
     ],
   },
   {
-    key: "rh", titulo: "RH",
+    key: "rh", titulo: "RH & SST",
     abas: [
       { href: "/dashboard/rh", label: "👷 RH & Folha" },
-      { href: "/dashboard/folha-detalhada", label: "📑 Folha INSS/IRRF" },
+      { href: "/dashboard/rh-admissao", label: "🪪 Admissão & Desligamento" },
+      { href: "/dashboard/matriz-sst", label: "🛡️ Matriz PGR/PCMSO" },
+      { href: "/dashboard/folha-competencias", label: "📆 Folha por Competência" },
+      { href: "/dashboard/folha-detalhada", label: "📑 Simulação INSS/IRRF" },
       { href: "/dashboard/rh-ocorrencias", label: "🏖️ Férias & Ocorrências" },
       { href: "/dashboard/mobilizacoes", label: "📋 Mobilizações" },
       { href: "/dashboard/treinamentos", label: "🎓 Treinamentos NR" },
