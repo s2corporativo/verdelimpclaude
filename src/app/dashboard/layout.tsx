@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 const MENU = [
   { s: "VISÃO GERAL" },
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/dashboard/erp-completo", label: "ERP Completo", icon: "🌿" },
   { href: "/dashboard/alertas", label: "Central de Alertas", icon: "🚨", grupo: "alertas" },
   { href: "/dashboard/ajuda", label: "Ajuda com IA", icon: "🤖" },
   { href: "/dashboard/manual", label: "Manual do Sistema", icon: "📖" },
@@ -28,7 +29,7 @@ const MENU = [
   { href: "/dashboard/fornecedores", label: "Fornecedores", icon: "📦" },
 
   { s: "CAMPO" },
-  { href: "/dashboard/logistica", label: "Operação de Campo", icon: "🚛", grupo: "campo" },
+  { href: "/dashboard/ordens-servico", label: "Operação de Campo", icon: "🚛", grupo: "campo" },
   { href: "/dashboard/equipamentos", label: "Frota & Equipamentos", icon: "🔧", grupo: "frota" },
   { href: "/dashboard/retro", label: "Serviços Especiais", icon: "🚜", grupo: "especiais" },
 
@@ -37,8 +38,7 @@ const MENU = [
   { href: "/dashboard/ambiental", label: "Ambiental", icon: "🌱" },
 
   { s: "FINANCEIRO & FISCAL" },
-  { href: "/dashboard/financeiro", label: "Financeiro + Aging", icon: "💰" },
-  { href: "/dashboard/rentabilidade", label: "Rentabilidade", icon: "💹" },
+  { href: "/dashboard/financeiro", label: "Financeiro", icon: "💰", grupo: "financeiro" },
   { href: "/dashboard/fiscal", label: "Fiscal & Contábil", icon: "💼", grupo: "fiscal" },
   { href: "/dashboard/tributario", label: "Inteligência Tributária", icon: "🧾" },
   { href: "/dashboard/nfse", label: "NFS-e Nacional", icon: "🧾" },
@@ -55,7 +55,6 @@ const MENU = [
   { href: "/dashboard/alterar-senha", label: "Alterar Senha", icon: "🔐" },
 ];
 
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -67,7 +66,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
-  // Navegar fecha a gaveta no mobile
   useEffect(() => { setMenuAberto(false); }, [pathname]);
 
   if (status === "loading") return (
@@ -90,7 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               style={{ maxWidth: 180, maxHeight: 48, objectFit: "contain", display: "block", margin: "0 auto 6px", background: "#fff", borderRadius: 6, padding: 4 }} />
           )}
           <p style={{ margin: 0, fontWeight: 900, fontSize: 13, textAlign: semLogo ? "left" : "center" }}>{semLogo ? "🌿 " : ""}VERDELIMP ERP</p>
-          <p style={{ margin: "2px 0 0", fontSize: 9, color: "rgba(255,255,255,.4)", textAlign: semLogo ? "left" : "center" }}>v2.2 · Betim/MG</p>
+          <p style={{ margin: "2px 0 0", fontSize: 9, color: "rgba(255,255,255,.4)", textAlign: semLogo ? "left" : "center" }}>v2.4 · Betim/MG</p>
         </div>
         <nav style={{ flex: 1, padding: "5px 4px", overflowY: "auto" }}>
           {MENU.map((m, i) => {
@@ -127,13 +125,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button className="vl-hamburger" onClick={() => setMenuAberto(true)} aria-label="Abrir menu de navegação">☰</button>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
             <NotificacoesWidget />
-            <span style={{ fontSize: 11, color: "#9ca3af" }}>🌿 Verdelimp ERP v2.2</span>
+            <span style={{ fontSize: 11, color: "#9ca3af" }}>🌿 Verdelimp ERP v2.4</span>
           </div>
         </div>
         <main className="vl-main" style={{ flex: 1, overflowY: "auto", padding: 22, background: "#f3f4f6" }}>
-        <SubNav />
-        {children}
-      </main>
+          <SubNav />
+          {children}
+        </main>
       </div>
     </div>
   );

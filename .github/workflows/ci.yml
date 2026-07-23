@@ -39,8 +39,27 @@ jobs:
       - name: Prisma validate (schema íntegro)
         run: npx prisma validate
 
-      - name: TypeScript (tsc --noEmit)
-        run: npx tsc --noEmit
+      - name: TypeScript (capturar relatório)
+        run: |
+          set +e
+          npx tsc --noEmit > typescript-report.txt 2>&1
+          echo $? > typescript-exit-code.txt
+          cat typescript-report.txt
+          exit 0
+
+      - name: Preservar relatório TypeScript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-report
+          path: |
+            typescript-report.txt
+            typescript-exit-code.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validar resultado TypeScript
+        run: test "$(cat typescript-exit-code.txt)" = "0"
 
       - name: Testes (vitest)
         run: npm test
@@ -57,11 +76,30 @@ jobs:
           ln -sf .env.production .env
           docker compose config --quiet
 
-      - name: Auditoria de dependências de produção (alta+)
-        run: npm audit --omit=dev --audit-level=high
+      - name: Auditoria de dependências de produção (capturar relatório)
+        run: |
+          set +e
+          npm audit --omit=dev --audit-level=high --json > npm-audit-report.json
+          echo $? > npm-audit-exit-code.txt
+          node -e 'const fs=require("fs"); const r=JSON.parse(fs.readFileSync("npm-audit-report.json","utf8")); console.log(JSON.stringify({metadata:r.metadata,vulnerabilities:r.vulnerabilities},null,2))'
+          exit 0
+
+      - name: Preservar auditoria npm
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: |
+            npm-audit-report.json
+            npm-audit-exit-code.txt
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Build de produção
         run: npm run build
+
+      - name: Validar auditoria de dependências
+        run: test "$(cat npm-audit-exit-code.txt)" = "0"
 
   migrations:
     name: Migrations aplicam num PostgreSQL real

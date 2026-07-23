@@ -1,37 +1,49 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { registrarAuditoria } from "@/lib/admin";
-import { erroInterno } from "@/lib/authz";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const { erro } = await exigirPapel("ADMIN", "RH", "OPERACIONAL");
+  if (erro) return erro;
   try {
     const data = await prisma.training.findMany({ orderBy: { expiresAt: "asc" }, include: { employee: { select: { name: true, role: true } } } });
     const hoje = new Date(); const em30 = new Date(hoje.getTime()+30*86400000);
     const enriched = data.map(t => ({ ...t, status: new Date(t.expiresAt) < hoje ? "vencido" : new Date(t.expiresAt) < em30 ? "a_vencer" : "valido", diasVenc: Math.ceil((new Date(t.expiresAt).getTime()-hoje.getTime())/86400000) }));
     if (!enriched.length) return NextResponse.json({ data: DEMO, _demo: true });
     return NextResponse.json({ data: enriched, vencidos: enriched.filter(t=>t.status==="vencido").length, aVencer: enriched.filter(t=>t.status==="a_vencer").length });
-  } catch { return NextResponse.json({ data: DEMO, _demo: true }); }
+  } catch (e) { return erroInterno(e, "api/treinamentos GET"); }
 }
 
 export async function POST(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "RH");
+  if (erro) return erro;
   try {
     const b = await req.json();
-    const t = await prisma.training.create({ data: { employeeId: b.employeeId, trainingType: b.trainingType, issuedAt: new Date(b.issuedAt), expiresAt: new Date(b.expiresAt), institution: b.institution, status: "valido" } });
-    const session = await getServerSession(authOptions);
-    await registrarAuditoria({ userId: (session?.user as any)?.id || null, action: "CRIAR", module: "sst", entityType: "Training", entityId: t.id, newValues: { employeeId: b.employeeId, trainingType: b.trainingType } });
+    if (!b.employeeId || !b.trainingType || !b.issuedAt || !b.expiresAt) return NextResponse.json({ error: "Funcionário, treinamento, emissão e vencimento são obrigatórios" }, { status: 400 });
+    const t = await prisma.training.create({ data: {
+      employeeId: b.employeeId, trainingType: b.trainingType, issuedAt: new Date(b.issuedAt), expiresAt: new Date(b.expiresAt),
+      institution: b.institution || null, certificatePath: b.certificatePath || null, status: "valido",
+    }});
+    await registrarAuditoria({ userId: user!.id, action: "CRIAR", module: "sst", entityType: "Training", entityId: t.id, newValues: { employeeId: b.employeeId, trainingType: b.trainingType, certificatePath: b.certificatePath || null } });
     return NextResponse.json(t, { status: 201 });
-  } catch (e: any) { return erroInterno(e, "api/treinamentos"); }
+  } catch (e) { return erroInterno(e, "api/treinamentos POST"); }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "RH");
+  if (erro) return erro;
+  try {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    await prisma.training.delete({ where: { id } });
+    await registrarAuditoria({ userId: user!.id, action: "EXCLUIR", module: "sst", entityType: "Training", entityId: id });
+    return NextResponse.json({ success: true });
+  } catch (e) { return erroInterno(e, "api/treinamentos DELETE"); }
 }
 
 const DEMO = [
-  { id:"t1", employee:{ name:"Abrão Felipe", role:"Op. Roçadeira" }, trainingType:"NR-12", issuedAt:"2025-06-01", expiresAt:"2026-06-01", institution:"SENAI Betim", status:"a_vencer", diasVenc:32 },
-  { id:"t2", employee:{ name:"Ana Luiza Ribeiro", role:"Supervisora" }, trainingType:"NR-35", issuedAt:"2025-04-01", expiresAt:"2027-04-01", institution:"Empresa de Treinamentos", status:"valido", diasVenc:336 },
-  { id:"t3", employee:{ name:"Gilberto Ferreira", role:"Op. Roçadeira" }, trainingType:"NR-06", issuedAt:"2024-06-07", expiresAt:"2026-06-07", institution:"SESI Contagem", status:"a_vencer", diasVenc:38 },
-  { id:"t4", employee:{ name:"Leomar Souza", role:"Op. Retroescavadeira" }, trainingType:"CNH Cat. B", issuedAt:"2020-01-01", expiresAt:"2025-01-01", institution:"DETRAN/MG", status:"vencido", diasVenc:-119 },
-  { id:"t5", employee:{ name:"José Antonio", role:"Op. Roçadeira" }, trainingType:"NR-12", issuedAt:"2026-01-01", expiresAt:"2027-01-01", institution:"SENAI Betim", status:"valido", diasVenc:246 },
+  { id:"t1", employee:{ name:"Abrão Felipe", role:"Op. Roçadeira" }, trainingType:"NR-12", issuedAt:"2025-06-01", expiresAt:"2026-06-01", institution:"SENAI Betim", certificatePath:null, status:"a_vencer", diasVenc:32 },
 ];
