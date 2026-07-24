@@ -1,7 +1,7 @@
 Solicitação de deploy automático em produção.
-Data: 2026-07-23
+Data: 2026-07-24
 Modo: auto
-Origem: implementação validada do ERP Verdelimp v2.4.
-Commit funcional: 5a483fff4b8a3af9fb495f4ec9790c3797dfebfe
-Validações: TypeScript, testes, lint, build, npm audit, migrations PostgreSQL 16 e seed aprovados.
-Execução: deploy protegido na VPS Contabo com health check e evidências na issue 37.
+Origem: refatoração validada do fluxo operacional e da usabilidade do Verdelimp v3.0.
+Commit funcional: 04736bd5937868bf035057b2106eef9360f2c4d0
+Validações: TypeScript, testes Vitest, lint, build de produção, npm audit, Docker Compose, migrations PostgreSQL 16 e seed aprovados.
+Execução: deploy protegido na VPS Contabo com health check e evidências técnicas na issue 37.
