@@ -1,64 +1,210 @@
-// CRM — funil de oportunidades com clientes privados (condomínios, indústrias…).
+// Demandas comerciais — entrada única para clientes privados, renovações e serviços emergenciais.
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { erroInterno } from "@/lib/authz";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
+const estagios = ["lead", "qualificado", "proposta", "negociacao", "ganho", "perdido"] as const;
+
+const textoOpcional = (limite: number) => z.string().trim().max(limite).optional().nullable();
+
+const demandaSchema = z.object({
+  prospectName: z.string().trim().min(1, "Nome do cliente é obrigatório").max(180),
+  contactName: textoOpcional(150),
+  phone: textoOpcional(40),
+  email: z.union([z.string().trim().email("E-mail inválido").max(180), z.literal("")]).optional().nullable(),
+  origin: textoOpcional(80),
+  serviceType: textoOpcional(180),
+  estimatedValue: z.union([z.string(), z.number()]).optional().nullable(),
+  stage: z.enum(estagios).optional(),
+  nextAction: textoOpcional(300),
+  nextActionDate: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"), z.literal("")]).optional().nullable(),
+  notes: textoOpcional(4000),
+});
+
+const atualizacaoSchema = demandaSchema.partial().extend({
+  id: z.string().trim().min(1, "id obrigatório"),
+});
+
+function valorMonetario(valor: string | number | null | undefined) {
+  if (valor === null || valor === undefined || valor === "") return null;
+  const numero = Number(valor);
+  if (!Number.isFinite(numero) || numero < 0 || numero > 9999999999999.99) {
+    throw new Error("Valor estimado inválido");
+  }
+  return numero;
+}
+
+function dataOpcional(valor: string | null | undefined) {
+  if (!valor) return null;
+  const data = new Date(`${valor}T12:00:00`);
+  if (Number.isNaN(data.getTime())) throw new Error("Data inválida");
+  return data;
+}
+
+function paraAuditoria(oportunidade: any) {
+  if (!oportunidade) return null;
+  return {
+    id: oportunidade.id,
+    prospectName: oportunidade.prospectName,
+    contactName: oportunidade.contactName,
+    phone: oportunidade.phone,
+    email: oportunidade.email,
+    origin: oportunidade.origin,
+    serviceType: oportunidade.serviceType,
+    estimatedValue: oportunidade.estimatedValue === null ? null : Number(oportunidade.estimatedValue),
+    stage: oportunidade.stage,
+    nextAction: oportunidade.nextAction,
+    nextActionDate: oportunidade.nextActionDate ? new Date(oportunidade.nextActionDate).toISOString() : null,
+    notes: oportunidade.notes,
+  };
+}
+
 export async function GET() {
+  const { erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  if (erro) return erro;
+
   try {
     const oportunidades = await prisma.opportunity.findMany({ orderBy: { updatedAt: "desc" } });
-    const total = oportunidades.filter((o) => !["ganho", "perdido"].includes(o.stage))
-      .reduce((s, o) => s + Number(o.estimatedValue || 0), 0);
+    const total = oportunidades
+      .filter((oportunidade) => !["ganho", "perdido"].includes(oportunidade.stage))
+      .reduce((soma, oportunidade) => soma + Number(oportunidade.estimatedValue || 0), 0);
+
     return NextResponse.json({ oportunidades, valorEmAberto: total });
-  } catch (e: any) {
-    return erroInterno(e, "api/oportunidades");
+  } catch (e) {
+    return erroInterno(e, "api/oportunidades GET");
   }
 }
 
 export async function POST(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  if (erro || !user) return erro;
+
   try {
-    const b = await req.json();
-    if (!b.prospectName) return NextResponse.json({ error: "Nome do cliente é obrigatório" }, { status: 400 });
-    const o = await prisma.opportunity.create({
+    const validacao = demandaSchema.safeParse(await req.json());
+    if (!validacao.success) {
+      return NextResponse.json(
+        { error: validacao.error.issues[0]?.message || "Dados inválidos" },
+        { status: 400 },
+      );
+    }
+
+    const b = validacao.data;
+    const oportunidade = await prisma.opportunity.create({
       data: {
-        prospectName: b.prospectName, contactName: b.contactName || null,
-        phone: b.phone || null, email: b.email || null, origin: b.origin || null,
+        prospectName: b.prospectName,
+        contactName: b.contactName || null,
+        phone: b.phone || null,
+        email: b.email || null,
+        origin: b.origin || null,
         serviceType: b.serviceType || null,
-        estimatedValue: b.estimatedValue ? Number(b.estimatedValue) : null,
-        stage: b.stage || "lead", nextAction: b.nextAction || null,
-        nextActionDate: b.nextActionDate ? new Date(b.nextActionDate) : null,
+        estimatedValue: valorMonetario(b.estimatedValue),
+        stage: b.stage || "lead",
+        nextAction: b.nextAction || null,
+        nextActionDate: dataOpcional(b.nextActionDate),
         notes: b.notes || null,
       },
     });
-    return NextResponse.json({ ok: true, id: o.id });
-  } catch (e: any) {
-    return erroInterno(e, "api/oportunidades");
+
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: "CREATE",
+        module: "demandas",
+        entityType: "Opportunity",
+        entityId: oportunidade.id,
+        newValues: paraAuditoria(oportunidade),
+      },
+    });
+
+    return NextResponse.json({ ok: true, id: oportunidade.id }, { status: 201 });
+  } catch (e) {
+    if (e instanceof Error && ["Valor estimado inválido", "Data inválida"].includes(e.message)) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
+    return erroInterno(e, "api/oportunidades POST");
   }
 }
 
 export async function PUT(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  if (erro || !user) return erro;
+
   try {
-    const b = await req.json();
-    if (!b.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-    const data: any = {};
-    for (const k of ["prospectName", "contactName", "phone", "email", "origin", "serviceType", "stage", "nextAction", "notes"]) if (b[k] !== undefined) data[k] = b[k];
-    if (b.estimatedValue !== undefined) data.estimatedValue = b.estimatedValue ? Number(b.estimatedValue) : null;
-    if (b.nextActionDate !== undefined) data.nextActionDate = b.nextActionDate ? new Date(b.nextActionDate) : null;
-    await prisma.opportunity.update({ where: { id: b.id }, data });
+    const validacao = atualizacaoSchema.safeParse(await req.json());
+    if (!validacao.success) {
+      return NextResponse.json(
+        { error: validacao.error.issues[0]?.message || "Dados inválidos" },
+        { status: 400 },
+      );
+    }
+
+    const b = validacao.data;
+    const anterior = await prisma.opportunity.findUnique({ where: { id: b.id } });
+    if (!anterior) return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
+
+    const data: Record<string, any> = {};
+    for (const chave of ["prospectName", "contactName", "phone", "email", "origin", "serviceType", "stage", "nextAction", "notes"] as const) {
+      if (b[chave] !== undefined) data[chave] = b[chave] || null;
+    }
+    if (b.prospectName !== undefined) data.prospectName = b.prospectName;
+    if (b.estimatedValue !== undefined) data.estimatedValue = valorMonetario(b.estimatedValue);
+    if (b.nextActionDate !== undefined) data.nextActionDate = dataOpcional(b.nextActionDate);
+
+    const atualizada = await prisma.opportunity.update({ where: { id: b.id }, data });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: "UPDATE",
+        module: "demandas",
+        entityType: "Opportunity",
+        entityId: atualizada.id,
+        oldValues: paraAuditoria(anterior),
+        newValues: paraAuditoria(atualizada),
+      },
+    });
+
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return erroInterno(e, "api/oportunidades");
+  } catch (e) {
+    if (e instanceof Error && ["Valor estimado inválido", "Data inválida"].includes(e.message)) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
+    return erroInterno(e, "api/oportunidades PUT");
   }
 }
 
+// Compatibilidade com clientes antigos. A interface v3 encerra a demanda por status
+// e não expõe exclusão definitiva. A remoção permanece restrita ao administrador.
 export async function DELETE(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN");
+  if (erro || !user) return erro;
+
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-    await prisma.opportunity.delete({ where: { id } });
+
+    const anterior = await prisma.opportunity.findUnique({ where: { id } });
+    if (!anterior) return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
+
+    await prisma.$transaction([
+      prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "DELETE",
+          module: "demandas",
+          entityType: "Opportunity",
+          entityId: id,
+          oldValues: paraAuditoria(anterior),
+        },
+      }),
+      prisma.opportunity.delete({ where: { id } }),
+    ]);
+
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return erroInterno(e, "api/oportunidades");
+  } catch (e) {
+    return erroInterno(e, "api/oportunidades DELETE");
   }
 }
