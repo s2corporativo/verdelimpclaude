@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const READ_ROLES = ["ADMIN", "GESTOR", "FINANCEIRO", "FISCAL"];
 const CANCELLED = ["cancelada", "cancelado", "cancelled", "CANCELLED", "Cancelado"];
 
-type PaymentMonth = { competencia: string; recebido: Prisma.Decimal };
+type PaymentMonth = { competencia: string | null; recebido: Prisma.Decimal };
 
 function validYear(value: string) {
   return /^\d{4}$/.test(value) && Number(value) >= 2000 && Number(value) <= 2100;
@@ -74,20 +74,24 @@ export async function GET(req: NextRequest) {
     }
 
     for (const item of nfses) {
+      if (!item.competence) continue;
       const row = map.get(item.competence);
       if (!row) continue;
       row.receitaBruta += Number(item.serviceValue || 0);
       row.receitaLiquidaNfse += Number(item.netAmount || 0);
     }
     for (const item of tributos) {
+      if (!item.competence) continue;
       const row = map.get(item.competence);
       if (row) row.deducoesTributos += Number(item.totalAmount || 0);
     }
     for (const item of despesas) {
+      if (!item.competence) continue;
       const row = map.get(item.competence);
       if (row) row.despesasOp += Number(item.amount || 0);
     }
     for (const item of recebimentos) {
+      if (!item.competencia) continue;
       const row = map.get(item.competencia);
       if (row) row.receitaRecebida += Number(item.recebido || 0);
     }
