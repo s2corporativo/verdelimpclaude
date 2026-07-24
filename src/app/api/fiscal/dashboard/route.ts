@@ -1,41 +1,78 @@
-// src/app/api/fiscal/dashboard/route.ts
-import { NextResponse } from "next/server";
+// Indicadores fiscais derivados exclusivamente dos lançamentos persistidos.
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 
-// Sempre executar no servidor — nunca pré-renderizar com dados demo no build
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+const ConsultaSchema = z.object({
+  competencia: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+});
+
+export async function GET(req: NextRequest) {
+  const { erro } = await exigirPapel("ADMIN", "FINANCEIRO", "GESTOR");
+  if (erro) return erro;
+
   try {
-    const today = new Date();
-    const [tributosAberto, tributosPago, tributosVencidos, nfseCount, docsVencer] = await Promise.all([
-      prisma.fiscalTaxExpense.aggregate({ where: { status: "em_aberto" }, _sum: { totalAmount: true } }),
-      prisma.fiscalTaxExpense.aggregate({ where: { status: "pago" }, _sum: { totalAmount: true } }),
-      prisma.fiscalTaxExpense.count({ where: { status: "vencido" } }),
-      prisma.fiscalNfse.count(),
-      prisma.fiscalDocument.count({ where: { status: { in: ["a_vencer", "vencido"] } } }),
+    const validacao = ConsultaSchema.safeParse(Object.fromEntries(new URL(req.url).searchParams.entries()));
+    if (!validacao.success) return NextResponse.json({ error: "Competência inválida. Use AAAA-MM." }, { status: 400 });
+
+    const hoje = new Date();
+    const em30 = new Date(hoje.getTime() + 30 * 86_400_000);
+    const filtroCompetencia = validacao.data.competencia ? { competence: validacao.data.competencia } : {};
+
+    const [abertos, pagos, vencidos, nfseCount, docsVencer, proximosVencimentos] = await Promise.all([
+      prisma.fiscalTaxExpense.aggregate({
+        where: { ...filtroCompetencia, status: { not: "pago" } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.fiscalTaxExpense.aggregate({
+        where: { ...filtroCompetencia, status: "pago" },
+        _sum: { totalAmount: true },
+      }),
+      prisma.fiscalTaxExpense.count({
+        where: { ...filtroCompetencia, status: { not: "pago" }, dueDate: { lt: hoje } },
+      }),
+      prisma.fiscalNfse.count({ where: filtroCompetencia }),
+      prisma.fiscalDocument.count({
+        where: { dueDate: { lte: em30 }, status: { notIn: ["arquivado", "substituido"] } },
+      }),
+      prisma.fiscalTaxExpense.findMany({
+        where: { ...filtroCompetencia, status: { not: "pago" } },
+        orderBy: { dueDate: "asc" },
+        take: 10,
+        select: {
+          id: true,
+          taxType: true,
+          description: true,
+          competence: true,
+          dueDate: true,
+          totalAmount: true,
+          generatedAuto: true,
+          status: true,
+        },
+      }),
     ]);
 
-    const proximosVenc = await prisma.fiscalTaxExpense.findMany({
-      where: { status: "em_aberto" },
-      orderBy: { dueDate: "asc" },
-      take: 10,
-      select: { taxType: true, competence: true, dueDate: true, totalAmount: true, generatedAuto: true },
-    });
+    const normalizados = proximosVencimentos.map((item) => ({
+      ...item,
+      vencido: item.dueDate < hoje,
+      diasParaVencimento: Math.ceil((item.dueDate.getTime() - hoje.getTime()) / 86_400_000),
+    }));
 
     return NextResponse.json({
-      tributosAberto: Number(tributosAberto._sum.totalAmount) || 0,
-      tributosPago: Number(tributosPago._sum.totalAmount) || 0,
-      tributosVencidos,
+      tributosAberto: Number(abertos._sum.totalAmount || 0),
+      tributosPago: Number(pagos._sum.totalAmount || 0),
+      tributosVencidos: vencidos,
       nfseCount,
       docsVencer,
-      proximosVencimentos: proximosVenc,
+      proximosVencimentos: normalizados,
+      competencia: validacao.data.competencia || null,
+      fonte: "lancamentos_fiscais",
+      geradoEm: hoje.toISOString(),
     });
-  } catch {
-    // Retornar dados demo se banco não estiver disponível
-    return NextResponse.json({
-      tributosAberto: 8450, tributosPago: 12300, tributosVencidos: 1,
-      nfseCount: 4, docsVencer: 2, proximosVencimentos: [], _demo: true,
-    });
+  } catch (e) {
+    return erroInterno(e, "api/fiscal/dashboard GET");
   }
 }

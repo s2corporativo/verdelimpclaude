@@ -1,82 +1,263 @@
-
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarAuditoria } from "@/lib/admin";
-import { erroInterno } from "@/lib/authz";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
-async function userId() {
-  const s = await getServerSession(authOptions);
-  return (s?.user as any)?.id || null;
+const STATUS = ["Ativo", "Encerrado", "Suspenso", "Renovando", "Cancelado"] as const;
+const INDICES = ["INPC", "IPCA", "IGPM"] as const;
+
+const ConsultaSchema = z.object({
+  status: z.enum(STATUS).optional(),
+  clientId: z.string().trim().min(1).optional(),
+  q: z.string().trim().max(150).optional(),
+});
+
+const ContratoSchema = z.object({
+  clientId: z.string().trim().min(1).optional().nullable(),
+  object: z.string().trim().min(3).max(1000),
+  value: z.coerce.number().positive().max(1_000_000_000),
+  monthlyValue: z.coerce.number().nonnegative().max(1_000_000_000).default(0),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  status: z.enum(STATUS).default("Ativo"),
+  renewalAlertDays: z.coerce.number().int().min(1).max(730).default(90),
+  adjustIndex: z.enum(INDICES).default("INPC"),
+  notes: z.string().trim().max(5000).optional().nullable(),
+});
+
+const ContratoUpdateSchema = ContratoSchema.partial().extend({
+  id: z.string().trim().min(1),
+});
+
+function dataUtc(data: string) {
+  const resultado = new Date(`${data}T00:00:00.000Z`);
+  return Number.isNaN(resultado.getTime()) ? null : resultado;
 }
 
-export async function GET() {
+async function validarCliente(clientId?: string | null) {
+  if (!clientId) return true;
+  const cliente = await prisma.client.findFirst({
+    where: { id: clientId, active: true, deletedAt: null },
+    select: { id: true },
+  });
+  return Boolean(cliente);
+}
+
+export async function GET(req: NextRequest) {
+  const { erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL", "OPERACAO", "FINANCEIRO");
+  if (erro) return erro;
+
   try {
-    const data = await prisma.contract.findMany({ orderBy: { endDate: "asc" }, include: { measurements: { select: { id: true, status: true, value: true } } } });
-    const hoje = new Date();
-    const enriched = data.map(c => {
-      const diasFim = Math.ceil((new Date(c.endDate).getTime() - hoje.getTime()) / 86400000);
-      return { ...c, diasFim, alerta: diasFim <= c.renewalAlertDays && diasFim > 0 ? "renovar" : diasFim <= 0 ? "vencido" : "ok" };
+    const validacao = ConsultaSchema.safeParse(Object.fromEntries(new URL(req.url).searchParams.entries()));
+    if (!validacao.success) return NextResponse.json({ error: "Filtros inválidos." }, { status: 400 });
+    const filtros = validacao.data;
+
+    const contratos = await prisma.contract.findMany({
+      where: {
+        ...(filtros.status ? { status: filtros.status } : {}),
+        ...(filtros.clientId ? { clientId: filtros.clientId } : {}),
+        ...(filtros.q ? {
+          OR: [
+            { number: { contains: filtros.q, mode: "insensitive" } },
+            { object: { contains: filtros.q, mode: "insensitive" } },
+            { client: { name: { contains: filtros.q, mode: "insensitive" } } },
+          ],
+        } : {}),
+      },
+      orderBy: [{ status: "asc" }, { endDate: "asc" }],
+      include: {
+        client: { select: { id: true, name: true, cnpjCpf: true } },
+        measurements: { select: { id: true, status: true, value: true, period: true } },
+      },
     });
-    if (!enriched.length) return NextResponse.json({ data: DEMO, _demo: true });
-    return NextResponse.json({ data: enriched });
-  } catch { return NextResponse.json({ data: DEMO, _demo: true }); }
+
+    const hoje = new Date();
+    const data = contratos.map((contrato) => {
+      const diasFim = Math.ceil((contrato.endDate.getTime() - hoje.getTime()) / 86_400_000);
+      const alerta = contrato.status === "Cancelado" || contrato.status === "Encerrado"
+        ? "inativo"
+        : diasFim <= 0
+          ? "vencido"
+          : diasFim <= contrato.renewalAlertDays
+            ? "renovar"
+            : "ok";
+      return { ...contrato, diasFim, alerta };
+    });
+
+    return NextResponse.json({ data, total: data.length, fonte: "contratos_transacionais" });
+  } catch (e) {
+    return erroInterno(e, "api/contratos GET");
+  }
 }
 
 export async function POST(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  if (erro) return erro;
+
   try {
-    const b = await req.json();
-    if (!b.object || !b.value || !b.startDate || !b.endDate) return NextResponse.json({ error: "Campos obrigatórios: objeto, valor, início, fim" }, { status: 400 });
-    const count = await prisma.contract.count();
-    const number = `CONT-${new Date().getFullYear()}-${String(count+1).padStart(3,"0")}`;
-    const c = await prisma.contract.create({ data: { number, clientId: b.clientId||null, object: b.object, value: Number(b.value), monthlyValue: Number(b.monthlyValue||0), startDate: new Date(b.startDate), endDate: new Date(b.endDate), status: b.status||"Ativo", notes: b.notes } });
-    await registrarAuditoria({ userId: await userId(), action: "CRIAR", module: "contratos", entityType: "Contract", entityId: c.id, newValues: { number: c.number, value: Number(c.value) } });
-    return NextResponse.json(c, { status: 201 });
-  } catch (e: any) { return erroInterno(e, "api/contratos"); }
+    const validacao = ContratoSchema.safeParse(await req.json());
+    if (!validacao.success) {
+      return NextResponse.json({
+        error: validacao.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; "),
+      }, { status: 400 });
+    }
+    const dados = validacao.data;
+    const inicio = dataUtc(dados.startDate);
+    const fim = dataUtc(dados.endDate);
+    if (!inicio || !fim || inicio > fim) {
+      return NextResponse.json({ error: "A vigência do contrato é inválida." }, { status: 400 });
+    }
+    if (!(await validarCliente(dados.clientId))) {
+      return NextResponse.json({ error: "Cliente inexistente ou inativo." }, { status: 400 });
+    }
+
+    const number = `CONT-${inicio.getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
+    const contrato = await prisma.contract.create({
+      data: {
+        number,
+        clientId: dados.clientId || null,
+        object: dados.object,
+        value: dados.value,
+        monthlyValue: dados.monthlyValue,
+        startDate: inicio,
+        endDate: fim,
+        status: dados.status,
+        renewalAlertDays: dados.renewalAlertDays,
+        adjustIndex: dados.adjustIndex,
+        notes: dados.notes || null,
+      },
+    });
+
+    await registrarAuditoria({
+      userId: user!.id,
+      action: "CRIAR",
+      module: "contratos",
+      entityType: "Contract",
+      entityId: contrato.id,
+      newValues: {
+        number: contrato.number,
+        clientId: contrato.clientId,
+        value: Number(contrato.value),
+        startDate: contrato.startDate.toISOString(),
+        endDate: contrato.endDate.toISOString(),
+        status: contrato.status,
+      },
+    });
+
+    return NextResponse.json(contrato, { status: 201 });
+  } catch (e: any) {
+    if (e?.code === "P2002") return NextResponse.json({ error: "Número de contrato já existente." }, { status: 409 });
+    return erroInterno(e, "api/contratos POST");
+  }
 }
 
-// Editar contrato
 export async function PUT(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  if (erro) return erro;
+
   try {
-    const b = await req.json();
-    if (!b.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-    const data: any = {};
-    if (b.object !== undefined) { if (!String(b.object).trim()) return NextResponse.json({ error: "Objeto não pode ficar vazio" }, { status: 400 }); data.object = b.object; }
-    if (b.clientId !== undefined) data.clientId = b.clientId || null;
-    if (b.value !== undefined) data.value = Number(b.value);
-    if (b.monthlyValue !== undefined) data.monthlyValue = Number(b.monthlyValue || 0);
-    if (b.startDate) data.startDate = new Date(b.startDate);
-    if (b.endDate) data.endDate = new Date(b.endDate);
-    if (b.status !== undefined) data.status = b.status;
-    if (b.notes !== undefined) data.notes = b.notes || null;
-    const c = await prisma.contract.update({ where: { id: b.id }, data });
-    await registrarAuditoria({ userId: await userId(), action: "EDITAR", module: "contratos", entityType: "Contract", entityId: b.id, newValues: data });
-    return NextResponse.json(c);
-  } catch (e: any) {
-    if (e.code === "P2025") return NextResponse.json({ error: "Contrato não encontrado" }, { status: 404 });
-    return erroInterno(e, "api/contratos");
+    const validacao = ContratoUpdateSchema.safeParse(await req.json());
+    if (!validacao.success) {
+      return NextResponse.json({
+        error: validacao.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; "),
+      }, { status: 400 });
+    }
+    const dados = validacao.data;
+    const atual = await prisma.contract.findUnique({ where: { id: dados.id } });
+    if (!atual) return NextResponse.json({ error: "Contrato não encontrado." }, { status: 404 });
+    if (atual.status === "Cancelado" && dados.status && dados.status !== "Cancelado") {
+      return NextResponse.json({ error: "Contrato cancelado não pode ser reativado por edição comum." }, { status: 409 });
+    }
+    if (!(await validarCliente(dados.clientId))) {
+      return NextResponse.json({ error: "Cliente inexistente ou inativo." }, { status: 400 });
+    }
+
+    const inicio = dados.startDate ? dataUtc(dados.startDate) : atual.startDate;
+    const fim = dados.endDate ? dataUtc(dados.endDate) : atual.endDate;
+    if (!inicio || !fim || inicio > fim) {
+      return NextResponse.json({ error: "A vigência do contrato é inválida." }, { status: 400 });
+    }
+
+    const contrato = await prisma.contract.update({
+      where: { id: dados.id },
+      data: {
+        ...(dados.clientId !== undefined ? { clientId: dados.clientId || null } : {}),
+        ...(dados.object !== undefined ? { object: dados.object } : {}),
+        ...(dados.value !== undefined ? { value: dados.value } : {}),
+        ...(dados.monthlyValue !== undefined ? { monthlyValue: dados.monthlyValue } : {}),
+        ...(dados.startDate !== undefined ? { startDate: inicio } : {}),
+        ...(dados.endDate !== undefined ? { endDate: fim } : {}),
+        ...(dados.status !== undefined ? { status: dados.status } : {}),
+        ...(dados.renewalAlertDays !== undefined ? { renewalAlertDays: dados.renewalAlertDays } : {}),
+        ...(dados.adjustIndex !== undefined ? { adjustIndex: dados.adjustIndex } : {}),
+        ...(dados.notes !== undefined ? { notes: dados.notes || null } : {}),
+      },
+    });
+
+    await registrarAuditoria({
+      userId: user!.id,
+      action: "EDITAR",
+      module: "contratos",
+      entityType: "Contract",
+      entityId: contrato.id,
+      oldValues: {
+        clientId: atual.clientId,
+        object: atual.object,
+        value: Number(atual.value),
+        monthlyValue: Number(atual.monthlyValue),
+        startDate: atual.startDate.toISOString(),
+        endDate: atual.endDate.toISOString(),
+        status: atual.status,
+      },
+      newValues: {
+        clientId: contrato.clientId,
+        object: contrato.object,
+        value: Number(contrato.value),
+        monthlyValue: Number(contrato.monthlyValue),
+        startDate: contrato.startDate.toISOString(),
+        endDate: contrato.endDate.toISOString(),
+        status: contrato.status,
+      },
+    });
+
+    return NextResponse.json(contrato);
+  } catch (e) {
+    return erroInterno(e, "api/contratos PUT");
   }
 }
 
-// "Excluir": marca como Cancelado (preserva medições/custos vinculados)
+// Cancelamento lógico: preserva medições, custos, diários e documentos vinculados.
 export async function DELETE(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR");
+  if (erro) return erro;
+
   try {
-    const id = new URL(req.url).searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-    const c = await prisma.contract.update({ where: { id }, data: { status: "Cancelado" } });
-    await registrarAuditoria({ userId: await userId(), action: "CANCELAR", module: "contratos", entityType: "Contract", entityId: id });
-    return NextResponse.json({ success: true, contrato: c });
-  } catch (e: any) {
-    if (e.code === "P2025") return NextResponse.json({ error: "Contrato não encontrado" }, { status: 404 });
-    return erroInterno(e, "api/contratos");
+    const id = new URL(req.url).searchParams.get("id")?.trim();
+    if (!id) return NextResponse.json({ error: "id obrigatório." }, { status: 400 });
+
+    const atual = await prisma.contract.findUnique({ where: { id } });
+    if (!atual) return NextResponse.json({ error: "Contrato não encontrado." }, { status: 404 });
+    if (atual.status === "Cancelado") {
+      return NextResponse.json({ success: true, contrato: atual, idempotente: true });
+    }
+
+    const contrato = await prisma.contract.update({ where: { id }, data: { status: "Cancelado" } });
+    await registrarAuditoria({
+      userId: user!.id,
+      action: "CANCELAR",
+      module: "contratos",
+      entityType: "Contract",
+      entityId: id,
+      oldValues: { status: atual.status },
+      newValues: { status: "Cancelado" },
+    });
+
+    return NextResponse.json({ success: true, contrato });
+  } catch (e) {
+    return erroInterno(e, "api/contratos DELETE");
   }
 }
-
-const DEMO = [
-  { id:"ct1", number:"CONT-2026-001", object:"Roçada Canteiros Norte — PBH", value:462000, monthlyValue:38500, startDate:"2026-01-01", endDate:"2026-12-31", status:"Ativo", diasFim:245, alerta:"ok", measurements:[] },
-  { id:"ct2", number:"CONT-2026-002", object:"PRADA Linhas Transmissão — CEMIG", value:504000, monthlyValue:42000, startDate:"2026-03-01", endDate:"2027-02-28", status:"Ativo", diasFim:304, alerta:"ok", measurements:[] },
-  { id:"ct3", number:"CONT-2025-003", object:"Jardinagem Mensal HQ Betim — Sanesul", value:102000, monthlyValue:8500, startDate:"2025-07-01", endDate:"2026-06-30", status:"Ativo", diasFim:61, alerta:"renovar", measurements:[] },
-];
