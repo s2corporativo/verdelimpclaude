@@ -1,52 +1,172 @@
-
-// getByUser (unreadOnly), markAsRead — sistema de alertas internos
+// Alertas internos gerados a partir de dados reais, com estado de leitura por usuário.
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { erroInterno, exigirPapel } from "@/lib/authz";
+
+export const dynamic = "force-dynamic";
+
+const MarcarSchema = z.object({
+  action: z.enum(["mark_read", "mark_unread"]),
+  ids: z.array(z.string().trim().min(1).max(200)).min(1).max(200),
+});
+
+function diasAte(data: Date, hoje: Date) {
+  return Math.ceil((data.getTime() - hoje.getTime()) / 86_400_000);
+}
+
+async function gerarNotificacoes() {
+  const hoje = new Date();
+  const em30 = new Date(hoje.getTime() + 30 * 86_400_000);
+  const em7 = new Date(hoje.getTime() + 7 * 86_400_000);
+  const ha365 = new Date(hoje.getTime() - 365 * 86_400_000);
+  const notifs: any[] = [];
+
+  const [treinamentos, tributos, itens, contratos] = await Promise.all([
+    prisma.training.findMany({
+      where: { expiresAt: { gte: ha365, lte: em30 } },
+      include: { employee: { select: { name: true, active: true } } },
+      orderBy: { expiresAt: "asc" },
+      take: 500,
+    }),
+    prisma.fiscalTaxExpense.findMany({
+      where: { status: "em_aberto", dueDate: { gte: ha365, lte: em7 } },
+      orderBy: { dueDate: "asc" },
+      take: 500,
+    }),
+    prisma.inventoryItem.findMany({
+      where: { active: true },
+      orderBy: { description: "asc" },
+      take: 1000,
+    }),
+    prisma.contract.findMany({
+      where: { endDate: { gte: ha365, lte: em30 }, status: "Ativo" },
+      orderBy: { endDate: "asc" },
+      take: 500,
+    }),
+  ]);
+
+  for (const training of treinamentos) {
+    if (!training.employee.active) continue;
+    const dias = diasAte(new Date(training.expiresAt), hoje);
+    notifs.push({
+      id: `sst-${training.id}`,
+      type: "sst_vencendo",
+      title: dias < 0 ? "Treinamento vencido" : "Treinamento a vencer",
+      message: `${training.employee.name} — ${training.trainingType} ${dias < 0 ? `venceu há ${Math.abs(dias)} dia(s)` : `vence em ${dias} dia(s)`}`,
+      urgency: dias < 0 ? "critica" : dias <= 7 ? "alta" : "media",
+      createdAt: training.expiresAt,
+      href: "/dashboard/treinamentos",
+    });
+  }
+
+  for (const tax of tributos) {
+    const dias = diasAte(new Date(tax.dueDate), hoje);
+    notifs.push({
+      id: `trib-${tax.id}`,
+      type: "tributo_vencendo",
+      title: dias < 0 ? `${tax.taxType} vencido` : `${tax.taxType} a vencer`,
+      message: `${tax.taxType} ${tax.competence} — R$ ${Number(tax.totalAmount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ${dias < 0 ? `venceu há ${Math.abs(dias)} dia(s)` : `vence em ${dias} dia(s)`}`,
+      urgency: dias < 0 ? "critica" : "alta",
+      createdAt: tax.dueDate,
+      href: "/dashboard/fiscal",
+    });
+  }
+
+  for (const item of itens) {
+    if (Number(item.currentQuantity) > Number(item.minimumStock)) continue;
+    notifs.push({
+      id: `stock-${item.id}`,
+      type: "estoque_critico",
+      title: "Estoque crítico",
+      message: `${item.description} — ${Number(item.currentQuantity).toFixed(0)} unid. (mínimo: ${Number(item.minimumStock).toFixed(0)})`,
+      urgency: Number(item.currentQuantity) <= 0 ? "alta" : "media",
+      createdAt: item.updatedAt,
+      href: "/dashboard/almoxarifado",
+    });
+  }
+
+  for (const contract of contratos) {
+    if (!contract.endDate) continue;
+    const dias = diasAte(new Date(contract.endDate), hoje);
+    const objeto = String(contract.object || contract.number || "Contrato").slice(0, 80);
+    notifs.push({
+      id: `cont-${contract.id}`,
+      type: "contrato_vencendo",
+      title: dias < 0 ? "Contrato vencido" : "Contrato a vencer",
+      message: `${objeto} — ${dias < 0 ? `venceu há ${Math.abs(dias)} dia(s)` : `vence em ${dias} dia(s)`}`,
+      urgency: dias < 0 ? "critica" : dias <= 15 ? "alta" : "media",
+      createdAt: contract.endDate,
+      href: "/dashboard/contratos",
+    });
+  }
+
+  const ordem: Record<string, number> = { critica: 0, alta: 1, media: 2 };
+  return notifs.sort((a, b) => {
+    const porUrgencia = (ordem[a.urgency] ?? 9) - (ordem[b.urgency] ?? 9);
+    if (porUrgencia !== 0) return porUrgencia;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+}
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const unreadOnly = searchParams.get("unreadOnly") === "true";
+  const { user, erro } = await exigirPapel();
+  if (erro) return erro;
+
   try {
-    const hoje = new Date(); const em30 = new Date(hoje.getTime()+30*86400000); const em7 = new Date(hoje.getTime()+7*86400000);
-    const notifs: any[] = [];
+    const unreadOnly = req.nextUrl.searchParams.get("unreadOnly") === "true";
+    const [notificacoes, leituras] = await Promise.all([
+      gerarNotificacoes(),
+      prisma.$queryRaw<{ notification_key: string }[]>`
+        SELECT notification_key
+        FROM erp_notification_read
+        WHERE user_id = ${user!.id}
+      `,
+    ]);
+    const lidas = new Set(leituras.map((item) => item.notification_key));
+    const data = notificacoes.map((item) => ({ ...item, read: lidas.has(item.id) }));
+    const filtradas = unreadOnly ? data.filter((item) => !item.read) : data;
 
-    // SST vencendo
-    const sst = await prisma.training.findMany({ where: { expiresAt: { lte: em30 } }, include: { employee: { select: { name: true } } } });
-    sst.forEach(t => {
-      const dias = Math.ceil((new Date(t.expiresAt).getTime()-hoje.getTime())/86400000);
-      notifs.push({ id:"sst-"+t.id, type:"sst_vencendo", title:`SST ${dias<0?"VENCIDO":"vencendo"}`, message:`${t.employee.name} — ${t.trainingType} ${dias<0?"venceu há "+Math.abs(dias)+"d":"vence em "+dias+"d"}`, urgency:dias<0?"critica":dias<7?"alta":"media", read:false, createdAt:new Date().toISOString() });
+    return NextResponse.json({
+      data: filtradas,
+      total: data.length,
+      naoLidas: data.filter((item) => !item.read).length,
+      empty: data.length === 0,
     });
-
-    // Tributos vencendo
-    const trib = await prisma.fiscalTaxExpense.findMany({ where: { status:"em_aberto", dueDate:{ lte:em7 } } });
-    trib.forEach(t => {
-      const dias = Math.ceil((new Date(t.dueDate).getTime()-hoje.getTime())/86400000);
-      notifs.push({ id:"trib-"+t.id, type:"tributo_vencendo", title:`${t.taxType} ${dias<0?"VENCIDO":"vencendo"}`, message:`${t.taxType} ${t.competence} — R$${Number(t.totalAmount).toLocaleString("pt-BR",{minimumFractionDigits:2})} ${dias<0?"venceu há "+Math.abs(dias)+"d":"vence em "+dias+"d"}`, urgency:dias<0?"critica":"alta", read:false, createdAt:new Date().toISOString() });
-    });
-
-    // Estoque crítico
-    const items = await prisma.inventoryItem.findMany({ where:{ active:true } });
-    items.filter(i=>Number(i.currentQuantity)<=Number(i.minimumStock)).forEach(i => {
-      notifs.push({ id:"stock-"+i.id, type:"estoque_critico", title:"Estoque crítico", message:`${i.description} — ${Number(i.currentQuantity).toFixed(0)} unid. (mín: ${Number(i.minimumStock).toFixed(0)})`, urgency:"media", read:false, createdAt:new Date().toISOString() });
-    });
-
-    // Contratos vencendo
-    const contratos = await prisma.contract.findMany({ where:{ endDate:{ lte:em30 }, status:"Ativo" } });
-    contratos.forEach(c => {
-      const dias = Math.ceil((new Date(c.endDate).getTime()-hoje.getTime())/86400000);
-      notifs.push({ id:"cont-"+c.id, type:"contrato_vencendo", title:"Contrato vencendo", message:`${c.object.substring(0,50)} — vence em ${dias} dias`, urgency:dias<15?"alta":"media", read:false, createdAt:new Date().toISOString() });
-    });
-
-    const todas = notifs.sort((a,b)=>{ const o={critica:0,alta:1,media:2}; return (o as any)[a.urgency]-(o as any)[b.urgency]; });
-    return NextResponse.json({ data: unreadOnly ? todas.filter(n=>!n.read) : todas, total:todas.length, naoLidas:todas.filter(n=>!n.read).length });
-  } catch {
-    return NextResponse.json({ data: DEMO_NOTIF, total:DEMO_NOTIF.length, naoLidas:DEMO_NOTIF.length, _demo:true });
+  } catch (e) {
+    return erroInterno(e, "api/notificacoes GET");
   }
 }
 
-const DEMO_NOTIF = [
-  { id:"d1", type:"sst_vencendo", title:"SST vencendo em 32 dias", message:"Abrão Felipe — NR-12 vence em 32 dias", urgency:"media", read:false },
-  { id:"d2", type:"tributo_vencendo", title:"DAS vencendo em 5 dias", message:"DAS 2026-04 — R$3.840,00 vence em 5 dias", urgency:"alta", read:false },
-  { id:"d3", type:"estoque_critico", title:"Estoque crítico — Capacete", message:"EPI-002 Capacete — 8 unid. (mín: 10)", urgency:"media", read:false },
-  { id:"d4", type:"contrato_vencendo", title:"Contrato vencendo em 61 dias", message:"Jardinagem Sanesul — vence em 61 dias", urgency:"media", read:false },
-];
+export async function POST(req: NextRequest) {
+  const { user, erro } = await exigirPapel();
+  if (erro) return erro;
+
+  try {
+    const parsed = MarcarSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const ids = [...new Set(parsed.data.ids)];
+    if (parsed.data.action === "mark_read") {
+      await prisma.$transaction(
+        ids.map((id) => prisma.$executeRaw`
+          INSERT INTO erp_notification_read (user_id, notification_key, read_at)
+          VALUES (${user!.id}, ${id}, NOW())
+          ON CONFLICT (user_id, notification_key) DO UPDATE SET read_at = EXCLUDED.read_at
+        `),
+      );
+    } else {
+      await prisma.$executeRaw`
+        DELETE FROM erp_notification_read
+        WHERE user_id = ${user!.id}
+          AND notification_key = ANY(${ids}::text[])
+      `;
+    }
+
+    return NextResponse.json({ success: true, updated: ids.length });
+  } catch (e) {
+    return erroInterno(e, "api/notificacoes POST");
+  }
+}

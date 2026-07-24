@@ -1,132 +1,199 @@
 // Adiantamentos — registro, consulta e baixa de adiantamentos salariais
+import { randomUUID } from "crypto";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { exigirPapel, erroInterno } from "@/lib/authz";
 import { registrarAuditoria } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
-// GET — Lista de adiantamentos
+const CompetenciaSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "competência deve estar no formato YYYY-MM");
+const StatusSchema = z.enum(["pendente", "descontado", "cancelado"]);
+
+const CriarSchema = z.object({
+  employeeId: z.string().trim().min(1),
+  amount: z.coerce.number().positive().max(10_000_000),
+  competencia: CompetenciaSchema,
+  notes: z.string().trim().max(2000).optional().nullable(),
+});
+
+const BaixaSchema = z.object({
+  id: z.string().trim().min(1),
+  status: z.enum(["descontado", "cancelado"]),
+});
+
+function erroValidacao(error: z.ZodError) {
+  return NextResponse.json({ error: "Dados inválidos", details: error.flatten() }, { status: 400 });
+}
+
+// GET — lista registros reais, sem fallback demonstrativo.
 export async function GET(req: NextRequest) {
   const { erro } = await exigirPapel("ADMIN", "RH", "FINANCEIRO");
   if (erro) return erro;
+
   try {
     const { searchParams } = new URL(req.url);
-    const employeeId = searchParams.get("employeeId");
-    const status = searchParams.get("status"); // pendente | descontado | cancelado
-    const competencia = searchParams.get("competencia"); // 2026-07
+    const employeeId = searchParams.get("employeeId")?.trim() || null;
+    const statusRaw = searchParams.get("status")?.trim() || null;
+    const competenciaRaw = searchParams.get("competencia")?.trim() || null;
 
-    let where = "WHERE 1=1";
-    const params: any[] = [];
+    const status = statusRaw ? StatusSchema.safeParse(statusRaw) : null;
+    if (status && !status.success) return erroValidacao(status.error);
+    const competencia = competenciaRaw ? CompetenciaSchema.safeParse(competenciaRaw) : null;
+    if (competencia && !competencia.success) return erroValidacao(competencia.error);
 
-    if (employeeId) { where += ` AND a.employee_id = $${params.length + 1}`; params.push(employeeId); }
-    if (status) { where += ` AND a.status = $${params.length + 1}`; params.push(status); }
-    if (competencia) { where += ` AND a.competencia = $${params.length + 1}`; params.push(competencia); }
+    const conditions: Prisma.Sql[] = [Prisma.sql`TRUE`];
+    if (employeeId) conditions.push(Prisma.sql`a.employee_id = ${employeeId}`);
+    if (status?.success) conditions.push(Prisma.sql`a.status = ${status.data}`);
+    if (competencia?.success) conditions.push(Prisma.sql`a.competencia = ${competencia.data}`);
 
-    const adiantamentos = await prisma.$queryRaw<any[]>`
-      SELECT a.*, e.name as employee_name, e.role as employee_role, e.salary as employee_salary
+    const data = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT
+        a.id,
+        a.employee_id,
+        a.amount,
+        a.competencia,
+        a.status,
+        a.notes,
+        a.created_by,
+        a.updated_by,
+        a.discounted_at,
+        a.cancelled_at,
+        a.created_at,
+        a.updated_at,
+        e.name AS employee_name,
+        e.role AS employee_role,
+        e.salary AS employee_salary,
+        e.active AS employee_active
       FROM erp_adiantamento a
       JOIN "Employee" e ON e.id = a.employee_id
-      ${prisma.$queryRawUnsafe(where, ...params)}
+      WHERE ${Prisma.join(conditions, " AND ")}
       ORDER BY a.created_at DESC
-    `;
+      LIMIT 1000
+    `);
 
-    // Se a tabela não existir, retornar demo
-    if (!adiantamentos.length && !employeeId && !status && !competencia) {
-      return NextResponse.json({ data: DEMO_ADIANTAMENTOS, _demo: true });
-    }
+    const totalPendente = data
+      .filter((item) => item.status === "pendente")
+      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
-    return NextResponse.json({ data: adiantamentos });
-  } catch {
-    return NextResponse.json({ data: DEMO_ADIANTAMENTOS, _demo: true });
+    return NextResponse.json({
+      data,
+      total: data.length,
+      totalPendente: Number(totalPendente.toFixed(2)),
+      empty: data.length === 0,
+    });
+  } catch (e) {
+    return erroInterno(e, "api/folha/adiantamentos GET");
   }
 }
 
-// POST — Registrar adiantamento
+// POST — registra um adiantamento real.
 export async function POST(req: NextRequest) {
   const { user, erro } = await exigirPapel("ADMIN", "RH", "FINANCEIRO");
   if (erro) return erro;
+
   try {
-    const body = await req.json();
-    const { employeeId, amount, competencia, notes } = body;
+    const parsed = CriarSchema.safeParse(await req.json());
+    if (!parsed.success) return erroValidacao(parsed.error);
+    const body = parsed.data;
 
-    if (!employeeId || !amount || !competencia) {
-      return NextResponse.json({ error: "employeeId, amount e competencia são obrigatórios" }, { status: 400 });
+    const employee = await prisma.employee.findFirst({
+      where: { id: body.employeeId, active: true },
+      select: { id: true, name: true, salary: true, status: true },
+    });
+    if (!employee) return NextResponse.json({ error: "Funcionário ativo não encontrado" }, { status: 404 });
+
+    const existing = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT id
+      FROM erp_adiantamento
+      WHERE employee_id = ${body.employeeId}
+        AND competencia = ${body.competencia}
+        AND status = 'pendente'
+      LIMIT 1
+    `;
+    if (existing.length) {
+      return NextResponse.json({ error: "Já existe adiantamento pendente para este funcionário e competência" }, { status: 409 });
     }
 
-    if (Number(amount) <= 0) {
-      return NextResponse.json({ error: "Valor deve ser positivo" }, { status: 400 });
-    }
+    const id = randomUUID();
+    await prisma.$executeRaw`
+      INSERT INTO erp_adiantamento
+        (id, employee_id, amount, competencia, status, notes, created_by, updated_by)
+      VALUES
+        (${id}, ${body.employeeId}, ${body.amount}, ${body.competencia}, 'pendente', ${body.notes || null}, ${user!.id}, ${user!.id})
+    `;
 
-    // Verificar funcionário
-    const emp = await prisma.employee.findUnique({ where: { id: employeeId } });
-    if (!emp) return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
-
-    // Limite: adiantamento não pode exceder 50% do salário (CLT)
-    const limite = Number(emp.salary) * 0.5;
-    if (Number(amount) > limite) {
-      return NextResponse.json({
-        error: `Adiantamento não pode exceder 50% do salário (R$ ${limite.toFixed(2)})`,
-      }, { status: 400 });
-    }
-
-    // Criar tabela se não existir
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS erp_adiantamento (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        employee_id TEXT NOT NULL,
-        amount DECIMAL(15,2) NOT NULL,
-        competencia TEXT NOT NULL,
-        status TEXT DEFAULT 'pendente',
-        notes TEXT,
-        created_by TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `);
-
-    const id = crypto.randomUUID();
-    await prisma.$executeRawUnsafe(`
-      INSERT INTO erp_adiantamento (id, employee_id, amount, competencia, status, notes, created_by)
-      VALUES ($1, $2, $3, $4, 'pendente', $5, $6)
-    `, id, employeeId, Number(amount), competencia, notes || null, user?.id || null);
+    const salary = Number(employee.salary);
+    const warning = body.amount > salary * 0.5
+      ? "O valor supera 50% do salário-base cadastrado. Trata-se de alerta interno, não de conclusão jurídica automática."
+      : null;
 
     await registrarAuditoria({
-      userId: user!.id, action: "CRIAR", module: "rh",
-      entityType: "Adiantamento", entityId: id,
-      newValues: { employeeId, amount: Number(amount), competencia },
+      userId: user!.id,
+      action: "CRIAR",
+      module: "rh",
+      entityType: "Adiantamento",
+      entityId: id,
+      newValues: {
+        employeeId: body.employeeId,
+        employeeName: employee.name,
+        amount: body.amount,
+        competencia: body.competencia,
+        warning,
+      },
     });
 
-    return NextResponse.json({ success: true, id }, { status: 201 });
+    return NextResponse.json({ success: true, id, warning }, { status: 201 });
   } catch (e) {
     return erroInterno(e, "api/folha/adiantamentos POST");
   }
 }
 
-// PUT — Dar baixa no adiantamento (descontar da folha)
+// PUT — transição única de pendente para descontado ou cancelado.
 export async function PUT(req: NextRequest) {
   const { user, erro } = await exigirPapel("ADMIN", "RH", "FINANCEIRO");
   if (erro) return erro;
+
   try {
-    const body = await req.json();
-    const { id, status } = body;
+    const parsed = BaixaSchema.safeParse(await req.json());
+    if (!parsed.success) return erroValidacao(parsed.error);
+    const body = parsed.data;
 
-    if (!id || !status) {
-      return NextResponse.json({ error: "id e status são obrigatórios" }, { status: 400 });
+    const rows = await prisma.$queryRaw<any[]>`
+      SELECT id, employee_id, amount, competencia, status
+      FROM erp_adiantamento
+      WHERE id = ${body.id}
+      LIMIT 1
+    `;
+    const current = rows[0];
+    if (!current) return NextResponse.json({ error: "Adiantamento não encontrado" }, { status: 404 });
+    if (current.status !== "pendente") {
+      return NextResponse.json({ error: `Adiantamento já está ${current.status}` }, { status: 409 });
     }
 
-    if (!["descontado", "cancelado"].includes(status)) {
-      return NextResponse.json({ error: "Status inválido. Use: descontado ou cancelado" }, { status: 400 });
+    const affected = await prisma.$executeRaw`
+      UPDATE erp_adiantamento
+      SET status = ${body.status},
+          updated_by = ${user!.id},
+          discounted_at = CASE WHEN ${body.status} = 'descontado' THEN NOW() ELSE discounted_at END,
+          cancelled_at = CASE WHEN ${body.status} = 'cancelado' THEN NOW() ELSE cancelled_at END,
+          updated_at = NOW()
+      WHERE id = ${body.id} AND status = 'pendente'
+    `;
+    if (affected !== 1) {
+      return NextResponse.json({ error: "O registro foi alterado por outro usuário. Atualize a tela." }, { status: 409 });
     }
-
-    await prisma.$executeRawUnsafe(`
-      UPDATE erp_adiantamento SET status = $1, updated_at = NOW() WHERE id = $2
-    `, status, id);
 
     await registrarAuditoria({
-      userId: user!.id, action: "ATUALIZAR", module: "rh",
-      entityType: "Adiantamento", entityId: id,
-      newValues: { status },
+      userId: user!.id,
+      action: "ATUALIZAR",
+      module: "rh",
+      entityType: "Adiantamento",
+      entityId: body.id,
+      oldValues: { status: current.status },
+      newValues: { status: body.status },
     });
 
     return NextResponse.json({ success: true });
@@ -134,9 +201,3 @@ export async function PUT(req: NextRequest) {
     return erroInterno(e, "api/folha/adiantamentos PUT");
   }
 }
-
-const DEMO_ADIANTAMENTOS = [
-  { id: "a1", employee_id: "e1", employee_name: "Abrão Felipe", employee_role: "Op. Roçadeira", amount: 1250, competencia: "2026-07", status: "pendente", created_at: "2026-07-01T10:00:00Z" },
-  { id: "a2", employee_id: "e2", employee_name: "Ana Luiza Ribeiro", employee_role: "Supervisora", amount: 1750, competencia: "2026-07", status: "pendente", created_at: "2026-07-01T10:05:00Z" },
-  { id: "a3", employee_id: "e5", employee_name: "Leomar Souza", employee_role: "Op. Retroescav.", amount: 1600, competencia: "2026-06", status: "descontado", created_at: "2026-06-01T10:00:00Z" },
-];

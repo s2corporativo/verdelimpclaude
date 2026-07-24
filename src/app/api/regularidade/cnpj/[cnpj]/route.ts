@@ -1,307 +1,254 @@
-// src/app/api/regularidade/cnpj/[cnpj]/route.ts
-// Consulta de Regularidade Fiscal e Situação Cadastral
-// Fontes: BrasilAPI (Receita Federal), SINTEGRA/SEFAZ via CNPJ
-// Apoio gerencial — validar certidões originais nos órgãos oficiais
-
+// Consulta de situação cadastral de CNPJ e referências para emissão de certidões.
+// Situação ATIVA na Receita Federal não equivale a regularidade fiscal.
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { fetchWithCache } from "@/lib/api-cache";
-import { erroInterno } from "@/lib/authz";
+import { prisma } from "@/lib/prisma";
+import { erroInterno, exigirPapel } from "@/lib/authz";
+import { registrarAuditoria } from "@/lib/admin";
 
-/* ─── Fontes de CND disponíveis publicamente ─────────────────────
-   CND Federal:    https://solucoes.receita.fazenda.gov.br/Servicos/certidaointernet/PJ/Emitir
-   CRF/FGTS:       https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf
-   SINTEGRA/ICMS:  https://www.sintegra.gov.br (por UF)
-   Situação Receita Federal: BrasilAPI (dados da RF com até 24h de delay)
-   ─────────────────────────────────────────────────────────────── */
+export const dynamic = "force-dynamic";
 
-interface RegularidadeResult {
-  cnpj: string;
-  razaoSocial: string | null;
-  situacaoCadastral: string | null;
-  situacaoDesc: string | null;
-  dataAbertura: string | null;
-  cnae: string | null;
-  municipio: string | null;
-  uf: string | null;
-  porte: string | null;
-  natureza: string | null;
-  email: string | null;
-  telefone: string | null;
-  // Regularidade interpretada a partir da situação cadastral RF
-  regularidadeRF: "regular" | "irregular" | "pendente" | "desconhecida";
-  alertas: string[];
-  recomendacoes: string[];
-  fontes: { nome: string; url: string; obs: string }[];
-  consultadoEm: string;
-  cached: boolean;
-}
-
-const SITUACAO_MAP: Record<string, { status: "regular" | "irregular" | "pendente" | "desconhecida"; desc: string }> = {
-  "ATIVA": { status: "regular", desc: "CNPJ ativo na Receita Federal" },
-  "BAIXADA": { status: "irregular", desc: "CNPJ baixado — empresa encerrada" },
-  "INAPTA": { status: "irregular", desc: "CNPJ inapto — verificar irregularidades" },
-  "SUSPENSA": { status: "pendente", desc: "CNPJ suspenso — pendências a regularizar" },
-  "NULA": { status: "irregular", desc: "CNPJ nulo — situação crítica" },
-};
+const PAPEIS = ["ADMIN", "GESTOR", "COMERCIAL", "FINANCEIRO", "FISCAL"];
 
 type ContextoCnpj = { params: Promise<{ cnpj: string }> };
 
-export async function GET(
-  _req: NextRequest,
-  { params }: ContextoCnpj
-) {
+type StatusCadastral = "ativa" | "irregular" | "suspensa" | "desconhecida";
+
+const SITUACAO_MAP: Record<string, { status: StatusCadastral; legacy: "regular" | "irregular" | "pendente" | "desconhecida"; desc: string }> = {
+  ATIVA: { status: "ativa", legacy: "regular", desc: "CNPJ ativo no cadastro da Receita Federal" },
+  BAIXADA: { status: "irregular", legacy: "irregular", desc: "CNPJ baixado no cadastro da Receita Federal" },
+  INAPTA: { status: "irregular", legacy: "irregular", desc: "CNPJ inapto no cadastro da Receita Federal" },
+  SUSPENSA: { status: "suspensa", legacy: "pendente", desc: "CNPJ suspenso no cadastro da Receita Federal" },
+  NULA: { status: "irregular", legacy: "irregular", desc: "CNPJ nulo no cadastro da Receita Federal" },
+};
+
+const FonteSchema = z.object({
+  nome: z.string().trim().min(2).max(250),
+  url: z.string().trim().url().max(2000).optional().nullable(),
+  obs: z.string().trim().max(1000).optional().nullable(),
+  documentUrl: z.string().trim().url().max(2000).optional().nullable(),
+  validade: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+});
+
+const SalvarGedSchema = z.object({
+  fontes: z.array(FonteSchema).min(1).max(30),
+  razaoSocial: z.string().trim().max(250).optional().nullable(),
+});
+
+function validarCNPJ(cnpj: string): boolean {
+  if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
+  const calc = (digits: string, weights: number[]) =>
+    digits.split("").reduce((sum, digit, index) => sum + Number(digit) * weights[index], 0);
+  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const r1 = calc(cnpj.slice(0, 12), w1) % 11;
+  const d1 = r1 < 2 ? 0 : 11 - r1;
+  if (Number(cnpj[12]) !== d1) return false;
+  const r2 = calc(cnpj.slice(0, 13), w2) % 11;
+  const d2 = r2 < 2 ? 0 : 11 - r2;
+  return Number(cnpj[13]) === d2;
+}
+
+function formatarCnpj(cnpj: string) {
+  return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+}
+
+const FONTES_OFICIAIS = [
+  {
+    nome: "Receita Federal — Comprovante de Inscrição e Situação Cadastral",
+    url: "https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp",
+    obs: "Confirma dados cadastrais. Não comprova inexistência de débitos.",
+  },
+  {
+    nome: "CND Federal — Receita Federal e PGFN",
+    url: "https://solucoes.receita.fazenda.gov.br/Servicos/certidaointernet/PJ/Emitir",
+    obs: "Emitir certidão atualizada para verificar débitos federais e dívida ativa da União.",
+  },
+  {
+    nome: "CRF/FGTS — Caixa Econômica Federal",
+    url: "https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf",
+    obs: "Consultar a regularidade do FGTS diretamente na Caixa.",
+  },
+  {
+    nome: "CNDT — Tribunal Superior do Trabalho",
+    url: "https://certidao.tst.jus.br/",
+    obs: "Emitir a Certidão Negativa de Débitos Trabalhistas.",
+  },
+  {
+    nome: "Situação estadual — SEF/MG",
+    url: "https://www.fazenda.mg.gov.br/empresas/cadastro_contribuintes/consulta_publica/",
+    obs: "Aplicável quando houver inscrição estadual em Minas Gerais.",
+  },
+];
+
+export async function GET(_req: NextRequest, { params }: ContextoCnpj) {
+  const { erro } = await exigirPapel(...PAPEIS);
+  if (erro) return erro;
+
   const { cnpj } = await params;
   const clean = cnpj.replace(/\D/g, "");
-
-  if (clean.length !== 14) {
-    return NextResponse.json({ error: "CNPJ deve ter 14 dígitos" }, { status: 400 });
-  }
-
-  if (!validarCNPJ(clean)) {
-    return NextResponse.json({ error: "CNPJ inválido — dígitos verificadores incorretos" }, { status: 400 });
-  }
+  if (clean.length !== 14) return NextResponse.json({ error: "CNPJ deve ter 14 dígitos" }, { status: 400 });
+  if (!validarCNPJ(clean)) return NextResponse.json({ error: "CNPJ inválido — dígitos verificadores incorretos" }, { status: 400 });
 
   try {
     const { data, cached } = await fetchWithCache(
       `https://brasilapi.com.br/api/cnpj/v1/${clean}`,
       `regularidade:cnpj:${clean}`,
       "brasilapi-cnpj",
-      3_600_000 * 6 // cache 6h para regularidade
+      6 * 60 * 60 * 1000,
     ) as { data: any; cached: boolean };
 
-    if (data.message) {
-      return NextResponse.json({ error: data.message || "CNPJ não encontrado na Receita Federal" }, { status: 404 });
+    if (!data || data.message) {
+      return NextResponse.json({ error: data?.message || "CNPJ não localizado na fonte consultada" }, { status: 404 });
     }
 
-    const situacao = (data.descricao_situacao_cadastral || data.situacao_cadastral || "").toUpperCase().trim();
-    const mapeado = SITUACAO_MAP[situacao] || { status: "desconhecida" as const, desc: `Situação: ${situacao}` };
+    const situacao = String(data.descricao_situacao_cadastral || data.situacao_cadastral || "DESCONHECIDA").toUpperCase().trim();
+    const mapeado = SITUACAO_MAP[situacao] || {
+      status: "desconhecida" as const,
+      legacy: "desconhecida" as const,
+      desc: situacao ? `Situação cadastral informada: ${situacao}` : "Situação cadastral não informada",
+    };
 
     const alertas: string[] = [];
-    const recomendacoes: string[] = [];
+    const recomendacoes = [
+      "Emita e confira as certidões oficiais antes de habilitação, contratação, pagamento relevante ou concessão de crédito.",
+      "CNPJ ativo comprova apenas situação cadastral; não comprova regularidade fiscal, trabalhista ou perante o FGTS.",
+    ];
 
-    // Analisar situação
     if (mapeado.status === "irregular") {
-      alertas.push(`⛔ CNPJ com situação "${situacao}" — NÃO emitir NFS-e para este tomador sem regularização`);
-      alertas.push("⛔ Risco de rejeição em licitações e contratos públicos");
-      recomendacoes.push("Solicitar CND Federal atualizada ao fornecedor/cliente antes de qualquer operação");
-      recomendacoes.push("Verificar se há processos de falência ou recuperação judicial");
-    } else if (mapeado.status === "pendente") {
-      alertas.push(`⚠️ CNPJ com situação "${situacao}" — verificar pendências antes de contratar`);
-      recomendacoes.push("Solicitar regularização e CND atualizada");
-    } else if (mapeado.status === "regular") {
-      recomendacoes.push("Consultar CND Federal diretamente na Receita Federal para fins contratuais");
-      recomendacoes.push("Verificar CRF/FGTS na Caixa Econômica Federal");
-      recomendacoes.push("Para contratos públicos, solicitar certidões originais atualizadas");
+      alertas.push(`CNPJ com situação cadastral ${situacao}. Verifique a situação diretamente na Receita Federal antes de prosseguir.`);
+    } else if (mapeado.status === "suspensa") {
+      alertas.push("CNPJ suspenso. Solicite esclarecimentos e documentos atualizados antes de contratar ou liberar operação sensível.");
     }
 
-    // Verificar CNAE para risco de ISS de Betim
-    const cnaeStr = String(data.cnae_fiscal || "").replace(/\D/g, "");
-    const cnaesServico = ["8130300", "8122200", "8129000", "0220906", "3811400", "4399199"];
-    if (cnaesServico.includes(cnaeStr)) {
-      recomendacoes.push(`CNAE ${data.cnae_fiscal} sujeito a retenção de ISS — verificar obrigatoriedade de retenção na fonte`);
-    }
+    const cnae = data.cnae_fiscal_descricao
+      ? `${data.cnae_fiscal || ""} — ${data.cnae_fiscal_descricao}`.trim()
+      : data.cnae_fiscal ? String(data.cnae_fiscal) : null;
 
-    // Alertar se MEI ou ME com restrições
-    if (data.porte === "MICRO EMPRESA" || data.porte === "EMPRESA DE PEQUENO PORTE") {
-      recomendacoes.push(`Porte ${data.porte}: verificar limites de faturamento para Simples Nacional antes de contratos de alto valor`);
-    }
-
-    const result: RegularidadeResult = {
-      cnpj: clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5"),
+    return NextResponse.json({
+      cnpj: formatarCnpj(clean),
       razaoSocial: data.razao_social || null,
-      situacaoCadastral: situacao,
+      situacaoCadastral: situacao || null,
+      situacaoStatus: mapeado.status,
       situacaoDesc: mapeado.desc,
+      // Campo legado para não quebrar a interface; representa somente a situação cadastral.
+      regularidadeRF: mapeado.legacy,
+      regularidadeFiscal: "nao_verificada",
       dataAbertura: data.data_inicio_atividade || null,
-      cnae: data.cnae_fiscal_descricao ? `${data.cnae_fiscal} — ${data.cnae_fiscal_descricao}` : null,
+      cnae,
       municipio: data.municipio || null,
       uf: data.uf || null,
       porte: data.porte || null,
       natureza: data.natureza_juridica || null,
       email: data.email || null,
-      telefone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1}) ${data.telefone_1}` : null,
-      regularidadeRF: mapeado.status,
+      telefone: data.ddd_telefone_1 || data.telefone_1 || null,
       alertas,
       recomendacoes,
-      fontes: [
-        {
-          nome: "Receita Federal — Situação Cadastral (via BrasilAPI)",
-          url: "https://www.receita.fazenda.gov.br/pessoajuridica/cnpj/cnpjreva/cnpjreva_solicitacao.asp",
-          obs: "Dados consultados com até 6h de cache. Verificar diretamente para fins oficiais."
-        },
-        {
-          nome: "CND Federal — Certidão Negativa de Débitos",
-          url: "https://solucoes.receita.fazenda.gov.br/Servicos/certidaointernet/PJ/Emitir",
-          obs: "Emitir certidão atualizada para contratos e licitações"
-        },
-        {
-          nome: "CRF/FGTS — Certidão de Regularidade do FGTS",
-          url: "https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf",
-          obs: "Obrigatória para contratos com a Administração Pública"
-        },
-        {
-          nome: "SINTEGRA — Situação Estadual (ICMS — MG)",
-          url: "https://www.fazenda.mg.gov.br/empresas/cadastro_contribuintes/consulta_publica/",
-          obs: "Consultar situação estadual no SINTEGRA da SEFAZ/MG"
-        },
-        {
-          nome: "Certidão de Regularidade Trabalhista — TST",
-          url: "https://certidao.tst.jus.br/",
-          obs: "Obrigatória para contratos com a Administração Pública (Lei 12.440/2011)"
-        },
-      ],
+      fontes: FONTES_OFICIAIS,
       consultadoEm: new Date().toISOString(),
       cached,
-    };
-
-    return NextResponse.json(result);
-  } catch (e: any) {
-    return NextResponse.json(
-      { error: e.message || "Erro ao consultar Receita Federal", _demo: true, ...DEMO_RESULT(clean) },
-      { status: 200 }
-    );
+      source: "BrasilAPI / dados cadastrais da Receita Federal",
+      avisoLegal: "Resultado gerencial. Para prova de regularidade, utilize as certidões emitidas nos portais oficiais.",
+    });
+  } catch (e) {
+    console.error("[api/regularidade/cnpj GET]", e);
+    return NextResponse.json({
+      error: "O serviço externo de consulta cadastral está indisponível. Nenhum dado demonstrativo foi utilizado.",
+      source: "BrasilAPI",
+    }, { status: 502 });
   }
 }
 
-// Validação matemática do CNPJ
-function validarCNPJ(cnpj: string): boolean {
-  if (cnpj.length !== 14) return false;
-  if (/^(\d)\1+$/.test(cnpj)) return false;
-  const calc = (digits: string, weights: number[]) =>
-    digits.split("").reduce((sum, d, i) => sum + parseInt(d) * weights[i], 0);
-  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  const r1 = calc(cnpj.slice(0, 12), w1) % 11;
-  const d1 = r1 < 2 ? 0 : 11 - r1;
-  if (parseInt(cnpj[12]) !== d1) return false;
-  const r2 = calc(cnpj.slice(0, 13), w2) % 11;
-  const d2 = r2 < 2 ? 0 : 11 - r2;
-  return parseInt(cnpj[13]) === d2;
-}
-
-function DEMO_RESULT(cnpj: string) {
-  return {
-    cnpj: cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5"),
-    razaoSocial: "DADOS DEMONSTRATIVOS — Consultar Receita Federal",
-    situacaoCadastral: "ATIVA",
-    situacaoDesc: "CNPJ ativo na Receita Federal",
-    regularidadeRF: "regular",
-    alertas: [],
-    recomendacoes: ["Verificar CND Federal diretamente na Receita Federal para fins contratuais"],
-    fontes: [],
-    consultadoEm: new Date().toISOString(),
-    cached: false,
-  };
-}
-
-// ══════════════════════════════════════════════════════════════════
-// INTEGRAÇÃO GED — salvar certidões verificadas no GED automaticamente
-// POST /api/regularidade/cnpj/[cnpj] — corpo: { fontes, razaoSocial, salvarGed: true }
-// ══════════════════════════════════════════════════════════════════
-
 export async function POST(req: NextRequest, { params }: ContextoCnpj) {
-  // Salva as certidões consultadas no GED automaticamente
+  const { user, erro } = await exigirPapel(...PAPEIS);
+  if (erro) return erro;
+
   try {
     const { cnpj } = await params;
-    const body = await req.json();
-    const { fontes, razaoSocial } = body;
+    const clean = cnpj.replace(/\D/g, "");
+    if (!validarCNPJ(clean)) return NextResponse.json({ error: "CNPJ inválido" }, { status: 400 });
 
-    if (!fontes?.length) {
-      return NextResponse.json({ error: "Fontes obrigatórias" }, { status: 400 });
+    const parsed = SalvarGedSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    // Mapeamento certidão → metadados GED
-    const CERT_MAP: Record<string, { subcategoria: string; validadeDias: number }> = {
-      "CND Federal":           { subcategoria: "Certidão CND",        validadeDias: 180 },
-      "CRF/FGTS":              { subcategoria: "Certidão FGTS",       validadeDias: 30  },
-      "Certidão Trabalhista":  { subcategoria: "Certidão Trabalhista", validadeDias: 180 },
-      "SINTEGRA":              { subcategoria: "Certidão Municipal",   validadeDias: 180 },
-      "CND Municipal":         { subcategoria: "Certidão Municipal",   validadeDias: 180 },
-      "CADIN":                 { subcategoria: "Certidão CND",        validadeDias: 180 },
-    };
-
-    const { prisma } = await import("@/lib/prisma");
-    const hoje = new Date();
-    const cnpjFormatado = cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-
-    // Buscar se é o próprio CNPJ da empresa ou de cliente
-    let clienteId: string | null = null;
-    try {
-      const cliente = await prisma.client.findFirst({ where: { cnpjCpf: cnpjFormatado } });
-      clienteId = cliente?.id || null;
-    } catch { /* sem cliente, ok */ }
+    const cnpjFormatado = formatarCnpj(clean);
+    const cliente = await prisma.client.findFirst({
+      where: { OR: [{ cnpjCpf: cnpjFormatado }, { cnpjCpf: clean }] },
+      select: { id: true },
+    });
 
     const salvos: string[] = [];
     const ignorados: string[] = [];
+    const criados: string[] = [];
 
-    for (const fonte of fontes) {
-      // Identificar qual certidão é esta fonte
-      let chave: string | null = null;
-      for (const k of Object.keys(CERT_MAP)) {
-        if (fonte.nome?.includes(k)) { chave = k; break; }
-      }
-
-      // Pular fontes que não são certidões (ex: BrasilAPI, Receita Federal cadastral)
-      if (!chave || fonte.nome?.includes("BrasilAPI") || fonte.nome?.includes("Situação Cadastral")) {
-        ignorados.push(fonte.nome);
+    for (const fonte of parsed.data.fontes) {
+      const urlArquivo = fonte.documentUrl || fonte.url || null;
+      if (!urlArquivo) {
+        ignorados.push(`${fonte.nome} (sem URL)`);
         continue;
       }
 
-      const meta = CERT_MAP[chave];
-      const validade = new Date(hoje);
-      validade.setDate(validade.getDate() + meta.validadeDias);
+      const documentoEmitido = Boolean(fonte.documentUrl);
+      const nome = documentoEmitido
+        ? `${fonte.nome} — ${parsed.data.razaoSocial || cnpjFormatado}`
+        : `Portal de consulta — ${fonte.nome} — ${parsed.data.razaoSocial || cnpjFormatado}`;
 
-      // Nome do documento
-      const nomeCNPJ = razaoSocial ? ` — ${razaoSocial}` : cnpjFormatado ? ` — ${cnpjFormatado}` : "";
-      const nomeDoc = `${chave}${nomeCNPJ} (${hoje.toLocaleDateString("pt-BR")})`;
-
-      // Verificar se já existe documento recente (últimos 7 dias) para não duplicar
-      try {
-        const existente = await prisma.document.findFirst({
-          where: {
-            subcategoria: meta.subcategoria,
-            nome: { contains: chave },
-            createdAt: { gte: new Date(hoje.getTime() - 7 * 86400000) },
-          },
-        });
-
-        if (existente) {
-          ignorados.push(`${chave} (já existe — ${existente.createdAt.toLocaleDateString("pt-BR")})`);
-          continue;
-        }
-
-        // Criar no GED
-        await prisma.document.create({
-          data: {
-            nome: nomeDoc,
-            descricao: fonte.obs || "Certidão consultada automaticamente via módulo de Regularidade Fiscal",
-            categoria: "fiscal",
-            subcategoria: meta.subcategoria,
-            tags: `certidao,regularidade,${chave.toLowerCase().replace(/\//g,"-").replace(/ /g,"-")},${hoje.getFullYear()}`,
-            clienteId: clienteId || null,
-            estrategia: "url",
-            urlArquivo: fonte.url || null,
-            mimeType: "application/pdf",
-            validade,
-            status: "ativo",
-            versao: 1,
-            confidencial: false,
-            uploadBy: "Regularidade Fiscal (automático)",
-          },
-        });
-
-        salvos.push(chave);
-      } catch (e: any) {
-        ignorados.push(`${chave} (erro: ${e.message})`);
+      const existente = await prisma.document.findFirst({
+        where: {
+          urlArquivo,
+          clienteId: cliente?.id || null,
+          status: "ativo",
+        },
+        select: { id: true },
+      });
+      if (existente) {
+        ignorados.push(`${fonte.nome} (referência já cadastrada)`);
+        continue;
       }
+
+      const doc = await prisma.document.create({
+        data: {
+          nome,
+          descricao: documentoEmitido
+            ? fonte.obs || "Certidão informada pelo usuário no módulo de regularidade"
+            : `${fonte.obs || "Portal oficial de consulta"} Este registro é apenas uma referência de acesso e não representa certidão emitida.`,
+          categoria: "fiscal",
+          subcategoria: documentoEmitido ? "Certidão" : "Referência de Regularidade",
+          tags: `regularidade,cnpj,${clean},${documentoEmitido ? "certidao" : "portal-consulta"}`,
+          clienteId: cliente?.id || null,
+          estrategia: "url",
+          urlArquivo,
+          validade: fonte.validade ? new Date(`${fonte.validade}T12:00:00`) : null,
+          status: "ativo",
+          versao: 1,
+          confidencial: false,
+          uploadBy: user!.name || user!.email || user!.id,
+        },
+      });
+      criados.push(doc.id);
+      salvos.push(fonte.nome);
     }
+
+    await registrarAuditoria({
+      userId: user!.id,
+      action: "CRIAR_REFERENCIAS",
+      module: "regularidade",
+      entityType: "Document",
+      newValues: { cnpj: cnpjFormatado, documentos: criados, salvos, ignorados },
+    });
 
     return NextResponse.json({
       success: true,
       salvos,
       ignorados,
-      mensagem: `✅ ${salvos.length} certidão(ões) salvas no GED com vencimento calculado automaticamente`,
+      mensagem: salvos.length
+        ? `${salvos.length} referência(s) ou documento(s) cadastrados no GED. Portais de emissão foram identificados como referências, não como certidões emitidas.`
+        : "Nenhum novo registro foi criado.",
     });
-  } catch (e: any) {
-    return erroInterno(e, "api/regularidade/cnpj/[cnpj]");
+  } catch (e) {
+    return erroInterno(e, "api/regularidade/cnpj POST");
   }
 }
