@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     const documentosVencidos = data.reduce((soma, employee) => soma + employee.docs.filter((doc) => doc.expiresAt < hoje).length, 0);
     const documentosVencendo = data.reduce((soma, employee) => soma + employee.docs.filter((doc) => doc.expiresAt >= hoje && doc.expiresAt <= em30).length, 0);
     const treinamentosVencidos = data.reduce((soma, employee) => soma + employee.trainings.filter((training) => training.expiresAt < hoje).length, 0);
-    const asoVencidos = data.reduce((soma, employee) => soma + employee.asoExams.filter((aso) => aso.expiresAt < hoje).length, 0);
+    const asoVencidos = data.reduce((soma, employee) => soma + employee.asoExams.filter((aso) => Boolean(aso.expiresAt && aso.expiresAt < hoje)).length, 0);
     const folhaTotal = data.filter((employee) => employee.active).reduce((soma, employee) => soma + Number(employee.salary), 0);
 
     return NextResponse.json({
