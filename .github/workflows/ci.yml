@@ -146,3 +146,67 @@ jobs:
         run: npm run prisma:seed
         env:
           SEED_ADMIN_PASSWORD: ci-somente-teste
+
+      - name: Validar seed estrutural e vínculo comercial
+        run: |
+          node <<'NODE'
+          const { PrismaClient } = require('@prisma/client');
+          const prisma = new PrismaClient();
+
+          async function main() {
+            const [diretoria, demoEmployees, demoVehicles] = await Promise.all([
+              prisma.role.count({ where: { name: 'DIRETORIA' } }),
+              prisma.employee.count({
+                where: {
+                  OR: [
+                    { id: { startsWith: 'demo-' } },
+                    { id: { in: ['emp-1','emp-2','emp-3','emp-4','emp-5','emp-6','emp-7','emp-8'] } },
+                  ],
+                },
+              }),
+              prisma.vehicle.count({
+                where: {
+                  OR: [
+                    { id: { startsWith: 'demo-' } },
+                    { id: { in: ['veh-1','veh-2','veh-3'] } },
+                  ],
+                },
+              }),
+            ]);
+
+            if (diretoria !== 1) throw new Error(`Papel DIRETORIA inválido: ${diretoria}`);
+            if (demoEmployees !== 0) throw new Error(`Seed criou ${demoEmployees} funcionário(s) demonstrativo(s)`);
+            if (demoVehicles !== 0) throw new Error(`Seed criou ${demoVehicles} veículo(s) demonstrativo(s)`);
+
+            const [column] = await prisma.$queryRawUnsafe(`
+              SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'ServiceDossier' AND column_name = 'opportunityId'
+              ) AS exists
+            `);
+            const [foreignKey] = await prisma.$queryRawUnsafe(`
+              SELECT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ServiceDossier_opportunityId_fkey'
+              ) AS exists
+            `);
+            const triggers = await prisma.$queryRawUnsafe(`
+              SELECT tgname FROM pg_trigger
+              WHERE tgname IN ('trg_service_dossier_sync_opportunity','trg_proposal_sync_opportunity')
+                AND NOT tgisinternal
+            `);
+
+            if (!column?.exists) throw new Error('Coluna ServiceDossier.opportunityId ausente');
+            if (!foreignKey?.exists) throw new Error('FK demanda-dossiê ausente');
+            if (triggers.length !== 2) throw new Error(`Triggers do pipeline incompletos: ${triggers.length}/2`);
+
+            console.log('Seed estrutural e vínculo demanda-dossiê validados.');
+          }
+
+          main()
+            .catch((error) => {
+              console.error(error);
+              process.exitCode = 1;
+            })
+            .finally(() => prisma.$disconnect());
+          NODE
