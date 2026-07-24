@@ -1,8 +1,8 @@
 Solicitação de deploy automático em produção.
 Data: 2026-07-24
 Modo: auto
-Origem: fechamento operacional e financeiro integrado do Verdelimp v3.3.
-Commit funcional: bd1e3f3376eda41cca4a67c00464578113293dfe
+Origem: integridade de dados mestres, financeiro e NFS-e do Verdelimp v3.4.
+Commit funcional: 963b6de12b34d9b946d3080a3f001fd4c94be3b4
 Validações: TypeScript, testes Vitest, lint, build de produção, npm audit, Docker Compose, cadeia completa de migrations em PostgreSQL 16 e seed aprovados.
-Escopo: diário aceito, medição, aprovação, faturamento gerencial, título a receber, recebimento e rentabilidade.
+Escopo acumulado: fluxo comercial, dossiê, rotinas, importação financeira, diário, medição, faturamento, recebimento, rentabilidade, clientes, fornecedores, despesas e NFS-e sem dados fictícios nos módulos tratados.
 Execução: deploy protegido na VPS Contabo, condicionado aos secrets, backup, health check e evidências técnicas da issue 37.
