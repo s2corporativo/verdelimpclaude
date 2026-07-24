@@ -1,80 +1,139 @@
-// src/app/api/financeiro/aging/route.ts
-// Aging de contas a receber — vencimento vs recebimento
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 
-// Sempre executar no servidor — nunca pré-renderizar com dados demo no build
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    const hoje = new Date();
+const READ_ROLES = ["ADMIN", "GESTOR", "FINANCEIRO", "FISCAL", "COMERCIAL"];
+const DAY_MS = 86_400_000;
 
-    // Buscar receitas previstas e em aberto
-    const receitas = await prisma.expense.findMany({
-      where: {
-        categoryId: { not: undefined },
-        status: { in: ["previsto","em_aberto","vencido"] },
-        // Apenas receitas (positivas) pelo sinal da category
-      },
-      include: { category: { select: { name: true, type: true } } },
-      orderBy: { dueDate: "asc" },
-      take: 200,
-    });
+type AgingRow = {
+  id: string;
+  client_id: string | null;
+  contract_id: string | null;
+  description: string;
+  document_number: string | null;
+  issue_date: Date;
+  due_date: Date;
+  gross_amount: Prisma.Decimal;
+  net_amount: Prisma.Decimal;
+  status: string;
+  client_name: string | null;
+  contract_number: string | null;
+  paid_amount: Prisma.Decimal;
+  balance: Prisma.Decimal;
+};
 
-    // Filtrar apenas receitas (type=receita ou description tem "Receita")
-    const aReceber = receitas.filter(e =>
-      e.category?.type === "receita" ||
-      e.description.toLowerCase().includes("receita") ||
-      e.description.toLowerCase().includes("medição") ||
-      e.description.toLowerCase().includes("cont-")
-    );
-
-    // Bucketing de aging
-    const buckets = {
-      corrente:  aReceber.filter(e => new Date(e.dueDate) >= hoje),
-      ate30:     aReceber.filter(e => { const d = new Date(e.dueDate); return d < hoje && (hoje.getTime()-d.getTime()) <= 30*86400000; }),
-      de31a60:   aReceber.filter(e => { const d = new Date(e.dueDate); const dias = (hoje.getTime()-d.getTime())/86400000; return dias > 30 && dias <= 60; }),
-      de61a90:   aReceber.filter(e => { const d = new Date(e.dueDate); const dias = (hoje.getTime()-d.getTime())/86400000; return dias > 60 && dias <= 90; }),
-      acima90:   aReceber.filter(e => { const d = new Date(e.dueDate); return (hoje.getTime()-d.getTime())/86400000 > 90; }),
-    };
-
-    const soma = (arr: any[]) => arr.reduce((s,e) => s + Number(e.amount||0), 0);
-
-    const aging = {
-      corrente:  { qtd: buckets.corrente.length,  valor: soma(buckets.corrente),  itens: buckets.corrente.slice(0,10) },
-      ate30:     { qtd: buckets.ate30.length,      valor: soma(buckets.ate30),     itens: buckets.ate30.slice(0,10) },
-      de31a60:   { qtd: buckets.de31a60.length,    valor: soma(buckets.de31a60),   itens: buckets.de31a60.slice(0,10) },
-      de61a90:   { qtd: buckets.de61a90.length,    valor: soma(buckets.de61a90),   itens: buckets.de61a90.slice(0,10) },
-      acima90:   { qtd: buckets.acima90.length,    valor: soma(buckets.acima90),   itens: buckets.acima90.slice(0,10) },
-    };
-
-    const totalVencido = soma(buckets.ate30) + soma(buckets.de31a60) + soma(buckets.de61a90) + soma(buckets.acima90);
-    const totalGeral = soma(aReceber);
-
-    if (!aReceber.length) return NextResponse.json({ aging: DEMO_AGING, totalVencido: 37800, totalGeral: 168000, _demo: true });
-    return NextResponse.json({ aging, totalVencido, totalGeral });
-  } catch {
-    return NextResponse.json({ aging: DEMO_AGING, totalVencido: 37800, totalGeral: 168000, _demo: true });
-  }
+function startOfDay(value: Date) {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
 }
 
-const DEMO_AGING = {
-  corrente:  { qtd:4, valor:130200, itens:[
-    { id:"r1", description:"Receita MAI/2026 — CONT-2026-001 PBH",  amount:38000, dueDate:"2026-05-10" },
-    { id:"r2", description:"Receita MAI/2026 — CONT-2026-002 CEMIG", amount:32500, dueDate:"2026-05-15" },
-    { id:"r3", description:"Receita MAI/2026 — CONT-2026-003 COPASA",amount:31200, dueDate:"2026-05-20" },
-    { id:"r4", description:"Receita MAI/2026 — CONT-2026-004 Sanesul",amount:28500, dueDate:"2026-05-25" },
-  ]},
-  ate30:     { qtd:2, valor:22400, itens:[
-    { id:"r5", description:"Receita ABR/2026 — CONT-2026-001 PBH",  amount:14800, dueDate:"2026-04-10" },
-    { id:"r6", description:"Receita ABR/2026 — CONT-2026-002 CEMIG", amount:7600,  dueDate:"2026-04-22" },
-  ]},
-  de31a60:   { qtd:1, valor:11200, itens:[
-    { id:"r7", description:"Receita MAR/2026 — CONT-2026-004 Sanesul",amount:11200, dueDate:"2026-03-30" },
-  ]},
-  de61a90:   { qtd:1, valor:4200,  itens:[
-    { id:"r8", description:"Serviço Avulso — Retro CEMIG jan/26", amount:4200, dueDate:"2026-02-28" },
-  ]},
-  acima90:   { qtd:0, valor:0, itens:[] },
-};
+function emptyBucket() {
+  return { qtd: 0, valor: 0, itens: [] as Array<Record<string, unknown>> };
+}
+
+export async function GET(req: NextRequest) {
+  const { erro } = await exigirPapel(...READ_ROLES);
+  if (erro) return erro;
+
+  try {
+    const limitRaw = Number(req.nextUrl.searchParams.get("limit") || 1000);
+    const limit = Number.isInteger(limitRaw) ? Math.min(Math.max(limitRaw, 1), 2000) : 1000;
+    const asOfRaw = req.nextUrl.searchParams.get("asOf");
+    const asOf = asOfRaw ? new Date(`${asOfRaw}T12:00:00`) : new Date();
+    if (Number.isNaN(asOf.getTime())) {
+      return NextResponse.json({ error: "Data-base inválida. Use AAAA-MM-DD." }, { status: 400 });
+    }
+    const reference = startOfDay(asOf);
+
+    const rows = await prisma.$queryRaw<AgingRow[]>(Prisma.sql`
+      SELECT
+        r.id,
+        r.client_id,
+        r.contract_id,
+        r.description,
+        r.document_number,
+        r.issue_date,
+        r.due_date,
+        r.gross_amount,
+        r.net_amount,
+        r.status,
+        cl.name AS client_name,
+        c.number AS contract_number,
+        COALESCE(SUM(p.amount), 0) AS paid_amount,
+        GREATEST(r.net_amount - COALESCE(SUM(p.amount), 0), 0) AS balance
+      FROM erp_receivable r
+      LEFT JOIN erp_receivable_payment p ON p.receivable_id = r.id
+      LEFT JOIN "Client" cl ON cl.id = r.client_id
+      LEFT JOIN "Contract" c ON c.id = r.contract_id
+      WHERE r.status <> 'CANCELLED'
+      GROUP BY r.id, cl.id, c.id
+      HAVING GREATEST(r.net_amount - COALESCE(SUM(p.amount), 0), 0) > 0.009
+      ORDER BY r.due_date ASC
+      LIMIT ${limit}
+    `);
+
+    const buckets = {
+      corrente: emptyBucket(),
+      ate30: emptyBucket(),
+      de31a60: emptyBucket(),
+      de61a90: emptyBucket(),
+      acima90: emptyBucket(),
+    };
+
+    for (const row of rows) {
+      const due = startOfDay(new Date(row.due_date));
+      const diasAtraso = Math.max(0, Math.floor((reference.getTime() - due.getTime()) / DAY_MS));
+      const balance = Number(row.balance || 0);
+      const item = {
+        id: row.id,
+        description: row.description,
+        documentNumber: row.document_number,
+        clientId: row.client_id,
+        clientName: row.client_name,
+        contractId: row.contract_id,
+        contractNumber: row.contract_number,
+        issueDate: row.issue_date,
+        dueDate: row.due_date,
+        grossAmount: Number(row.gross_amount || 0),
+        netAmount: Number(row.net_amount || 0),
+        paidAmount: Number(row.paid_amount || 0),
+        balance,
+        amount: balance,
+        status: row.status,
+        diasAtraso,
+      };
+
+      const bucket = due >= reference
+        ? buckets.corrente
+        : diasAtraso <= 30
+          ? buckets.ate30
+          : diasAtraso <= 60
+            ? buckets.de31a60
+            : diasAtraso <= 90
+              ? buckets.de61a90
+              : buckets.acima90;
+
+      bucket.qtd += 1;
+      bucket.valor += balance;
+      if (bucket.itens.length < 50) bucket.itens.push(item);
+    }
+
+    const totalVencido = buckets.ate30.valor + buckets.de31a60.valor + buckets.de61a90.valor + buckets.acima90.valor;
+    const totalGeral = totalVencido + buckets.corrente.valor;
+
+    return NextResponse.json({
+      aging: buckets,
+      totalVencido,
+      totalGeral,
+      totalTitulos: rows.length,
+      asOf: reference.toISOString().slice(0, 10),
+      source: "erp_receivable",
+    });
+  } catch (error) {
+    return erroInterno(error, "api/financeiro/aging GET");
+  }
+}
