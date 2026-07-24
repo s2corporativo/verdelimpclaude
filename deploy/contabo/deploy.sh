@@ -7,6 +7,7 @@ APP_IMAGE="${APP_IMAGE:-verdelimp-app:latest}"
 HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-180}"
 ROLLBACK_IMAGE=""
 OLD_SHA=""
+EXPECTED_RELEASE=""
 
 log() {
   echo "[$(date '+%F %T')] $*"
@@ -70,7 +71,6 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-# O Docker Compose lê variáveis de .env para interpolação.
 ln -sf .env.production .env
 
 log "Executando backup integral pré-deploy"
@@ -99,6 +99,18 @@ if [ "$OLD_SHA" = "$NEW_SHA" ]; then
   log "Código já estava atualizado; o deploy seguirá para validar build, migrations e saúde."
 fi
 
+if [ ! -f "src/lib/system-version.ts" ]; then
+  echo "Erro: arquivo de versão do sistema não encontrado." >&2
+  exit 1
+fi
+EXPECTED_VERSION="$(sed -n 's/^export const SYSTEM_VERSION = "\([^"]*\)";$/\1/p' src/lib/system-version.ts | head -n 1)"
+if [ -z "$EXPECTED_VERSION" ]; then
+  echo "Erro: não foi possível identificar a versão esperada em src/lib/system-version.ts." >&2
+  exit 1
+fi
+EXPECTED_RELEASE="v${EXPECTED_VERSION}"
+log "Release esperada: $EXPECTED_RELEASE"
+
 log "Construindo nova imagem"
 docker compose build --pull app
 
@@ -115,18 +127,22 @@ docker compose up -d --no-deps app
 log "Aguardando healthcheck"
 wait_for_health
 
-log "Validando endpoint interno"
+log "Validando endpoint interno e release publicada"
 set -a
 # shellcheck disable=SC1091
 source .env.production
 set +a
-curl -fsS --max-time 15 "http://127.0.0.1:${APP_PORT:-3010}/api/health" | grep -q '"ok":true'
+HEALTH_PAYLOAD="$(curl -fsS --max-time 15 "http://127.0.0.1:${APP_PORT:-3010}/api/health")"
+printf '%s\n' "$HEALTH_PAYLOAD"
+printf '%s' "$HEALTH_PAYLOAD" | grep -q '"ok":true'
+printf '%s' "$HEALTH_PAYLOAD" | grep -q "\"release\":\"${EXPECTED_RELEASE}\""
 
 trap - ERR
 
 log "Deploy concluído com sucesso"
-log "Versão anterior: $OLD_SHORT"
-log "Versão atual: $(git rev-parse --short HEAD)"
+log "Versão anterior do Git: $OLD_SHORT"
+log "Versão atual do Git: $(git rev-parse --short HEAD)"
+log "Release confirmada pelo container: $EXPECTED_RELEASE"
 docker compose ps
 
 # Mantém somente a imagem imediatamente anterior para rollback rápido.
