@@ -59,8 +59,8 @@ export async function GET(req: NextRequest) {
         r.contract_id,
         COALESCE(SUM(CASE WHEN r.status <> 'CANCELLED' THEN r.gross_amount ELSE 0 END), 0) AS billed,
         COALESCE(SUM(CASE WHEN r.status <> 'CANCELLED' THEN r.net_amount ELSE 0 END), 0) AS net_billed,
-        COALESCE(SUM(CASE WHEN r.status <> 'CANCELLED' THEN pay.paid ELSE 0 END), 0) AS received,
-        COALESCE(SUM(CASE WHEN r.status <> 'CANCELLED' THEN r.net_amount - pay.paid ELSE 0 END), 0) AS open_balance,
+        COALESCE(SUM(CASE WHEN r.status <> 'CANCELLED' THEN COALESCE(pay.paid,0) ELSE 0 END), 0) AS received,
+        COALESCE(SUM(CASE WHEN r.status <> 'CANCELLED' THEN r.net_amount - COALESCE(pay.paid,0) ELSE 0 END), 0) AS open_balance,
         COUNT(*) FILTER (WHERE r.status <> 'CANCELLED')::int AS title_count
       FROM erp_receivable r
       LEFT JOIN (
