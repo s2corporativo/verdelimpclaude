@@ -102,6 +102,7 @@ export async function GET(req: NextRequest) {
         netAmount: Number(row.net_amount || 0),
         paidAmount: Number(row.paid_amount || 0),
         balance,
+        amount: balance,
         status: row.status,
         diasAtraso,
       };
