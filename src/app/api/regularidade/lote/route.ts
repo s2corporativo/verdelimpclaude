@@ -1,88 +1,137 @@
-// src/app/api/regularidade/lote/route.ts
-// Verificação em lote de regularidade fiscal de clientes e fornecedores
+// Verificação em lote da situação cadastral de clientes e fornecedores.
+// A consulta à BrasilAPI não substitui CND Federal, CRF/FGTS, CNDT ou certidões estaduais/municipais.
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchWithCache } from "@/lib/api-cache";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 
-// Sempre executar no servidor — nunca pré-renderizar com dados demo no build
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+type Entidade = {
+  id: string;
+  tipo: "cliente" | "fornecedor";
+  nome: string;
+  cnpjOriginal: string;
+  situacaoAnterior: string | null;
+};
+
+function classificarSituacao(situacao: string) {
+  if (situacao === "ATIVA") return { situacaoStatus: "ativa", legacy: "regular" };
+  if (situacao === "SUSPENSA") return { situacaoStatus: "suspensa", legacy: "pendente" };
+  if (["BAIXADA", "INAPTA", "NULA"].includes(situacao)) return { situacaoStatus: "irregular", legacy: "irregular" };
+  return { situacaoStatus: "desconhecida", legacy: "desconhecida" };
+}
+
+async function consultar(entidade: Entidade) {
+  const cnpj = entidade.cnpjOriginal.replace(/\D/g, "");
+  if (cnpj.length !== 14) {
+    return {
+      id: entidade.id,
+      tipo: entidade.tipo,
+      nome: entidade.nome,
+      cnpj: entidade.cnpjOriginal,
+      situacao: entidade.situacaoAnterior || "CNPJ INVÁLIDO",
+      situacaoStatus: "desconhecida",
+      regularidade: "desconhecida",
+      regularidadeFiscal: "nao_verificada",
+      consultado: false,
+      error: "CNPJ não possui 14 dígitos",
+    };
+  }
+
   try {
-    // Buscar todos os clientes e fornecedores com CNPJ
-    const [clientes, fornecedores] = await Promise.all([
-      prisma.client.findMany({ where: { deletedAt: null, cnpjCpf: { not: null } }, select: { id: true, name: true, cnpjCpf: true, situacao: true } }),
-      prisma.supplier.findMany({ where: { deletedAt: null, cnpj: { not: null } }, select: { id: true, name: true, cnpj: true, situacao: true } }),
-    ]);
+    const { data, cached } = await fetchWithCache(
+      `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
+      `regularidade:cnpj:${cnpj}`,
+      "brasilapi-cnpj",
+      6 * 60 * 60 * 1000,
+    ) as { data: any; cached: boolean };
 
-    const total = clientes.length + fornecedores.length;
-
-    // Consultar situação atual de cada um (com cache de 6h)
-    const resultados: any[] = [];
-
-    for (const c of clientes) {
-      const cnpj = (c.cnpjCpf || "").replace(/\D/g, "");
-      if (cnpj.length === 14) {
-        try {
-          const { data } = await fetchWithCache(
-            `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
-            `regularidade:cnpj:${cnpj}`,
-            "brasilapi-cnpj",
-            3_600_000 * 6
-          ) as { data: any; cached: boolean };
-          const situacao = (data.descricao_situacao_cadastral || data.situacao_cadastral || "DESCONHECIDA").toUpperCase();
-          resultados.push({
-            id: c.id, tipo: "cliente", nome: c.name, cnpj: c.cnpjCpf,
-            situacao, regularidade: situacao === "ATIVA" ? "regular" : situacao === "SUSPENSA" ? "pendente" : "irregular",
-          });
-        } catch {
-          resultados.push({ id: c.id, tipo: "cliente", nome: c.name, cnpj: c.cnpjCpf, situacao: c.situacao || "NÃO CONSULTADO", regularidade: "desconhecida" });
-        }
-      }
-    }
-
-    for (const f of fornecedores) {
-      const cnpj = (f.cnpj || "").replace(/\D/g, "");
-      if (cnpj.length === 14) {
-        try {
-          const { data } = await fetchWithCache(
-            `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
-            `regularidade:cnpj:${cnpj}`,
-            "brasilapi-cnpj",
-            3_600_000 * 6
-          ) as { data: any; cached: boolean };
-          const situacao = (data.descricao_situacao_cadastral || data.situacao_cadastral || "DESCONHECIDA").toUpperCase();
-          resultados.push({
-            id: f.id, tipo: "fornecedor", nome: f.name, cnpj: f.cnpj,
-            situacao, regularidade: situacao === "ATIVA" ? "regular" : situacao === "SUSPENSA" ? "pendente" : "irregular",
-          });
-        } catch {
-          resultados.push({ id: f.id, tipo: "fornecedor", nome: f.name, cnpj: f.cnpj, situacao: f.situacao || "NÃO CONSULTADO", regularidade: "desconhecida" });
-        }
-      }
-    }
-
-    return NextResponse.json({
-      total, consultados: resultados.length,
-      regulares: resultados.filter(r => r.regularidade === "regular").length,
-      irregulares: resultados.filter(r => r.regularidade === "irregular").length,
-      pendentes: resultados.filter(r => r.regularidade === "pendente").length,
-      desconhecidos: resultados.filter(r => r.regularidade === "desconhecida").length,
-      resultados,
-    });
-  } catch {
-    return NextResponse.json({ ...DEMO_LOTE, _demo: true });
+    const situacao = String(data?.descricao_situacao_cadastral || data?.situacao_cadastral || "DESCONHECIDA").toUpperCase().trim();
+    const classe = classificarSituacao(situacao);
+    return {
+      id: entidade.id,
+      tipo: entidade.tipo,
+      nome: entidade.nome,
+      cnpj: entidade.cnpjOriginal,
+      situacao,
+      situacaoStatus: classe.situacaoStatus,
+      regularidade: classe.legacy,
+      regularidadeFiscal: "nao_verificada",
+      consultado: true,
+      cached,
+    };
+  } catch (e) {
+    console.error(`[regularidade/lote:${entidade.tipo}:${cnpj}]`, e);
+    return {
+      id: entidade.id,
+      tipo: entidade.tipo,
+      nome: entidade.nome,
+      cnpj: entidade.cnpjOriginal,
+      situacao: entidade.situacaoAnterior || "NÃO CONSULTADO",
+      situacaoStatus: "desconhecida",
+      regularidade: "desconhecida",
+      regularidadeFiscal: "nao_verificada",
+      consultado: false,
+      error: "Serviço externo indisponível ou CNPJ não localizado",
+    };
   }
 }
 
-const DEMO_LOTE = {
-  total: 9, consultados: 9,
-  regulares: 7, irregulares: 0, pendentes: 1, desconhecidos: 1,
-  resultados: [
-    { id: "c1", tipo: "cliente", nome: "Prefeitura de BH", cnpj: "17.317.344/0001-19", situacao: "ATIVA", regularidade: "regular" },
-    { id: "c2", tipo: "cliente", nome: "CEMIG", cnpj: "17.038.582/0001-53", situacao: "ATIVA", regularidade: "regular" },
-    { id: "c3", tipo: "cliente", nome: "Copasa", cnpj: "17.054.027/0001-78", situacao: "ATIVA", regularidade: "regular" },
-    { id: "f1", tipo: "fornecedor", nome: "Fornecedor Demo", cnpj: "00.000.000/0001-00", situacao: "NÃO CONSULTADO", regularidade: "desconhecida" },
-    { id: "f2", tipo: "fornecedor", nome: "Loja de EPI Exemplo", cnpj: "00.000.000/0001-01", situacao: "ATIVA", regularidade: "regular" },
-  ],
-};
+export async function GET() {
+  const { erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL", "FINANCEIRO", "FISCAL");
+  if (erro) return erro;
+
+  try {
+    const [clientes, fornecedores] = await Promise.all([
+      prisma.client.findMany({
+        where: { deletedAt: null, active: true, cnpjCpf: { not: null } },
+        select: { id: true, name: true, cnpjCpf: true, situacao: true },
+        orderBy: { name: "asc" },
+        take: 500,
+      }),
+      prisma.supplier.findMany({
+        where: { deletedAt: null, active: true, cnpj: { not: null } },
+        select: { id: true, name: true, cnpj: true, situacao: true },
+        orderBy: { name: "asc" },
+        take: 500,
+      }),
+    ]);
+
+    const entidades: Entidade[] = [
+      ...clientes.map((item) => ({ id: item.id, tipo: "cliente" as const, nome: item.name, cnpjOriginal: item.cnpjCpf || "", situacaoAnterior: item.situacao })),
+      ...fornecedores.map((item) => ({ id: item.id, tipo: "fornecedor" as const, nome: item.name, cnpjOriginal: item.cnpj || "", situacaoAnterior: item.situacao })),
+    ];
+
+    const resultados: any[] = [];
+    const tamanhoLote = 5;
+    for (let i = 0; i < entidades.length; i += tamanhoLote) {
+      resultados.push(...await Promise.all(entidades.slice(i, i + tamanhoLote).map(consultar)));
+    }
+
+    const ativosCadastralmente = resultados.filter((item) => item.situacaoStatus === "ativa").length;
+    const irregularesCadastrais = resultados.filter((item) => item.situacaoStatus === "irregular").length;
+    const suspensos = resultados.filter((item) => item.situacaoStatus === "suspensa").length;
+    const desconhecidos = resultados.filter((item) => item.situacaoStatus === "desconhecida").length;
+
+    return NextResponse.json({
+      total: entidades.length,
+      consultados: resultados.filter((item) => item.consultado).length,
+      ativosCadastralmente,
+      irregularesCadastrais,
+      suspensos,
+      desconhecidos,
+      // Compatibilidade temporária com a interface existente.
+      regulares: ativosCadastralmente,
+      irregulares: irregularesCadastrais,
+      pendentes: suspensos,
+      resultados,
+      escopo: "situacao_cadastral_cnpj",
+      regularidadeFiscalVerificada: false,
+      aviso: "CNPJ ativo não comprova regularidade fiscal. Confirme as certidões oficiais antes de contratar, pagar ou habilitar em licitação.",
+      empty: entidades.length === 0,
+    });
+  } catch (e) {
+    return erroInterno(e, "api/regularidade/lote GET");
+  }
+}
