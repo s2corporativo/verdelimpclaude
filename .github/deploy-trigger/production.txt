@@ -1,8 +1,8 @@
 Solicitação de deploy automático em produção.
 Data: 2026-07-24
 Modo: auto
-Origem: integridade operacional do Verdelimp v3.5.
-Commit funcional: 275a5586ebbcafb62a4795614d9fcca509ef1383
+Origem: integridade de RH, GED e serviços especializados do Verdelimp v3.6.
+Commit funcional: c74f9789e6dca5af905b8bd609891a77687a2ff2
 Validações: Prisma generate/validate, TypeScript, testes Vitest, lint, scripts operacionais, build de produção, npm audit, Docker Compose, cadeia completa de migrations em PostgreSQL 16 e seed aprovados.
-Escopo acumulado: fluxo comercial e operacional, dossiê, rotinas, importação financeira, diário, medição, faturamento, recebimento, rentabilidade, clientes, fornecedores, despesas, NFS-e, EPI, combustível, logística, retroescavadeira e equipamentos sem dados fictícios nos módulos tratados.
+Escopo acumulado: fluxo comercial e operacional, dossiê, rotinas, importação financeira, diário, medição, faturamento, recebimento, rentabilidade, clientes, fornecedores, despesas, NFS-e, EPI, combustível, logística, retroescavadeira, equipamentos, RH, GED e dedetização sem dados fictícios nos módulos tratados.
 Execução: deploy protegido na VPS Contabo, condicionado aos secrets, backup, health check e evidências técnicas da issue 37.
