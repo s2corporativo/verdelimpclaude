@@ -28,13 +28,14 @@ export default withAuth(
       ["/dashboard/diagnostico", ["ADMIN"]],
       ["/api/alertas/whatsapp", ["ADMIN"]],
       ["/dashboard/configuracoes", ["ADMIN"]],
-      ["/dashboard/credenciais", ["ADMIN"]], // cofre de chaves/senhas (API já coberta por /api/admin)
+      ["/dashboard/credenciais", ["ADMIN"]],
       // E-mail — cotações/contratos recebidos + análise IA
       ["/api/email-analise", [...GES, "FINANCEIRO"]],
       ["/dashboard/email-analise", [...GES, "FINANCEIRO"]],
-      // Financeiro & fiscal (as rotas reais não começam todas com /api/fiscal)
+      // Financeiro & fiscal
       ["/api/fiscal", FIN], ["/dashboard/fiscal", FIN],
-      ["/api/financeiro", ["ADMIN", "FINANCEIRO"]], ["/dashboard/financeiro", ["ADMIN", "FINANCEIRO"]],
+      ["/api/financeiro", FIN], ["/dashboard/financeiro", FIN],
+      ["/dashboard/contas-receber", FIN],
       ["/api/dre", FIN], ["/dashboard/dre", FIN],
       ["/api/rentabilidade", FIN], ["/dashboard/rentabilidade", FIN],
       ["/api/tributario", FIN], ["/dashboard/tributario", FIN],
@@ -56,8 +57,7 @@ export default withAuth(
       ["/api/almoxarifado", ["ADMIN", "ALMOXARIFADO", "OPERACIONAL"]],
       ["/dashboard/almoxarifado", ["ADMIN", "ALMOXARIFADO", "OPERACIONAL"]],
       ["/dashboard/propostas", ["ADMIN", "COMERCIAL", "OPERACIONAL"]],
-      // GED — documentos podem conter holerite/ASO/contrato social; papel mínimo
-      // aqui, e o handler ainda restringe os confidenciais por categoria.
+      // GED — documentos podem conter holerite/ASO/contrato social
       ["/api/documentos", ["ADMIN", "GESTOR", "COMERCIAL", "RH", "FINANCEIRO", "FISCAL"]],
       ["/dashboard/documentos", ["ADMIN", "GESTOR", "COMERCIAL", "RH", "FINANCEIRO", "FISCAL"]],
       // Comercial / licitações / precificação
@@ -75,12 +75,15 @@ export default withAuth(
       ["/api/equipe-otimizada", GES],
       ["/api/propostas", [...GES, "OPERACIONAL"]],
       ["/api/proposta-contrato", GES],
-      // Contratos e medição (valores contratuais)
+      // Contratos, execução, medição e fechamento
       ["/api/contratos", [...GES, "OPERACIONAL", "FINANCEIRO", "FISCAL"]],
       ["/api/contrato-impacto", GES],
       ["/api/contrato-propagar", GES],
       ["/api/cronograma-contrato", [...GES, "OPERACIONAL"]],
+      ["/api/diario", [...OPE, "COMERCIAL"]],
+      ["/dashboard/diario-obras", [...OPE, "COMERCIAL"]],
       ["/api/medicao", [...GES, "OPERACIONAL", "FINANCEIRO", "FISCAL"]],
+      ["/dashboard/medicao", [...GES, "OPERACIONAL", "FINANCEIRO", "FISCAL"]],
       // Operação de campo e frota
       ["/api/logistica", OPE],
       ["/api/equipamentos", OPE],
@@ -91,13 +94,9 @@ export default withAuth(
     ];
 
     for (const [route, required] of guards) {
-      if (path.startsWith(route)) {
-        if (!required.some((r) => roles.includes(r))) {
-          if (path.startsWith("/api/")) {
-            return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
-          }
-          return NextResponse.redirect(new URL("/dashboard/acesso-negado", req.url));
-        }
+      if (path.startsWith(route) && !required.some((role) => roles.includes(role))) {
+        if (path.startsWith("/api/")) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+        return NextResponse.redirect(new URL("/dashboard/acesso-negado", req.url));
       }
     }
 
@@ -106,21 +105,18 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Permitir acesso às rotas de API pública sem auth
         const publicApi = [
           "/api/integracoes/publicas/",
           "/api/auth/",
           "/api/health",
-          // Portal do cliente: acesso externo por token. A emissão de token
-          // (com clientId) exige sessão interna, checada dentro do handler.
           "/api/portal-cliente",
         ];
-        if (publicApi.some((p) => req.nextUrl.pathname.startsWith(p))) return true;
+        if (publicApi.some((path) => req.nextUrl.pathname.startsWith(path))) return true;
         return !!token;
       },
     },
     pages: { signIn: "/login" },
-  }
+  },
 );
 
 export const config = {
