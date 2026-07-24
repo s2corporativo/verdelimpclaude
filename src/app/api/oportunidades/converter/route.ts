@@ -6,6 +6,7 @@ import { erroInterno, exigirPapel } from "@/lib/authz";
 export const dynamic = "force-dynamic";
 
 const PREFIXO_FONTE = "OPPORTUNITY:";
+const urlDossie = (id: string) => `/dashboard/proposta-edital?id=${encodeURIComponent(id)}`;
 
 function dadosAuditoria(valor: Record<string, unknown>) {
   return JSON.parse(JSON.stringify(valor)) as Record<string, string | number | boolean | null>;
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
         reused: true,
         dossierId: existente.id,
         code: existente.code,
-        url: "/dashboard/proposta-edital",
+        url: urlDossie(existente.id),
       });
     }
 
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest) {
       dossierId: resultado.dossier.id,
       code: resultado.dossier.code,
       clientId: resultado.clientId,
-      url: "/dashboard/proposta-edital",
+      url: urlDossie(resultado.dossier.id),
       nextStep: "Validar escopo, quantidades, produtividade, equipe, custos, impostos e margem.",
     }, { status: resultado.criado ? 201 : 200 });
   } catch (error) {
