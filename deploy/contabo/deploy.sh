@@ -128,11 +128,13 @@ log "Aguardando healthcheck"
 wait_for_health
 
 log "Validando endpoint interno e release publicada"
-set -a
-# shellcheck disable=SC1091
-source .env.production
-set +a
-HEALTH_PAYLOAD="$(curl -fsS --max-time 15 "http://127.0.0.1:${APP_PORT:-3010}/api/health")"
+APP_BINDING="$(docker compose port app 3000 | head -n 1)"
+APP_PORT_RESOLVED="${APP_BINDING##*:}"
+if ! [[ "$APP_PORT_RESOLVED" =~ ^[0-9]+$ ]]; then
+  echo "Erro: não foi possível identificar a porta publicada da aplicação: ${APP_BINDING:-indisponível}." >&2
+  exit 1
+fi
+HEALTH_PAYLOAD="$(curl -fsS --max-time 15 "http://127.0.0.1:${APP_PORT_RESOLVED}/api/health")"
 printf '%s\n' "$HEALTH_PAYLOAD"
 printf '%s' "$HEALTH_PAYLOAD" | grep -q '"ok":true'
 printf '%s' "$HEALTH_PAYLOAD" | grep -q "\"release\":\"${EXPECTED_RELEASE}\""
