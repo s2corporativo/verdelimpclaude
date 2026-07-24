@@ -1,198 +1,315 @@
-// src/app/api/retro/route.ts
-// Módulo Retroescavadeira — gestão de serviços, custos operacionais e viabilidade
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { erroInterno } from "@/lib/authz";
+import { registrarAuditoria } from "@/lib/admin";
+import { erroInterno, exigirPapel } from "@/lib/authz";
+import { parseDataOperacional } from "@/lib/data-operacional";
 
-// ── Configuração padrão de custos (se não houver RetroConfig no banco) ──
+export const dynamic = "force-dynamic";
+
 const CONFIG_DEFAULT = {
-  custoHoraCombustivel: 45,  // diesel John Deere 3CX: ~8L/h × R$5,60
-  custoHoraOperador: 32,     // operador CLT + encargos: R$3.200 / 220h × 1.7 encargos ≈ R$24,7... com acréscimo hora prod
-  custoHoraDepreciacao: 28,  // R$280.000 / 10000h vida útil
-  custoHoraManutencao: 15,   // média preventiva+corretiva
-  custoHoraSeguro: 8,        // seguro anual ÷ horas
-  custoKmTransporte: 8,      // caminhão plataforma baixa + motorista
+  custoHoraCombustivel: 45,
+  custoHoraOperador: 32,
+  custoHoraDepreciacao: 28,
+  custoHoraManutencao: 15,
+  custoHoraSeguro: 8,
+  custoKmTransporte: 8,
   margemAlvo: 25,
 };
 
-// Produtividade m³/h ou m²/h por tipo de serviço
 const PRODUTIVIDADE: Record<string, { unidade: string; taxa: number; descricao: string }> = {
-  "Terraplanagem":            { unidade: "m³/h", taxa: 25,  descricao: "Corte e aterro de terra" },
-  "Valetamento":              { unidade: "m/h",  taxa: 8,   descricao: "Abertura de valas 0,6x0,8m" },
-  "Drenagem Superficial":     { unidade: "m/h",  taxa: 5,   descricao: "Sarjeta + tubulação" },
-  "Limpeza de Terreno":       { unidade: "m²/h", taxa: 400, descricao: "Retirada de entulho/vegetação" },
-  "Nivelamento":              { unidade: "m²/h", taxa: 300, descricao: "Platô, base para obras" },
-  "Carregamento de Material": { unidade: "m³/h", taxa: 35,  descricao: "Carga em caminhão" },
-  "Apoio PRADA/Recuperação":  { unidade: "m²/h", taxa: 180, descricao: "Modelagem de taludes" },
-  "Demolição/Retirada":       { unidade: "h",    taxa: 1,   descricao: "Trabalho por hora" },
-  "Outro":                    { unidade: "h",    taxa: 1,   descricao: "Trabalho por hora" },
+  Terraplanagem: { unidade: "m³/h", taxa: 25, descricao: "Corte e aterro de terra" },
+  Valetamento: { unidade: "m/h", taxa: 8, descricao: "Abertura de valas 0,6x0,8m" },
+  "Drenagem Superficial": { unidade: "m/h", taxa: 5, descricao: "Sarjeta e tubulação" },
+  "Limpeza de Terreno": { unidade: "m²/h", taxa: 400, descricao: "Retirada de entulho ou vegetação" },
+  Nivelamento: { unidade: "m²/h", taxa: 300, descricao: "Platô ou base para obras" },
+  "Carregamento de Material": { unidade: "m³/h", taxa: 35, descricao: "Carga em caminhão" },
+  "Apoio PRADA/Recuperação": { unidade: "m²/h", taxa: 180, descricao: "Modelagem de taludes" },
+  "Demolição/Retirada": { unidade: "h", taxa: 1, descricao: "Trabalho por hora" },
+  Outro: { unidade: "h", taxa: 1, descricao: "Trabalho por hora" },
 };
 
-function calcularCustos(cfg: any, horas: number, distanciaKm: number) {
-  const horaTotal = cfg.custoHoraCombustivel + cfg.custoHoraOperador + cfg.custoHoraDepreciacao + cfg.custoHoraManutencao + cfg.custoHoraSeguro;
-  const custoMaquina = horaTotal * horas;
-  const custoTransporte = cfg.custoKmTransporte * distanciaKm * 2; // ida e volta
-  const custoTotal = custoMaquina + custoTransporte;
-  const precoMinimo = custoTotal;
-  const precoIdeal = custoTotal * (1 + cfg.margemAlvo / 100);
+const ConfigSchema = z.object({
+  custoHoraCombustivel: z.coerce.number().nonnegative().max(100000),
+  custoHoraOperador: z.coerce.number().nonnegative().max(100000),
+  custoHoraDepreciacao: z.coerce.number().nonnegative().max(100000),
+  custoHoraManutencao: z.coerce.number().nonnegative().max(100000),
+  custoHoraSeguro: z.coerce.number().nonnegative().max(100000),
+  custoKmTransporte: z.coerce.number().nonnegative().max(100000),
+  margemAlvo: z.coerce.number().min(0).max(1000),
+});
 
+const JobSchema = z.object({
+  clienteNome: z.string().trim().min(2).max(200),
+  clienteId: z.string().trim().optional().nullable(),
+  contratoId: z.string().trim().optional().nullable(),
+  tipoServico: z.string().trim().min(2).max(120),
+  endereco: z.string().trim().max(500).optional().nullable(),
+  municipio: z.string().trim().max(120).optional().nullable(),
+  uf: z.string().trim().max(2).optional().nullable(),
+  areaM2: z.coerce.number().nonnegative().max(999999999).optional().nullable(),
+  volumeM3: z.coerce.number().nonnegative().max(999999999).optional().nullable(),
+  horasEstimadas: z.coerce.number().nonnegative().max(100000).optional().nullable(),
+  distanciaKm: z.coerce.number().nonnegative().max(100000).default(0),
+  dataInicio: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal("")]).optional().nullable(),
+  status: z.enum(["orcamento", "agendado", "em_execucao", "concluido", "cancelado"]).default("orcamento"),
+  valorCobrado: z.coerce.number().nonnegative().max(9999999999999.99).optional().nullable(),
+  observacoes: z.string().trim().max(2000).optional().nullable(),
+  artNumero: z.string().trim().max(120).optional().nullable(),
+});
+
+const StatusSchema = z.object({
+  action: z.literal("update_status"),
+  id: z.string().trim().min(1),
+  status: z.enum(["orcamento", "agendado", "em_execucao", "concluido", "cancelado"]),
+  horasRealizadas: z.coerce.number().nonnegative().max(100000).optional().nullable(),
+  custoTotal: z.coerce.number().nonnegative().max(9999999999999.99).optional().nullable(),
+  valorCobrado: z.coerce.number().nonnegative().max(9999999999999.99).optional().nullable(),
+  dataFim: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal("")]).optional().nullable(),
+});
+
+function numero(value: unknown) {
+  return Number(value || 0);
+}
+
+function configNumerica(config: any) {
+  return Object.fromEntries(
+    Object.keys(CONFIG_DEFAULT).map((key) => [key, numero(config?.[key] ?? (CONFIG_DEFAULT as any)[key])]),
+  ) as typeof CONFIG_DEFAULT;
+}
+
+function calcularCustos(config: typeof CONFIG_DEFAULT, horas: number, distanciaKm: number) {
+  const custoHora = config.custoHoraCombustivel + config.custoHoraOperador + config.custoHoraDepreciacao + config.custoHoraManutencao + config.custoHoraSeguro;
+  const custoMaquina = custoHora * horas;
+  const custoTransporte = config.custoKmTransporte * distanciaKm * 2;
+  const custoTotal = custoMaquina + custoTransporte;
+  const precoIdeal = custoTotal * (1 + config.margemAlvo / 100);
   return {
-    custoMaquinaHora: Number(horaTotal.toFixed(2)),
+    custoMaquinaHora: Number(custoHora.toFixed(2)),
     custoMaquinaTotal: Number(custoMaquina.toFixed(2)),
     custoTransporte: Number(custoTransporte.toFixed(2)),
     custoTotal: Number(custoTotal.toFixed(2)),
-    precoMinimo: Number(precoMinimo.toFixed(2)),
+    precoMinimo: Number(custoTotal.toFixed(2)),
     precoIdeal: Number(precoIdeal.toFixed(2)),
     detalhamento: {
-      combustivel: Number((cfg.custoHoraCombustivel * horas).toFixed(2)),
-      operador: Number((cfg.custoHoraOperador * horas).toFixed(2)),
-      depreciacao: Number((cfg.custoHoraDepreciacao * horas).toFixed(2)),
-      manutencao: Number((cfg.custoHoraManutencao * horas).toFixed(2)),
-      seguro: Number((cfg.custoHoraSeguro * horas).toFixed(2)),
+      combustivel: Number((config.custoHoraCombustivel * horas).toFixed(2)),
+      operador: Number((config.custoHoraOperador * horas).toFixed(2)),
+      depreciacao: Number((config.custoHoraDepreciacao * horas).toFixed(2)),
+      manutencao: Number((config.custoHoraManutencao * horas).toFixed(2)),
+      seguro: Number((config.custoHoraSeguro * horas).toFixed(2)),
       transporte: Number(custoTransporte.toFixed(2)),
     },
   };
 }
 
+async function carregarConfig() {
+  const config = await prisma.retroConfig.findFirst();
+  return { config: config ? configNumerica(config) : CONFIG_DEFAULT, configured: Boolean(config) };
+}
+
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const action = searchParams.get("action") || "list";
+  const { erro } = await exigirPapel("ADMIN", "GESTOR", "OPERACIONAL", "FINANCEIRO", "COMERCIAL");
+  if (erro) return erro;
 
-  if (action === "config") {
-    try {
-      const cfg = await prisma.retroConfig.findFirst();
-      return NextResponse.json({ config: cfg || CONFIG_DEFAULT });
-    } catch {
-      return NextResponse.json({ config: CONFIG_DEFAULT });
-    }
-  }
-
-  if (action === "viabilidade") {
-    const tipoServico = searchParams.get("tipo") || "Terraplanagem";
-    const quantidade = Number(searchParams.get("qtd")) || 100;
-    const distancia = Number(searchParams.get("dist")) || 30;
-    const valorProposto = Number(searchParams.get("valor")) || 0;
-
-    let cfg = CONFIG_DEFAULT;
-    try {
-      const dbCfg = await prisma.retroConfig.findFirst();
-      if (dbCfg) cfg = Object.fromEntries(Object.keys(CONFIG_DEFAULT).map((k) => [k, Number((dbCfg as any)[k] ?? (CONFIG_DEFAULT as any)[k])])) as typeof CONFIG_DEFAULT;
-    } catch {}
-
-    const prod = PRODUTIVIDADE[tipoServico] || PRODUTIVIDADE["Outro"];
-    const horas = prod.taxa > 0 ? quantidade / prod.taxa : quantidade;
-    const calculos = calcularCustos(cfg, horas, distancia);
-    const margemReal = valorProposto > 0 ? ((valorProposto - calculos.custoTotal) / valorProposto) * 100 : 0;
-
-    return NextResponse.json({
-      tipoServico, quantidade, unidade: prod.unidade, horas: Number(horas.toFixed(1)),
-      ...calculos,
-      valorProposto,
-      margemReal: Number(margemReal.toFixed(1)),
-      viavel: valorProposto >= calculos.precoMinimo,
-      recomendacao: valorProposto >= calculos.precoIdeal ? "✅ Lucrativo" : valorProposto >= calculos.precoMinimo ? "⚠️ Apertado" : valorProposto > 0 ? "⛔ Prejuízo" : "Informe o valor proposto",
-    });
-  }
-
-  // Listar jobs
+  const action = req.nextUrl.searchParams.get("action") || "list";
   try {
+    const loaded = await carregarConfig();
+
+    if (action === "config") {
+      return NextResponse.json({ config: loaded.config, configured: loaded.configured, source: loaded.configured ? "database" : "default" });
+    }
+
+    if (action === "viabilidade") {
+      const tipoServico = req.nextUrl.searchParams.get("tipo") || "Terraplanagem";
+      const quantidade = Math.max(0, Number(req.nextUrl.searchParams.get("qtd") || 0));
+      const distancia = Math.max(0, Number(req.nextUrl.searchParams.get("dist") || 0));
+      const valorProposto = Math.max(0, Number(req.nextUrl.searchParams.get("valor") || 0));
+      if (![quantidade, distancia, valorProposto].every(Number.isFinite)) {
+        return NextResponse.json({ error: "Parâmetros numéricos inválidos" }, { status: 400 });
+      }
+      const produtividade = PRODUTIVIDADE[tipoServico] || PRODUTIVIDADE.Outro;
+      const horas = produtividade.taxa > 0 ? quantidade / produtividade.taxa : quantidade;
+      const calculos = calcularCustos(loaded.config, horas, distancia);
+      const margemReal = valorProposto > 0 ? ((valorProposto - calculos.custoTotal) / valorProposto) * 100 : 0;
+      return NextResponse.json({
+        tipoServico,
+        quantidade,
+        unidade: produtividade.unidade,
+        descricaoProdutividade: produtividade.descricao,
+        horas: Number(horas.toFixed(2)),
+        ...calculos,
+        valorProposto,
+        margemReal: Number(margemReal.toFixed(2)),
+        viavel: valorProposto > 0 ? valorProposto >= calculos.precoMinimo : null,
+        recomendacao: valorProposto >= calculos.precoIdeal
+          ? "Lucrativo"
+          : valorProposto >= calculos.precoMinimo
+            ? "Margem abaixo da meta"
+            : valorProposto > 0
+              ? "Prejuízo estimado"
+              : "Informe o valor proposto",
+        configSource: loaded.configured ? "database" : "default",
+      });
+    }
+
+    const status = req.nextUrl.searchParams.get("status") || undefined;
     const jobs = await prisma.retroJob.findMany({
+      where: status ? { status } : undefined,
       orderBy: { createdAt: "desc" },
-      include: { despesas: true },
-      take: 100,
+      include: { despesas: { orderBy: { createdAt: "asc" } } },
+      take: 1000,
     });
-    if (!jobs.length) return NextResponse.json({ jobs: DEMO_JOBS, config: CONFIG_DEFAULT, _demo: true });
-    return NextResponse.json({ jobs, config: CONFIG_DEFAULT });
-  } catch {
-    return NextResponse.json({ jobs: DEMO_JOBS, config: CONFIG_DEFAULT, _demo: true });
+    return NextResponse.json({
+      jobs,
+      config: loaded.config,
+      configured: loaded.configured,
+      total: jobs.length,
+      empty: jobs.length === 0,
+    });
+  } catch (error) {
+    return erroInterno(error, "api/retro GET");
   }
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { action } = body;
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "OPERACIONAL", "FINANCEIRO", "COMERCIAL");
+  if (erro || !user) return erro;
 
-    if (action === "update_config") {
-      try {
-        const existing = await prisma.retroConfig.findFirst();
-        const cfg = existing
-          ? await prisma.retroConfig.update({ where: { id: existing.id }, data: body.config })
-          : await prisma.retroConfig.create({ data: body.config });
-        return NextResponse.json({ success: true, config: cfg });
-      } catch (e: any) {
-        return erroInterno(e, "api/retro");
+  try {
+    const raw = await req.json();
+
+    if (raw.action === "update_config") {
+      if (!["ADMIN", "GESTOR", "FINANCEIRO"].some((role) => user.roles.includes(role))) {
+        return NextResponse.json({ error: "Seu perfil não pode alterar custos operacionais" }, { status: 403 });
       }
+      const parsed = ConfigSchema.safeParse(raw.config);
+      if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || "Configuração inválida" }, { status: 400 });
+      const existing = await prisma.retroConfig.findFirst();
+      const config = existing
+        ? await prisma.retroConfig.update({ where: { id: existing.id }, data: parsed.data })
+        : await prisma.retroConfig.create({ data: parsed.data });
+      await registrarAuditoria({
+        userId: user.id,
+        action: existing ? "EDITAR" : "CRIAR",
+        module: "retro",
+        entityType: "RetroConfig",
+        entityId: config.id,
+        oldValues: existing ? configNumerica(existing) : undefined,
+        newValues: parsed.data,
+      });
+      return NextResponse.json({ success: true, config: configNumerica(config) });
     }
 
-    if (action === "update_status") {
+    if (raw.action === "update_status") {
+      const parsed = StatusSchema.safeParse(raw);
+      if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || "Atualização inválida" }, { status: 400 });
+      const body = parsed.data;
+      const current = await prisma.retroJob.findUnique({ where: { id: body.id } });
+      if (!current) return NextResponse.json({ error: "Serviço não encontrado" }, { status: 404 });
+      const valorCobrado = body.valorCobrado ?? numero(current.valorCobrado);
+      const custoTotal = body.custoTotal ?? numero(current.custoTotal);
+      const margemReal = valorCobrado > 0 ? ((valorCobrado - custoTotal) / valorCobrado) * 100 : null;
+      const dataFim = body.dataFim ? parseDataOperacional(body.dataFim) : body.status === "concluido" ? new Date() : current.dataFim;
+      if (body.dataFim && !dataFim) return NextResponse.json({ error: "Data final inválida" }, { status: 400 });
       const job = await prisma.retroJob.update({
         where: { id: body.id },
-        data: { status: body.status, horasRealizadas: body.horasRealizadas || null, custoTotal: body.custoTotal || null, valorCobrado: body.valorCobrado || null },
+        data: {
+          status: body.status,
+          horasRealizadas: body.horasRealizadas ?? current.horasRealizadas,
+          custoTotal: body.custoTotal ?? current.custoTotal,
+          valorCobrado: body.valorCobrado ?? current.valorCobrado,
+          margemReal,
+          viavel: valorCobrado > 0 ? valorCobrado >= custoTotal : current.viavel,
+          dataFim,
+        },
+      });
+      await registrarAuditoria({
+        userId: user.id,
+        action: "STATUS_CHANGE",
+        module: "retro",
+        entityType: "RetroJob",
+        entityId: job.id,
+        oldValues: { status: current.status, horasRealizadas: current.horasRealizadas, custoTotal: current.custoTotal, valorCobrado: current.valorCobrado },
+        newValues: { status: job.status, horasRealizadas: job.horasRealizadas, custoTotal: job.custoTotal, valorCobrado: job.valorCobrado, margemReal: job.margemReal },
       });
       return NextResponse.json({ success: true, job });
     }
 
-    // Criar job
-    let cfg = CONFIG_DEFAULT;
-    try {
-      const dbCfg = await prisma.retroConfig.findFirst();
-      if (dbCfg) cfg = Object.fromEntries(Object.keys(CONFIG_DEFAULT).map((k) => [k, Number((dbCfg as any)[k] ?? (CONFIG_DEFAULT as any)[k])])) as typeof CONFIG_DEFAULT;
-    } catch {}
-
-    const horas = Number(body.horasEstimadas) || 0;
-    const dist = Number(body.distanciaKm) || 30;
-    const calculos = calcularCustos(cfg, horas, dist);
-    const valorProposto = Number(body.valorCobrado) || 0;
-
-    const count = await prisma.retroJob.count();
-    const numero = `RETRO-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
-
-    const job = await prisma.retroJob.create({
-      data: {
-        numero,
-        clienteNome: body.clienteNome,
-        tipoServico: body.tipoServico,
-        endereco: body.endereco || null,
-        municipio: body.municipio || null,
-        uf: body.uf || null,
-        areaM2: body.areaM2 || null,
-        volumeM3: body.volumeM3 || null,
-        horasEstimadas: horas || null,
-        distanciaKm: dist || null,
-        dataInicio: body.dataInicio ? new Date(body.dataInicio) : null,
-        status: body.status || "orcamento",
-        precoMinimo: calculos.precoMinimo,
-        precoIdeal: calculos.precoIdeal,
-        valorCobrado: valorProposto || null,
-        viavel: valorProposto >= calculos.precoMinimo || valorProposto === 0,
-        observacoes: body.observacoes || null,
-      },
-    });
-
-    // Criar despesas automáticas
-    if (horas > 0) {
-      const despesas = [
-        { tipo: "combustivel", descricao: "Diesel", valor: calculos.detalhamento.combustivel, unidade: "h", quantidade: horas },
-        { tipo: "operador", descricao: "Operador CLT + encargos", valor: calculos.detalhamento.operador, unidade: "h", quantidade: horas },
-        { tipo: "depreciacao", descricao: "Depreciação da máquina", valor: calculos.detalhamento.depreciacao, unidade: "h", quantidade: horas },
-        { tipo: "manutencao", descricao: "Manutenção preventiva/corretiva", valor: calculos.detalhamento.manutencao, unidade: "h", quantidade: horas },
-        { tipo: "seguro", descricao: "Seguro da máquina", valor: calculos.detalhamento.seguro, unidade: "h", quantidade: horas },
-        { tipo: "transporte", descricao: `Transporte da máquina (${dist}km × 2)`, valor: calculos.detalhamento.transporte, unidade: "km", quantidade: dist * 2 },
-      ];
-      for (const d of despesas) {
-        await prisma.retroJobDespesa.create({ data: { retroJobId: job.id, ...d } });
-      }
+    const parsed = JobSchema.safeParse(raw);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || "Serviço inválido" }, { status: 400 });
+    const body = parsed.data;
+    const [loaded, client, contract] = await Promise.all([
+      carregarConfig(),
+      body.clienteId ? prisma.client.findUnique({ where: { id: body.clienteId }, select: { id: true, active: true } }) : null,
+      body.contratoId ? prisma.contract.findUnique({ where: { id: body.contratoId }, select: { id: true, clientId: true } }) : null,
+    ]);
+    if (body.clienteId && (!client || !client.active)) return NextResponse.json({ error: "Cliente inválido ou inativo" }, { status: 404 });
+    if (body.contratoId && !contract) return NextResponse.json({ error: "Contrato não encontrado" }, { status: 404 });
+    if (body.clienteId && contract?.clientId && contract.clientId !== body.clienteId) {
+      return NextResponse.json({ error: "O contrato não pertence ao cliente informado" }, { status: 409 });
     }
 
-    return NextResponse.json({ success: true, job, calculos });
-  } catch (e: any) {
-    return erroInterno(e, "api/retro");
+    const horas = numero(body.horasEstimadas);
+    const distancia = numero(body.distanciaKm);
+    const calculos = calcularCustos(loaded.config, horas, distancia);
+    const valorCobrado = numero(body.valorCobrado);
+    const dataInicio = body.dataInicio ? parseDataOperacional(body.dataInicio) : null;
+    if (body.dataInicio && !dataInicio) return NextResponse.json({ error: "Data inicial inválida" }, { status: 400 });
+    const numeroJob = `RETRO-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
+
+    const job = await prisma.$transaction(async (tx) => {
+      const created = await tx.retroJob.create({
+        data: {
+          numero: numeroJob,
+          clienteNome: body.clienteNome,
+          clienteId: body.clienteId || null,
+          contratoId: body.contratoId || null,
+          tipoServico: body.tipoServico,
+          endereco: body.endereco || null,
+          municipio: body.municipio || null,
+          uf: body.uf || null,
+          areaM2: body.areaM2 ?? null,
+          volumeM3: body.volumeM3 ?? null,
+          horasEstimadas: horas || null,
+          distanciaKm: distancia || null,
+          dataInicio,
+          status: body.status,
+          precoMinimo: calculos.precoMinimo,
+          precoIdeal: calculos.precoIdeal,
+          valorCobrado: valorCobrado || null,
+          custoTotal: horas > 0 ? calculos.custoTotal : null,
+          margemReal: valorCobrado > 0 && calculos.custoTotal > 0 ? ((valorCobrado - calculos.custoTotal) / valorCobrado) * 100 : null,
+          viavel: valorCobrado > 0 ? valorCobrado >= calculos.precoMinimo : true,
+          observacoes: body.observacoes || null,
+          artNumero: body.artNumero || null,
+        },
+      });
+      if (horas > 0) {
+        await tx.retroJobDespesa.createMany({
+          data: [
+            { retroJobId: created.id, tipo: "combustivel", descricao: "Combustível estimado", valor: calculos.detalhamento.combustivel, unidade: "h", quantidade: horas },
+            { retroJobId: created.id, tipo: "operador", descricao: "Operador e encargos estimados", valor: calculos.detalhamento.operador, unidade: "h", quantidade: horas },
+            { retroJobId: created.id, tipo: "depreciacao", descricao: "Depreciação estimada", valor: calculos.detalhamento.depreciacao, unidade: "h", quantidade: horas },
+            { retroJobId: created.id, tipo: "manutencao", descricao: "Manutenção estimada", valor: calculos.detalhamento.manutencao, unidade: "h", quantidade: horas },
+            { retroJobId: created.id, tipo: "seguro", descricao: "Seguro estimado", valor: calculos.detalhamento.seguro, unidade: "h", quantidade: horas },
+            { retroJobId: created.id, tipo: "transporte", descricao: `Transporte estimado (${distancia} km x 2)`, valor: calculos.detalhamento.transporte, unidade: "km", quantidade: distancia * 2 },
+          ],
+        });
+      }
+      return created;
+    });
+
+    await registrarAuditoria({
+      userId: user.id,
+      action: "CRIAR",
+      module: "retro",
+      entityType: "RetroJob",
+      entityId: job.id,
+      newValues: { numero: job.numero, clienteNome: job.clienteNome, tipoServico: job.tipoServico, horas, distancia, calculos, configSource: loaded.configured ? "database" : "default" },
+    });
+    return NextResponse.json({ success: true, job: await prisma.retroJob.findUnique({ where: { id: job.id }, include: { despesas: true } }), calculos }, { status: 201 });
+  } catch (error) {
+    return erroInterno(error, "api/retro POST");
   }
 }
-
-const DEMO_JOBS = [
-  { id:"r1", numero:"RETRO-2026-001", clienteNome:"CEMIG", tipoServico:"Apoio PRADA/Recuperação", municipio:"Betim", uf:"MG", horasEstimadas:16, horasRealizadas:18, distanciaKm:25, status:"concluido", precoMinimo:3480, precoIdeal:4350, valorCobrado:5200, viavel:true, custoTotal:3480, margemReal:33, createdAt:"2026-04-10", despesas:[] },
-  { id:"r2", numero:"RETRO-2026-002", clienteNome:"Prefeitura de Betim", tipoServico:"Terraplanagem", municipio:"Betim", uf:"MG", horasEstimadas:8, distanciaKm:8, status:"agendado", precoMinimo:1240, precoIdeal:1550, valorCobrado:1800, viavel:true, createdAt:"2026-04-20", despesas:[] },
-  { id:"r3", numero:"RETRO-2026-003", clienteNome:"Condomínio Alphaville", tipoServico:"Drenagem Superficial", municipio:"Betim", uf:"MG", horasEstimadas:6, distanciaKm:15, status:"orcamento", precoMinimo:1040, precoIdeal:1300, valorCobrado:900, viavel:false, createdAt:"2026-04-25", despesas:[] },
-];
