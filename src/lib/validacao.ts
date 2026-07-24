@@ -60,11 +60,15 @@ export const DocumentoSchema = z.object({
   clienteId: textoOpc(40),
   contratoId: textoOpc(40),
   funcionarioId: textoOpc(40),
-  estrategia: z.enum(["base64", "url", "gdrive"]).optional(),
+  // A interface chama de "arquivo" o upload feito para a VPS. No banco, isso
+  // continua sendo uma URL interna servida pela API de arquivos.
+  estrategia: z.enum(["base64", "url", "gdrive", "arquivo"])
+    .transform((value) => value === "arquivo" ? "url" as const : value)
+    .optional(),
   urlArquivo: textoOpc(1000),
   base64Data: z.string().max(2_800_000).optional().nullable(),
   mimeType: textoOpc(120),
-  tamanhoKb: z.coerce.number().int().min(0).optional().nullable(),
+  tamanhoKb: z.coerce.number().int().min(0).max(2_100_000).optional().nullable(),
   validade: textoOpc(30),
   confidencial: z.coerce.boolean().optional(),
 });
