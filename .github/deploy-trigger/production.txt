@@ -1,8 +1,9 @@
 Solicitação de deploy automático em produção.
 Data: 2026-07-24
 Modo: auto
-Origem: integridade de relatórios, SST, mobilizações, propostas e e-mail do Verdelimp v3.9.
-Commit funcional: 7bb6f0e2c2fdc936008dbefa191ceca0003ef7e2
-Validações: Prisma generate/validate, TypeScript, testes Vitest, lint, scripts operacionais, build de produção, npm audit, Docker Compose, cadeia completa de migrations em PostgreSQL 16 e seed aprovados.
-Escopo acumulado: fluxo comercial e operacional, dossiê, rotinas, importação financeira, diário, medição, faturamento, recebimento, rentabilidade, clientes, fornecedores, despesas, NFS-e, EPI, combustível, logística, retroescavadeira, equipamentos, RH, GED, dedetização, adiantamentos, notificações, regularidade cadastral, PNCP, folha detalhada, almoxarifado, histórico operacional, contratos, dashboard fiscal, pipeline de licitações, DRE, relatório mensal, aging, treinamentos, mobilizações, propostas e integrações de e-mail sem dados fictícios nos módulos tratados.
-Execução: deploy protegido na VPS Contabo, condicionado aos secrets, backup, health check e evidências técnicas da issue 37.
+Origem: hardening de seed, fluxo comercial, portal, diagnóstico e deploy do Verdelimp v3.10.
+Commit funcional: c6462bd557fc700c4e53cba3d84ddd888a00d57b
+Release esperada: v3.10.0
+Validações: Prisma generate/validate, TypeScript, testes Vitest, lint, scripts operacionais, build de produção, npm audit, Docker Compose, cadeia completa de migrations em PostgreSQL 16, seed estrutural, ausência de dados demonstrativos gerados, papel DIRETORIA e vínculo demanda-dossiê aprovados.
+Escopo acumulado: fluxo comercial e operacional, dossiê, rotinas, importação financeira, diário, medição, faturamento, recebimento, rentabilidade, clientes, fornecedores, despesas, NFS-e, EPI, combustível, logística, retroescavadeira, equipamentos, RH, GED, dedetização, adiantamentos, notificações, regularidade cadastral, PNCP, folha detalhada, almoxarifado, histórico operacional, contratos, dashboard fiscal, pipeline de licitações, DRE, relatório mensal, aging, treinamentos, mobilizações, propostas, integrações de e-mail, seed seguro, papel DIRETORIA, sincronização demanda-dossiê-proposta-contrato, portal sem fallback fictício, diagnóstico protegido e deploy com validação da release.
+Execução: deploy protegido na VPS Contabo, condicionado aos secrets, backup, migrations, health check com release v3.10.0 e evidências técnicas da issue 37.
