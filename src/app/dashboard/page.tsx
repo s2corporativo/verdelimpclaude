@@ -1,214 +1,321 @@
-
 "use client";
-import { useEffect, useState } from "react";
+
 import { DemoBadge } from "@/components/ui";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
-function Grafico({ meses, tendencia }: { meses: any[], tendencia?: number }) {
-  const [ativo, setAtivo] = useState<"barras"|"margem">("barras");
-  if (!meses?.length) return null;
-  const fmt = (v: number) => v >= 1000000 ? "R$"+(v/1000000).toFixed(1)+"M" : v >= 1000 ? "R$"+(v/1000).toFixed(0)+"k" : "R$"+v;
-  const fmtPct = (v: number) => (v >= 0 ? "+" : "")+v+"%";
+type Alerta = {
+  categoria: string;
+  titulo: string;
+  detalhe: string;
+  vence: string | null;
+  nivel: "critico" | "atencao" | "info";
+  link: string;
+};
 
-  // Gráfico de barras empilhadas
-  const maxFat = Math.max(...meses.map((m:any) => m.faturamento), 1);
-  const maxMarg = Math.max(...meses.map((m:any) => Math.abs(m.margem||0)), 1);
-  const ultMes = meses[meses.length-1];
-  const penMes = meses[meses.length-2];
-  const varFat = penMes?.faturamento > 0 ? Math.round(((ultMes.faturamento - penMes.faturamento)/penMes.faturamento)*100) : 0;
+type Rotina = {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categoria: string;
+  horario?: string;
+};
+
+type Painel = {
+  dashboard: Record<string, any>;
+  fiscal: Record<string, any>;
+  erp: Record<string, any>;
+  alertas: Alerta[];
+  resumoAlertas: { total: number; criticos: number; atencao: number };
+  rotinas: Rotina[];
+  carregando: boolean;
+  erro: string;
+};
+
+const caixa: React.CSSProperties = {
+  background: "#fff",
+  border: "1px solid #e4e9e5",
+  borderRadius: 14,
+  padding: 16,
+};
+
+function moeda(valor: unknown) {
+  if (valor === null || valor === undefined || valor === "") return "—";
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) return "—";
+  return numero.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function numero(valor: unknown) {
+  if (valor === null || valor === undefined || valor === "") return "—";
+  const convertido = Number(valor);
+  return Number.isFinite(convertido) ? convertido.toLocaleString("pt-BR") : "—";
+}
+
+function dataCurta(valor: string | null) {
+  if (!valor) return "Sem data";
+  const data = new Date(valor);
+  return Number.isNaN(data.getTime()) ? "Sem data" : data.toLocaleDateString("pt-BR");
+}
+
+function Indicador({ titulo, valor, detalhe, href, destaque = "verde", icon }: { titulo: string; valor: string; detalhe: string; href: string; destaque?: "verde" | "laranja" | "vermelho" | "azul"; icon: string }) {
+  const estilos = {
+    verde: { cor: "#334532", fundo: "#eaf5e4" },
+    laranja: { cor: "#ad450f", fundo: "#fff1e8" },
+    vermelho: { cor: "#ad2f0b", fundo: "#fff0eb" },
+    azul: { cor: "#27547d", fundo: "#edf5fb" },
+  }[destaque];
 
   return (
-    <div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, flexWrap:"wrap", gap:8 }}>
-        <div>
-          <h3 style={{ color:"#334532", fontSize:13, fontWeight:700, margin:0 }}>📈 Desempenho Financeiro — 12 meses</h3>
-          {tendencia !== undefined && (
-            <span style={{ fontSize:11, color: tendencia >= 0 ? "#15803d" : "#dc2626", fontWeight:600 }}>
-              {tendencia >= 0 ? "▲" : "▼"} {Math.abs(tendencia)}% vs trimestre anterior
-            </span>
-          )}
-        </div>
-        <div style={{ display:"flex", gap:6 }}>
-          {(["barras","margem"] as const).map(t => (
-            <button key={t} onClick={()=>setAtivo(t)}
-              style={{ background: ativo===t?"#334532":"#f3f4f6", color: ativo===t?"#fff":"#374151", border:"none", padding:"4px 10px", borderRadius:6, cursor:"pointer", fontSize:10, fontWeight:600 }}>
-              {t === "barras" ? "📊 Faturamento" : "📉 Margem %"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {ativo === "barras" && (
-        <div>
-          <div style={{ display:"flex", alignItems:"flex-end", gap:3, height:130, paddingBottom:4 }}>
-            {meses.map((m:any, i:number) => (
-              <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center" }}>
-                <div style={{ width:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-end", height:110, gap:1 }}>
-                  <div style={{ background:"#f87171", height: maxFat > 0 ? `${(m.tributos/maxFat)*105}px` : "1px", minHeight:1, borderRadius:"1px 1px 0 0" }} title={`Tributos: ${fmt(m.tributos)}`}/>
-                  <div style={{ background:"#fb923c", height: maxFat > 0 ? `${(m.despesas/maxFat)*105}px` : "1px", minHeight:1 }} title={`Despesas: ${fmt(m.despesas)}`}/>
-                  <div style={{ background:"#4a9410", height: maxFat > 0 ? `${(m.margem>0?m.margem/maxFat:0)*105}px` : "1px", minHeight:1 }} title={`Margem: ${fmt(m.margem)}`}/>
-                </div>
-                <span style={{ fontSize:8, color:"#9ca3af", marginTop:2, textAlign:"center", lineHeight:1 }}>{m.label||m.mes?.slice(5)}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ display:"flex", gap:12, marginTop:6, fontSize:9, flexWrap:"wrap" }}>
-            {[["#f87171","Tributos"],["#fb923c","Despesas op."],["#4a9410","Margem líquida"]].map(([c,l])=>(
-              <div key={l} style={{ display:"flex", alignItems:"center", gap:3 }}>
-                <div style={{ width:8, height:8, background:c, borderRadius:1 }}/><span style={{ color:"#6b7280" }}>{l}</span>
-              </div>
-            ))}
-          </div>
-          {/* Linha de valores no rodapé */}
-          <div style={{ display:"flex", justifyContent:"space-between", marginTop:10, padding:"8px 10px", background:"#f9fafb", borderRadius:8, fontSize:11, flexWrap:"wrap", gap:6 }}>
-            <span>Faturado (mês): <strong style={{ color:"#334532" }}>{fmt(ultMes.faturamento)}</strong></span>
-            <span>Tributos: <strong style={{ color:"#dc2626" }}>{fmt(ultMes.tributos)}</strong></span>
-            <span>Despesas: <strong style={{ color:"#d97706" }}>{fmt(ultMes.despesas)}</strong></span>
-            <span>Margem: <strong style={{ color: ultMes.margemPct >= 20 ? "#15803d" : ultMes.margemPct >= 10 ? "#d97706" : "#dc2626" }}>{fmt(ultMes.margem)} ({ultMes.margemPct}%)</strong></span>
-            <span style={{ color: varFat >= 0 ? "#15803d" : "#dc2626", fontWeight:600 }}>MoM: {fmtPct(varFat)}</span>
-          </div>
-        </div>
-      )}
-
-      {ativo === "margem" && (
-        <div>
-          <div style={{ display:"flex", alignItems:"flex-end", gap:3, height:130, paddingBottom:4 }}>
-            {meses.map((m:any, i:number) => {
-              const pct = m.margemPct || 0;
-              const cor = pct >= 30 ? "#15803d" : pct >= 20 ? "#65a30d" : pct >= 10 ? "#d97706" : "#dc2626";
-              return (
-                <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center" }}>
-                  <div style={{ fontSize:7, color:cor, fontWeight:700, marginBottom:1 }}>{pct}%</div>
-                  <div style={{ width:"100%", background:cor, height:`${Math.max(pct/50*100, 3)}px`, minHeight:3, borderRadius:"2px 2px 0 0" }} title={`Margem ${pct}%: ${fmt(m.margem)}`}/>
-                  <span style={{ fontSize:8, color:"#9ca3af", marginTop:2, textAlign:"center", lineHeight:1 }}>{m.label||m.mes?.slice(5)}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ display:"flex", gap:10, marginTop:8, fontSize:9 }}>
-            {[["#15803d","≥30%"],["#65a30d","20-29%"],["#d97706","10-19%"],["#dc2626","<10%"]].map(([c,l])=>(
-              <div key={l} style={{ display:"flex", alignItems:"center", gap:3 }}>
-                <div style={{ width:8, height:8, background:c, borderRadius:2 }}/><span style={{ color:"#6b7280" }}>{l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <Link href={href} style={{ ...caixa, padding: 13, display: "grid", gridTemplateColumns: "36px minmax(0,1fr)", gap: 10, alignItems: "center", textDecoration: "none", color: "inherit" }}>
+      <span aria-hidden="true" style={{ width: 36, height: 36, display: "grid", placeItems: "center", borderRadius: 10, background: estilos.fundo, color: estilos.cor, fontWeight: 900 }}>{icon}</span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: "block", color: "#7a847d", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em" }}>{titulo}</span>
+        <strong style={{ display: "block", color: estilos.cor, fontSize: 19, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis" }}>{valor}</strong>
+        <span style={{ display: "block", color: "#8b958e", fontSize: 9, marginTop: 2 }}>{detalhe}</span>
+      </span>
+    </Link>
   );
 }
 
-function Kpi({ l, v, i, c = "#4a9410", alert = false }: any) {
-  return (
-    <div style={{ background: "#fff", border: `1px solid ${alert ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 10, padding: "12px 14px", borderTop: `3px solid ${alert ? "#dc2626" : c}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 10, color: "#6b7280", fontWeight: 600, textTransform: "uppercase" }}>{l}</span>
-        <span style={{ fontSize: 14 }}>{i}</span>
-      </div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: alert ? "#dc2626" : c, marginTop: 5 }}>{v}</div>
-    </div>
-  );
+function saudacao() {
+  const hora = new Date().getHours();
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
 }
 
 export default function DashboardPage() {
-  const [dados, setDados] = useState<any>({});
-  const [fiscal, setFiscal] = useState<any>({});
-  const [graficos, setGraficos] = useState<any[]>([]);
-  const [tendencia, setTendencia] = useState<number>(0);
-  const [alertas, setAlertas] = useState<any>({ total: 0, criticos: 0 });
-  const [demo, setDemo] = useState(false);
-  const fmt = (v: number) => (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+  const [painel, setPainel] = useState<Painel>({
+    dashboard: {},
+    fiscal: {},
+    erp: {},
+    alertas: [],
+    resumoAlertas: { total: 0, criticos: 0, atencao: 0 },
+    rotinas: [],
+    carregando: true,
+    erro: "",
+  });
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/dashboard").then(r => r.json()).catch(() => ({})),
-      fetch("/api/fiscal/dashboard").then(r => r.json()).catch(() => ({})),
-      fetch("/api/dashboard/graficos").then(r => r.json()).catch(() => ({ meses: [] })),
-      fetch("/api/alertas-central").then(r => r.json()).catch(() => ({ resumo: {} })),
-    ]).then(([d, f, g, a]) => {
-      setDados(d); setFiscal(f); setGraficos(g.meses || []); setTendencia(g.tendencia || 0);
-      setAlertas(a.resumo || { total: 0, criticos: 0 }); setDemo(!!d._demo || !!f._demo);
-    });
+    let ativo = true;
+
+    async function carregarJson(url: string) {
+      const resposta = await fetch(url);
+      if (!resposta.ok) throw new Error(`${url}: ${resposta.status}`);
+      return resposta.json();
+    }
+
+    async function carregar() {
+      const resultados = await Promise.allSettled([
+        carregarJson("/api/dashboard"),
+        carregarJson("/api/fiscal/dashboard"),
+        carregarJson("/api/dashboard/erp-completo"),
+        carregarJson("/api/alertas-central"),
+        carregarJson("/api/rotinas?periodo=diaria"),
+      ]);
+
+      if (!ativo) return;
+
+      const valor = (indice: number) => resultados[indice].status === "fulfilled" ? resultados[indice].value : {};
+      const dashboard = valor(0);
+      const fiscal = valor(1);
+      const erp = valor(2);
+      const alertasResposta = valor(3);
+      const rotinasResposta = valor(4);
+      const falharam = resultados.filter((resultado) => resultado.status === "rejected").length;
+
+      setPainel({
+        dashboard,
+        fiscal,
+        erp,
+        alertas: alertasResposta.alertas || [],
+        resumoAlertas: alertasResposta.resumo || { total: 0, criticos: 0, atencao: 0 },
+        rotinas: rotinasResposta.rotinas || [],
+        carregando: false,
+        erro: falharam === resultados.length
+          ? "Não foi possível carregar o painel. Verifique a conexão e tente novamente."
+          : falharam > 0
+            ? "Parte das informações está temporariamente indisponível. Os dados exibidos são os que puderam ser confirmados."
+            : "",
+      });
+    }
+
+    carregar();
+    return () => { ativo = false; };
   }, []);
 
+  const prioridades = useMemo(
+    () => [...painel.alertas].sort((a, b) => {
+      const peso = { critico: 0, atencao: 1, info: 2 };
+      return peso[a.nivel] - peso[b.nivel];
+    }).slice(0, 7),
+    [painel.alertas],
+  );
+
+  const demo = Boolean(painel.dashboard._demo || painel.fiscal._demo || painel.erp._demo);
+  const operacoes = painel.erp.operations || {};
+  const financeiro = painel.erp.finance || {};
+  const contratos = painel.erp.contracts || {};
+  const contasVencidas = financeiro.overduePayable || {};
+
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
+    <div style={{ maxWidth: 1380, margin: "0 auto" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
         <div>
-          <h1 style={{ color: "#334532", fontSize: 22, fontWeight: 700, margin: 0 }}>Dashboard</h1>
-          <p style={{ color: "#6b7280", fontSize: 12, margin: "3px 0 0" }}>
-            VERDELIMP · CNPJ 30.198.776/0001-29 · Simples Nacional · Betim/MG
+          <p style={{ color: "#e05008", fontSize: 10, fontWeight: 850, textTransform: "uppercase", letterSpacing: ".09em", marginBottom: 5 }}>Visão diária</p>
+          <h1 style={{ color: "#263827", fontSize: 26, margin: 0 }}>{saudacao()}. O que precisa de atenção?</h1>
+          <p style={{ color: "#6e7971", fontSize: 12, marginTop: 5 }}>
+            Prioridades, execução e situação financeira em uma única tela.
             <DemoBadge mostrar={demo} />
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <span style={{ background: "#dcfce7", color: "#15803d", padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>● Sistema ativo</span>
-          <span style={{ background: "#e0e7ff", color: "#3730a3", padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>🌐 6 APIs ativas</span>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link href="/dashboard/atividades" style={{ textDecoration: "none", color: "#334532", background: "#fff", border: "1px solid #dfe5df", borderRadius: 9, padding: "9px 13px", fontSize: 11, fontWeight: 800 }}>Central de atividades</Link>
+          <Link href="/dashboard/oportunidades?nova=1" style={{ textDecoration: "none", color: "#fff", background: "#334532", borderRadius: 9, padding: "9px 13px", fontSize: 11, fontWeight: 800 }}>+ Nova demanda</Link>
         </div>
-      </div>
+      </header>
 
-      {fiscal.tributosVencidos > 0 && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 10, padding: "10px 14px", marginBottom: 14, color: "#991b1b", fontWeight: 600, fontSize: 13 }}>
-          🚨 {fiscal.tributosVencidos} tributo(s) VENCIDO(S) — acesse Central Fiscal para regularizar
+      {painel.erro && (
+        <div role="alert" style={{ marginBottom: 14, padding: "10px 13px", borderRadius: 10, border: "1px solid #f1c8b8", background: "#fff7f3", color: "#9b390f", fontSize: 11 }}>
+          {painel.erro}
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 9, marginBottom: 18 }}>
-        <Kpi l="Clientes" v={dados.totalClientes || 5} i="🤝" />
-        <Kpi l="Funcionários" v={dados.totalFuncionarios || 8} i="👷" c="#1d4ed8" />
-        <Kpi l="NFS-e emitidas" v={dados.totalNfse || 3} i="🧾" c="#7c3aed" />
-        <Kpi l="Propostas" v={dados.totalPropostas || 2} i="📄" c="#0891b2" />
-        <Kpi l="Tributos em aberto" v={`R$${fmt(fiscal.tributosAberto || 8450)}`} i="💸" c="#d97706" alert={fiscal.tributosAberto > 0} />
-        <Kpi l="Tributos pagos" v={`R$${fmt(fiscal.tributosPago || 5770)}`} i="✅" />
-        <Kpi l="Docs alerta" v={fiscal.docsVencer || 2} i="📋" c={fiscal.docsVencer > 0 ? "#dc2626" : "#4a9410"} alert={fiscal.docsVencer > 0} />
-        <Kpi l="Contratos ativos" v={dados.totalContratos ?? "—"} i="📋" />
-        <Kpi l="Faturamento contratado" v={`R$${fmt(dados.faturamentoContratado || 128500)}`} i="💰" c="#15803d" />
-        <a href="/dashboard/alertas" style={{ textDecoration: "none" }}>
-          <Kpi l="Alertas (30/90d)" v={alertas.total ?? 0} i="🚨" c={alertas.criticos > 0 ? "#dc2626" : "#4a9410"} alert={alertas.criticos > 0} />
-        </a>
-        <a href="/dashboard/proposta-edital" style={{ textDecoration: "none" }}><Kpi l="Dossiês a validar" v={dados.dossiesPendentes ?? 0} i="🧭" c="#7c3aed" alert={dados.dossiesPendentes > 0} /></a>
-        <a href="/dashboard/mobilizacoes" style={{ textDecoration: "none" }}><Kpi l="Mobilizações bloqueadas" v={dados.mobilizacoesBloqueadas ?? 0} i="⛔" c="#dc2626" alert={dados.mobilizacoesBloqueadas > 0} /></a>
-        <a href="/dashboard/monitor-docs" style={{ textDecoration: "none" }}><Kpi l="Docs para revisar" v={dados.documentosAguardandoRevisao ?? 0} i="🔎" c="#d97706" alert={dados.documentosAguardandoRevisao > 0} /></a>
-        <a href="/dashboard/alteracoes-escopo" style={{ textDecoration: "none" }}><Kpi l="Alterações de escopo" v={dados.alteracoesEscopoPendentes ?? 0} i="🔁" c="#0891b2" alert={dados.alteracoesEscopoPendentes > 0} /></a>
-      </div>
+      {painel.carregando ? (
+        <div style={{ ...caixa, color: "#4a9410", fontSize: 12 }}>Consolidando informações confirmadas do sistema...</div>
+      ) : (
+        <>
+          <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 9, marginBottom: 15 }}>
+            <Indicador
+              titulo="Críticos"
+              valor={numero(painel.resumoAlertas.criticos)}
+              detalhe="exigem ação imediata"
+              href="/dashboard/alertas"
+              destaque={painel.resumoAlertas.criticos > 0 ? "vermelho" : "verde"}
+              icon="!"
+            />
+            <Indicador titulo="Rotinas de hoje" valor={numero(painel.rotinas.length)} detalhe="atividades previstas" href="/dashboard/atividades" icon="✓" />
+            <Indicador titulo="Contratos ativos" valor={numero(contratos.active ?? painel.dashboard.totalContratos)} detalhe={`${numero(contratos.due90)} vencendo em 90 dias`} href="/dashboard/contratos" destaque={Number(contratos.due90 || 0) > 0 ? "laranja" : "verde"} icon="▤" />
+            <Indicador titulo="Em execução" valor={numero(operacoes.inProgress)} detalhe={`${numero(operacoes.blocked)} OS bloqueadas`} href="/dashboard/ordens-servico" destaque={Number(operacoes.blocked || 0) > 0 ? "vermelho" : "azul"} icon="▶" />
+            <Indicador titulo="A receber" valor={moeda(financeiro.receivable?.total)} detalhe="contas registradas" href="/dashboard/contas-receber" destaque="azul" icon="$" />
+            <Indicador titulo="Resultado do mês" valor={moeda(financeiro.monthProfit)} detalhe="receitas menos despesas" href="/dashboard/dre" destaque={Number(financeiro.monthProfit || 0) < 0 ? "vermelho" : "verde"} icon="↗" />
+          </section>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, marginBottom: 14 }}>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-          <Grafico meses={graficos} tendencia={tendencia} />
-        </div>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 12 }}>📅 Próximos vencimentos</h3>
-          {(fiscal.proximosVencimentos || [
-            { taxType: "ISS", competence: "2026-04", dueDate: "2026-05-10", totalAmount: 950 },
-            { taxType: "DAS", competence: "2026-04", dueDate: "2026-05-20", totalAmount: 3840 },
-            { taxType: "INSS", competence: "2026-04", dueDate: "2026-05-20", totalAmount: 1442 },
-          ]).map((v: any, i: number) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #f3f4f6" }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: 12 }}>{v.taxType} — {v.competence}</p>
-                <p style={{ margin: 0, fontSize: 10, color: "#9ca3af" }}>{new Date(v.dueDate).toLocaleDateString("pt-BR")}</p>
+          <section style={{ display: "grid", gridTemplateColumns: "minmax(0,1.35fr) minmax(320px,.65fr)", gap: 14, marginBottom: 14 }}>
+            <div style={caixa}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div>
+                  <h2 style={{ color: "#263827", fontSize: 15, margin: 0 }}>Prioridades</h2>
+                  <p style={{ color: "#7a847d", fontSize: 10, marginTop: 3 }}>Ordenadas por criticidade</p>
+                </div>
+                <Link href="/dashboard/alertas" style={{ color: "#3f6f2d", fontSize: 10, fontWeight: 800, textDecoration: "none" }}>Ver todas →</Link>
               </div>
-              <span style={{ fontWeight: 700, color: "#d97706" }}>R${fmt(Number(v.totalAmount))}</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ color: "#334532", fontSize: 13, marginBottom: 10 }}>🔗 APIs conectadas</h3>
-          {[["ViaCEP", "Endereços automáticos", "✅"], ["BrasilAPI CNPJ", "Dados Receita Federal", "✅"], ["IBGE", "Municípios e UFs", "✅"], ["Feriados 2026", "Calendário fiscal", "✅"], ["ISS Betim LC33/2003", "Alíquotas automáticas", "✅"], ["PNCP", "Radar licitações", "✅"]].map(([n, d, s]) => (
-            <div key={n} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #f3f4f6", fontSize: 11 }}>
-              <span><strong>{n}</strong> <span style={{ color: "#9ca3af" }}>— {d}</span></span><span>{s}</span>
+              {prioridades.length ? (
+                <div style={{ display: "grid", gap: 7 }}>
+                  {prioridades.map((alerta, indice) => {
+                    const critico = alerta.nivel === "critico";
+                    return (
+                      <Link key={`${alerta.titulo}-${indice}`} href={alerta.link} style={{ display: "grid", gridTemplateColumns: "8px minmax(0,1fr) auto", gap: 10, padding: "10px 11px", border: "1px solid #edf0ed", borderRadius: 10, textDecoration: "none", color: "inherit", background: critico ? "#fff8f5" : "#fffdf7" }}>
+                        <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 99, marginTop: 5, background: critico ? "#c2410c" : "#d49a18" }} />
+                        <span style={{ minWidth: 0 }}>
+                          <strong style={{ display: "block", color: "#263827", fontSize: 12 }}>{alerta.titulo}</strong>
+                          <span style={{ display: "block", color: "#707b73", fontSize: 10, lineHeight: 1.35, marginTop: 2 }}>{alerta.detalhe}</span>
+                          <span style={{ display: "block", color: "#9aa39d", fontSize: 9, fontWeight: 800, textTransform: "uppercase", marginTop: 4 }}>{alerta.categoria}</span>
+                        </span>
+                        <span style={{ color: critico ? "#b9380a" : "#946b0c", fontSize: 9, fontWeight: 800, whiteSpace: "nowrap" }}>{dataCurta(alerta.vence)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p style={{ color: "#758078", fontSize: 12 }}>Nenhuma prioridade pendente foi identificada.</p>
+              )}
             </div>
-          ))}
-        </div>
-        <div style={{ background: "linear-gradient(135deg, #334532 0%, #4a9410 100%)", borderRadius: 12, padding: 16, color: "#fff" }}>
-          <h3 style={{ fontSize: 13, marginBottom: 12 }}>🚀 Acesso rápido</h3>
-          {[["🧭 Novo Dossiê Operacional", "/dashboard/proposta-edital", "#fff", "#fbbf24"], ["💼 Apurar tributos", "/dashboard/fiscal", "#dcfce7", "#334532"], ["📄 Aprovar propostas", "/dashboard/propostas", "#dcfce7", "#334532"], ["🔍 Buscar licitações", "/dashboard/radar-licitacoes", "#dcfce7", "#334532"], ["🚛 Logística semana", "/dashboard/logistica", "#dcfce7", "#334532"], ["🤖 Ajuda com IA", "/dashboard/ajuda", "#dcfce7", "#334532"]].map(([l, h, bg, co]) => (
-            <a key={h} href={h} style={{ display: "block", background: "rgba(255,255,255,.15)", borderRadius: 8, padding: "8px 12px", marginBottom: 6, textDecoration: "none", color: "#fff", fontSize: 12, fontWeight: 600 }}>{l}</a>
-          ))}
-        </div>
-      </div>
+
+            <div style={{ display: "grid", gap: 14 }}>
+              <div style={caixa}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 11 }}>
+                  <h2 style={{ color: "#263827", fontSize: 15, margin: 0 }}>Hoje</h2>
+                  <Link href="/dashboard/rotinas" style={{ color: "#3f6f2d", fontSize: 10, fontWeight: 800, textDecoration: "none" }}>Rotinas →</Link>
+                </div>
+                {painel.rotinas.length ? painel.rotinas.slice(0, 6).map((rotina) => (
+                  <div key={rotina.id} style={{ display: "grid", gridTemplateColumns: "25px minmax(0,1fr) auto", gap: 8, alignItems: "start", padding: "8px 0", borderBottom: "1px solid #f0f2f0" }}>
+                    <span aria-hidden="true" style={{ width: 23, height: 23, display: "grid", placeItems: "center", borderRadius: 7, background: "#eaf5e4", color: "#334532", fontSize: 10, fontWeight: 900 }}>✓</span>
+                    <span style={{ color: "#344038", fontSize: 11, lineHeight: 1.3 }}>{rotina.titulo}</span>
+                    <span style={{ color: "#8a948d", fontSize: 9, whiteSpace: "nowrap" }}>{rotina.horario || rotina.categoria}</span>
+                  </div>
+                )) : <p style={{ color: "#758078", fontSize: 12 }}>Nenhuma rotina diária encontrada.</p>}
+              </div>
+
+              <div style={{ ...caixa, background: "linear-gradient(145deg,#263827,#3f6f2d)", border: 0, color: "#fff" }}>
+                <h2 style={{ fontSize: 15, margin: 0 }}>Próxima ação</h2>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,.7)", marginTop: 4, marginBottom: 12 }}>Comece pelo que gera receita ou evita risco.</p>
+                {[
+                  ["Registrar nova demanda", "/dashboard/oportunidades?nova=1"],
+                  ["Validar dossiês", "/dashboard/proposta-edital"],
+                  ["Revisar mobilizações", "/dashboard/mobilizacoes"],
+                  ["Preparar faturamento", "/dashboard/nfse"],
+                ].map(([rotulo, href]) => (
+                  <Link key={href} href={href} style={{ display: "flex", justifyContent: "space-between", color: "#fff", textDecoration: "none", padding: "8px 9px", marginTop: 5, background: "rgba(255,255,255,.1)", borderRadius: 8, fontSize: 11, fontWeight: 750 }}>
+                    <span>{rotulo}</span><span>→</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 14 }}>
+            <div style={caixa}>
+              <h2 style={{ color: "#263827", fontSize: 14, margin: 0 }}>Fluxo operacional</h2>
+              <p style={{ color: "#7a847d", fontSize: 10, marginTop: 3, marginBottom: 11 }}>Da análise à execução</p>
+              {[
+                ["Dossiês aguardando validação", painel.dashboard.dossiesPendentes, "/dashboard/proposta-edital"],
+                ["Mobilizações bloqueadas", painel.dashboard.mobilizacoesBloqueadas, "/dashboard/mobilizacoes"],
+                ["Documentos para revisar", painel.dashboard.documentosAguardandoRevisao, "/dashboard/monitor-docs"],
+                ["Alterações de escopo", painel.dashboard.alteracoesEscopoPendentes, "/dashboard/alteracoes-escopo"],
+              ].map(([rotulo, valor, href]) => (
+                <Link key={String(rotulo)} href={String(href)} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f2f0", color: "#465048", textDecoration: "none", fontSize: 11 }}>
+                  <span>{rotulo}</span><strong style={{ color: Number(valor || 0) > 0 ? "#b84213" : "#334532" }}>{numero(valor)}</strong>
+                </Link>
+              ))}
+            </div>
+
+            <div style={caixa}>
+              <h2 style={{ color: "#263827", fontSize: 14, margin: 0 }}>Financeiro do mês</h2>
+              <p style={{ color: "#7a847d", fontSize: 10, marginTop: 3, marginBottom: 11 }}>Valores efetivamente registrados</p>
+              {[
+                ["Receitas", moeda(financeiro.monthRevenue), "#2f6f2e"],
+                ["Despesas", moeda(financeiro.monthExpenses), "#a74a18"],
+                ["Resultado", moeda(financeiro.monthProfit), Number(financeiro.monthProfit || 0) < 0 ? "#b12d0c" : "#2f6f2e"],
+                ["Contas vencidas", moeda(contasVencidas.total), Number(contasVencidas.count || 0) > 0 ? "#b12d0c" : "#334532"],
+              ].map(([rotulo, valor, cor]) => (
+                <div key={String(rotulo)} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "8px 0", borderBottom: "1px solid #f0f2f0", fontSize: 11 }}>
+                  <span style={{ color: "#657068" }}>{rotulo}</span><strong style={{ color: String(cor) }}>{valor}</strong>
+                </div>
+              ))}
+              <Link href="/dashboard/dre" style={{ display: "inline-block", color: "#3f6f2d", fontSize: 10, fontWeight: 800, textDecoration: "none", marginTop: 11 }}>Abrir análise financeira →</Link>
+            </div>
+
+            <div style={caixa}>
+              <h2 style={{ color: "#263827", fontSize: 14, margin: 0 }}>Acessos frequentes</h2>
+              <p style={{ color: "#7a847d", fontSize: 10, marginTop: 3, marginBottom: 11 }}>Atalhos para a operação administrativa</p>
+              {[
+                ["Anexar documento", "/dashboard/documentos"],
+                ["Registrar despesa", "/dashboard/financeiro-avancado"],
+                ["Admitir funcionário", "/dashboard/rh-admissao"],
+                ["Criar ordem de serviço", "/dashboard/ordens-servico"],
+                ["Emitir ou registrar NFS-e", "/dashboard/nfse"],
+              ].map(([rotulo, href]) => (
+                <Link key={href} href={href} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f2f0", color: "#465048", textDecoration: "none", fontSize: 11 }}>
+                  <span>{rotulo}</span><span style={{ color: "#4a9410" }}>→</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }
