@@ -17,8 +17,10 @@ export default withAuth(
     const FIN = ["ADMIN", "FISCAL", "FINANCEIRO"];
     const RH_ = ["ADMIN", "RH"];
     const SST = ["ADMIN", "RH", "OPERACIONAL"];
+    const EPI = ["ADMIN", "RH", "OPERACIONAL", "ALMOXARIFADO"];
     const GES = ["ADMIN", "GESTOR", "COMERCIAL"];
     const OPE = ["ADMIN", "GESTOR", "OPERACIONAL"];
+    const RECURSOS = ["ADMIN", "GESTOR", "OPERACIONAL", "ALMOXARIFADO", "FINANCEIRO"];
     const guards: [string, string[]][] = [
       // Sistema / administração
       ["/api/admin", ["ADMIN"]],
@@ -50,7 +52,7 @@ export default withAuth(
       // SST / campo
       ["/api/sso", SST], ["/dashboard/sso", SST],
       ["/api/aso", SST], ["/dashboard/aso", SST],
-      ["/api/epi", SST], ["/dashboard/epi", SST],
+      ["/api/epi", EPI], ["/dashboard/epi", EPI],
       ["/api/treinamentos", SST], ["/dashboard/treinamentos", SST],
       ["/api/mobilizacoes", SST],
       // Estoque / comercial
@@ -85,11 +87,11 @@ export default withAuth(
       ["/api/medicao", [...GES, "OPERACIONAL", "FINANCEIRO", "FISCAL"]],
       ["/dashboard/medicao", [...GES, "OPERACIONAL", "FINANCEIRO", "FISCAL"]],
       // Operação de campo e frota
-      ["/api/logistica", OPE],
-      ["/api/equipamentos", OPE],
-      ["/api/combustivel", [...OPE, "FINANCEIRO"]],
-      ["/api/retro", OPE],
-      ["/api/detetizacao", OPE],
+      ["/api/logistica", OPE], ["/dashboard/logistica", OPE],
+      ["/api/equipamentos", RECURSOS], ["/dashboard/equipamentos", RECURSOS],
+      ["/api/combustivel", [...OPE, "FINANCEIRO"]], ["/dashboard/combustivel", [...OPE, "FINANCEIRO"]],
+      ["/api/retro", OPE], ["/dashboard/retro", OPE],
+      ["/api/detetizacao", OPE], ["/dashboard/detetizacao", OPE],
       ["/api/voz", [...OPE, "COMERCIAL"]],
     ];
 
