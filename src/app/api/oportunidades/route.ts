@@ -44,8 +44,7 @@ function dataOpcional(valor: string | null | undefined) {
   return data;
 }
 
-function paraAuditoria(oportunidade: any) {
-  if (!oportunidade) return null;
+function paraAuditoria(oportunidade: any): Record<string, string | number | null> {
   return {
     id: oportunidade.id,
     prospectName: oportunidade.prospectName,
