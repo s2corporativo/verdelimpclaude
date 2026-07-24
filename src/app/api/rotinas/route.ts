@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { erroInterno, exigirPapel } from "@/lib/authz";
@@ -34,6 +35,10 @@ function referenciaDaRotina(frequencia: FrequenciaRotina, data: Date) {
 
 function podeConfigurar(roles: string[]) {
   return PAPEIS_CONFIGURACAO.some((papel) => roles.includes(papel));
+}
+
+function jsonSeguro(valor: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(valor)) as Prisma.InputJsonValue;
 }
 
 function normalizarTemplate(valor: Record<string, unknown>, anterior?: RotinaTemplate): RotinaTemplate {
@@ -114,7 +119,7 @@ export async function GET(req: NextRequest) {
     const dataBase = dataInformada ? new Date(`${dataInformada}T12:00:00`) : new Date();
     if (Number.isNaN(dataBase.getTime())) return NextResponse.json({ error: "Data inválida" }, { status: 400 });
 
-    const frequenciasVisiveis = periodo === "diaria"
+    const frequenciasVisiveis: FrequenciaRotina[] = periodo === "diaria"
       ? ["diaria"]
       : periodo === "semanal"
         ? ["diaria", "semanal"]
@@ -198,7 +203,7 @@ export async function POST(req: NextRequest) {
           module: "rotinas-template",
           entityType: "RoutineTemplate",
           entityId: template.id,
-          newValues: template,
+          newValues: jsonSeguro(template),
         },
       });
       return NextResponse.json({ ok: true, rotina: template }, { status: 201 });
@@ -220,7 +225,7 @@ export async function POST(req: NextRequest) {
         module: "rotinas-execucao",
         entityType: "RoutineExecution",
         entityId: `${id}:${referenceDate}`,
-        newValues: { id, referenceDate, concluida, observacao: String(body.observacao || "").slice(0, 1000) || null },
+        newValues: jsonSeguro({ id, referenceDate, concluida, observacao: String(body.observacao || "").slice(0, 1000) || null }),
       },
     });
 
@@ -252,8 +257,8 @@ export async function PATCH(req: NextRequest) {
         module: "rotinas-template",
         entityType: "RoutineTemplate",
         entityId: id,
-        oldValues: atual,
-        newValues: template,
+        oldValues: jsonSeguro(atual),
+        newValues: jsonSeguro(template),
       },
     });
     return NextResponse.json({ ok: true, rotina: template });
@@ -282,8 +287,8 @@ export async function DELETE(req: NextRequest) {
         module: "rotinas-template",
         entityType: "RoutineTemplate",
         entityId: id,
-        oldValues: atual,
-        newValues: { ...atual, ativa: false },
+        oldValues: jsonSeguro(atual),
+        newValues: jsonSeguro({ ...atual, ativa: false }),
       },
     });
     return NextResponse.json({ ok: true });
