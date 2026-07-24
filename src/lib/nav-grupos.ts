@@ -9,6 +9,7 @@
 export interface AbaNav {
   href: string;
   label: string;
+  roles?: string[];
 }
 
 export interface GrupoNav {
@@ -109,14 +110,14 @@ export const GRUPOS_NAV: GrupoNav[] = [
       { href: "/dashboard/documentos", label: "📁 Documentos" },
       { href: "/dashboard/pastas-digitais", label: "📂 Organização digital" },
       { href: "/dashboard/checklist-docs", label: "📑 Checklists e modelos" },
-      { href: "/dashboard/email-analise", label: "📧 E-mails recebidos" },
-      { href: "/dashboard/email-integration", label: "📬 Integração de e-mail" },
+      { href: "/dashboard/email-analise", label: "📧 E-mails recebidos", roles: ["ADMIN", "GESTOR", "COMERCIAL", "FINANCEIRO"] },
+      { href: "/dashboard/email-integration", label: "📬 Integração de e-mail", roles: ["ADMIN", "GESTOR"] },
       { href: "/dashboard/manual", label: "📖 Manual" },
-      { href: "/dashboard/integracoes", label: "🔌 Integrações" },
-      { href: "/dashboard/configuracoes", label: "⚙️ Configurações" },
-      { href: "/dashboard/diagnostico", label: "🩺 Diagnóstico" },
-      { href: "/dashboard/credenciais", label: "🔑 Credenciais e APIs" },
-      { href: "/dashboard/admin", label: "🛡️ Usuários e permissões" },
+      { href: "/dashboard/integracoes", label: "🔌 Integrações", roles: ["ADMIN", "GESTOR"] },
+      { href: "/dashboard/configuracoes", label: "⚙️ Configurações", roles: ["ADMIN", "GESTOR"] },
+      { href: "/dashboard/diagnostico", label: "🩺 Diagnóstico", roles: ["ADMIN"] },
+      { href: "/dashboard/credenciais", label: "🔑 Credenciais e APIs", roles: ["ADMIN"] },
+      { href: "/dashboard/admin", label: "🛡️ Usuários e permissões", roles: ["ADMIN"] },
     ],
   },
   {
