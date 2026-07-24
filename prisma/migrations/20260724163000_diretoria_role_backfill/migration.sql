@@ -1,12 +1,14 @@
 -- Bancos existentes não executam seed durante atualizações. Esta migration
--- garante a presença do papel DIRETORIA e suas permissões empresariais.
+-- garante a presença do papel DIRETORIA e associa todas as permissões
+-- empresariais que já existirem no momento da atualização.
 INSERT INTO "Role" (id, name, description, "createdAt")
 VALUES ('role-diretoria', 'DIRETORIA', 'Diretoria e alçadas executivas', NOW())
 ON CONFLICT (name) DO UPDATE
 SET description = EXCLUDED.description;
 
--- A diretoria recebe os módulos empresariais existentes, exceto o módulo
--- administrativo de gestão de usuários/credenciais. A migration é idempotente.
+-- Em banco existente, as permissões já foram semeadas e são vinculadas aqui.
+-- Em instalação nova, a tabela Permission ainda pode estar vazia; o seed
+-- estrutural executado depois das migrations fará os mesmos vínculos.
 INSERT INTO "RolePermission" (id, "roleId", "permissionId")
 SELECT
   'rp-dir-' || md5(permission.id),
@@ -21,13 +23,18 @@ ON CONFLICT ("roleId", "permissionId") DO NOTHING;
 DO $$
 DECLARE
   role_count INTEGER;
-  permission_count INTEGER;
+  available_permission_count INTEGER;
+  assigned_permission_count INTEGER;
 BEGIN
   SELECT COUNT(*) INTO role_count
   FROM "Role"
   WHERE name = 'DIRETORIA';
 
-  SELECT COUNT(*) INTO permission_count
+  SELECT COUNT(*) INTO available_permission_count
+  FROM "Permission"
+  WHERE module <> 'admin';
+
+  SELECT COUNT(*) INTO assigned_permission_count
   FROM "RolePermission" role_permission
   JOIN "Role" role ON role.id = role_permission."roleId"
   JOIN "Permission" permission ON permission.id = role_permission."permissionId"
@@ -38,7 +45,10 @@ BEGIN
     RAISE EXCEPTION 'Papel DIRETORIA não foi provisionado corretamente';
   END IF;
 
-  IF permission_count = 0 THEN
-    RAISE EXCEPTION 'Papel DIRETORIA ficou sem permissões empresariais';
+  IF available_permission_count > 0
+     AND assigned_permission_count <> available_permission_count THEN
+    RAISE EXCEPTION 'Permissões da DIRETORIA incompletas: % de %',
+      assigned_permission_count,
+      available_permission_count;
   END IF;
 END $$;
