@@ -1,9 +1,9 @@
 Solicitação de deploy automático em produção.
 Data: 2026-07-24
 Modo: auto
-Origem: hardening transversal v3.10 e hotfix de provisionamento da DIRETORIA v3.10.1.
-Commit funcional: e55c3bde0415b162f7c87590ad5f1e909796d4bf
-Release esperada: v3.10.1
-Validações: Prisma generate/validate, TypeScript, testes Vitest, lint, scripts operacionais, build de produção, npm audit, Docker Compose, cadeia completa de migrations em PostgreSQL 16, seed estrutural, ausência de dados demonstrativos gerados, vínculo demanda-dossiê, papel DIRETORIA e provisionamento por migration aprovados.
-Escopo acumulado: fluxo comercial e operacional, dossiê, rotinas, importação financeira, diário, medição, faturamento, recebimento, rentabilidade, clientes, fornecedores, despesas, NFS-e, EPI, combustível, logística, retroescavadeira, equipamentos, RH, GED, dedetização, adiantamentos, notificações, regularidade cadastral, PNCP, folha detalhada, almoxarifado, histórico operacional, contratos, dashboard fiscal, pipeline de licitações, DRE, relatório mensal, aging, treinamentos, mobilizações, propostas, integrações de e-mail, seed seguro, papel DIRETORIA, sincronização demanda-dossiê-proposta-contrato, portal sem fallback fictício, diagnóstico protegido, exportações auditadas e deploy com validação da release.
-Execução: deploy protegido na VPS Contabo, condicionado aos secrets, backup, migrations, health check com release v3.10.1 e evidências técnicas da issue 37.
+Origem: hotfix do deploy para ambientes com valores textuais no .env e atualização de segurança do PostCSS.
+Commit funcional: 00e62d413323cf9bc2b4b1f150f7ff5b5e95f0c9
+Release esperada: v3.10.2
+Validações: Prisma generate/validate, TypeScript, testes Vitest, lint, scripts operacionais, build de produção, npm audit, Docker Compose, cadeia completa de migrations em PostgreSQL 16, seed estrutural, ausência de dados demonstrativos, vínculo demanda-dossiê, papel DIRETORIA e provisionamento por migration aprovados.
+Correções operacionais: o deploy não executa mais .env.production como script shell; a porta publicada é obtida pelo Docker Compose; o health check confirma ok=true e release v3.10.2; PostCSS atualizado para 8.5.22 com lock reproduzível e auditoria aprovada.
+Execução: deploy protegido na VPS Contabo, com backup prévio, migrations idempotentes, rollback de imagem e confirmação da release pelo endpoint /api/health.
