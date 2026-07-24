@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { erroInterno, exigirPapel } from "@/lib/authz";
 
@@ -8,12 +9,19 @@ export const dynamic = "force-dynamic";
 const PREFIXO_FONTE = "OPPORTUNITY:";
 const urlDossie = (id: string) => `/dashboard/proposta-edital?id=${encodeURIComponent(id)}`;
 
+type DossieVinculado = {
+  id: string;
+  code: string;
+  status: string;
+  opportunityId: string | null;
+};
+
 function dadosAuditoria(valor: Record<string, unknown>) {
   return JSON.parse(JSON.stringify(valor)) as Record<string, string | number | boolean | null>;
 }
 
 export async function POST(req: NextRequest) {
-  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL", "DIRETORIA");
   if (erro || !user) return erro;
 
   try {
@@ -26,11 +34,29 @@ export async function POST(req: NextRequest) {
     if (demanda.stage === "arquivado") return NextResponse.json({ error: "Restaure a demanda antes de iniciar a análise" }, { status: 409 });
 
     const sourceName = `${PREFIXO_FONTE}${demanda.id}`;
-    const existente = await prisma.serviceDossier.findFirst({
-      where: { sourceName },
-      select: { id: true, code: true, status: true },
-    });
+    const existentes = await prisma.$queryRaw<DossieVinculado[]>(Prisma.sql`
+      SELECT id, code, status, "opportunityId"
+      FROM "ServiceDossier"
+      WHERE "opportunityId" = ${demanda.id}
+         OR "sourceName" = ${sourceName}
+      ORDER BY ("opportunityId" IS NOT NULL) DESC, "createdAt" ASC
+      LIMIT 1
+    `);
+    const existente = existentes[0];
+
     if (existente) {
+      if (!existente.opportunityId) {
+        await prisma.$executeRaw(Prisma.sql`
+          UPDATE "ServiceDossier" d
+          SET "opportunityId" = ${demanda.id}, "updatedAt" = NOW()
+          WHERE d.id = ${existente.id}
+            AND d."opportunityId" IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM "ServiceDossier" other
+              WHERE other."opportunityId" = ${demanda.id}
+            )
+        `);
+      }
       if (demanda.stage === "lead") {
         await prisma.opportunity.update({
           where: { id: demanda.id },
@@ -47,11 +73,31 @@ export async function POST(req: NextRequest) {
     }
 
     const resultado = await prisma.$transaction(async (tx) => {
-      const duplicado = await tx.serviceDossier.findFirst({
-        where: { sourceName },
-        select: { id: true, code: true },
-      });
-      if (duplicado) return { dossier: duplicado, clientId: null as string | null, criado: false };
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`opportunity-dossier:${demanda.id}`}))`;
+
+      const vinculados = await tx.$queryRaw<DossieVinculado[]>(Prisma.sql`
+        SELECT id, code, status, "opportunityId"
+        FROM "ServiceDossier"
+        WHERE "opportunityId" = ${demanda.id}
+           OR "sourceName" = ${sourceName}
+        ORDER BY ("opportunityId" IS NOT NULL) DESC, "createdAt" ASC
+        LIMIT 1
+      `);
+      const duplicado = vinculados[0];
+      if (duplicado) {
+        if (!duplicado.opportunityId) {
+          await tx.$executeRaw(Prisma.sql`
+            UPDATE "ServiceDossier"
+            SET "opportunityId" = ${demanda.id}, "updatedAt" = NOW()
+            WHERE id = ${duplicado.id} AND "opportunityId" IS NULL
+          `);
+        }
+        await tx.opportunity.update({
+          where: { id: demanda.id },
+          data: { stage: demanda.stage === "lead" ? "qualificado" : demanda.stage, nextAction: demanda.nextAction || "Validar escopo e custos no dossiê operacional" },
+        });
+        return { dossier: duplicado, clientId: null as string | null, criado: false };
+      }
 
       let cliente = await tx.client.findFirst({
         where: {
@@ -78,6 +124,7 @@ export async function POST(req: NextRequest) {
       }
 
       const ano = new Date().getFullYear();
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`dossier-number:${ano}`}))`;
       const quantidade = await tx.serviceDossier.count({ where: { code: { startsWith: `DOS-${ano}-` } } });
       const code = `DOS-${ano}-${String(quantidade + 1).padStart(4, "0")}`;
       const titulo = `${demanda.serviceType || "Serviço"} — ${demanda.prospectName}`;
@@ -118,8 +165,14 @@ export async function POST(req: NextRequest) {
           ].filter(Boolean).join("\n"),
           riskMatrix: [],
         },
-        select: { id: true, code: true },
+        select: { id: true, code: true, status: true },
       });
+
+      await tx.$executeRaw(Prisma.sql`
+        UPDATE "ServiceDossier"
+        SET "opportunityId" = ${demanda.id}, "updatedAt" = NOW()
+        WHERE id = ${dossier.id}
+      `);
 
       await tx.opportunity.update({
         where: { id: demanda.id },
@@ -137,7 +190,7 @@ export async function POST(req: NextRequest) {
           entityType: "Opportunity",
           entityId: demanda.id,
           oldValues: dadosAuditoria({ stage: demanda.stage, nextAction: demanda.nextAction }),
-          newValues: dadosAuditoria({ stage: "qualificado", dossierId: dossier.id, dossierCode: dossier.code, clientId: cliente.id }),
+          newValues: dadosAuditoria({ stage: "qualificado", dossierId: dossier.id, dossierCode: dossier.code, clientId: cliente.id, relation: "ServiceDossier.opportunityId" }),
         },
       });
 
