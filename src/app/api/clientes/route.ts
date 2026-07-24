@@ -1,117 +1,192 @@
-// src/app/api/clientes/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { registrarAuditoria } from "@/lib/admin";
-import { erroInterno } from "@/lib/authz";
+import { erroInterno, exigirPapel } from "@/lib/authz";
 import { validar, ClienteSchema, ClienteUpdateSchema } from "@/lib/validacao";
 
 export const dynamic = "force-dynamic";
 
-async function userId() {
-  const s = await getServerSession(authOptions);
-  return (s?.user as any)?.id || null;
+const PAPEIS = ["ADMIN", "GESTOR", "COMERCIAL", "FINANCEIRO", "FISCAL"];
+
+function auditJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
-export async function GET() {
+function limparDocumento(value?: string | null) {
+  return value ? value.replace(/\D/g, "") : "";
+}
+
+async function enriquecerCnpj(body: any) {
+  const documento = limparDocumento(body.cnpjCpf);
+  if (!documento || documento.length !== 14 || body.municipio) return;
+
   try {
-    const clientes = await prisma.client.findMany({
-      where: { deletedAt: null },
-      orderBy: { name: "asc" },
+    const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${documento}`, {
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store",
     });
-    if (clientes.length === 0) return NextResponse.json({ data: DEMO_CLIENTES, _demo: true });
-    return NextResponse.json({ data: clientes });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (data?.message) return;
+    body.municipio = body.municipio || data.municipio || null;
+    body.uf = body.uf || data.uf || null;
+    body.situacao = data.descricao_situacao_cadastral || data.situacao_cadastral || body.situacao || null;
   } catch {
-    return NextResponse.json({ data: DEMO_CLIENTES, _demo: true });
+    // A indisponibilidade da fonte externa não impede o cadastro manual.
+  }
+}
+
+export async function GET(req: NextRequest) {
+  const { erro } = await exigirPapel(...PAPEIS);
+  if (erro) return erro;
+
+  try {
+    const search = req.nextUrl.searchParams.get("q")?.trim();
+    const active = req.nextUrl.searchParams.get("active");
+    const where: Prisma.ClientWhereInput = {
+      deletedAt: null,
+      ...(active === "true" ? { active: true } : active === "false" ? { active: false } : {}),
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { cnpjCpf: { contains: search } },
+          { contact: { contains: search, mode: "insensitive" } },
+          { municipio: { contains: search, mode: "insensitive" } },
+        ],
+      } : {}),
+    };
+    const data = await prisma.client.findMany({ where, orderBy: { name: "asc" }, take: 1000 });
+    return NextResponse.json({ data, total: data.length, empty: data.length === 0 });
+  } catch (error) {
+    return erroInterno(error, "api/clientes GET");
   }
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const bruto = await req.json();
-    const { data: body, erro } = validar(ClienteSchema, bruto);
-    if (erro) return erro;
+  const { user, erro: authError } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  if (authError || !user) return authError;
 
-    // Enriquecer com dados do CNPJ se não preenchido
-    if (body.cnpjCpf && !body.municipio) {
-      try {
-        const clean = body.cnpjCpf.replace(/\D/g, "");
-        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`, { signal: AbortSignal.timeout(5000) });
-        if (res.ok) {
-          const d = await res.json();
-          if (!d.message) {
-            body.municipio = body.municipio || d.municipio;
-            body.uf = body.uf || d.uf;
-            body.situacao = d.descricao_situacao_cadastral || d.situacao_cadastral;
-          }
-        }
-      } catch { /* Continuar sem dados da API */ }
+  try {
+    const raw = await req.json();
+    const { data: body, erro } = validar(ClienteSchema, raw);
+    if (erro) return erro;
+    await enriquecerCnpj(body);
+
+    const cliente = await prisma.$transaction(async (tx) => {
+      const created = await tx.client.create({
+        data: {
+          name: body.name,
+          cnpjCpf: body.cnpjCpf || null,
+          type: body.type || "juridica",
+          category: body.category || "Público",
+          email: body.email || null,
+          phone: body.phone || null,
+          contact: body.contact || null,
+          logradouro: body.logradouro || null,
+          municipio: body.municipio || null,
+          uf: body.uf || null,
+          cep: body.cep || null,
+          situacao: body.situacao || null,
+          notes: body.notes || null,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "CREATE",
+          module: "clientes",
+          entityType: "Client",
+          entityId: created.id,
+          newValues: auditJson(created),
+        },
+      });
+      return created;
+    });
+    return NextResponse.json(cliente, { status: 201 });
+  } catch (error: any) {
+    if (error?.code === "P2002") return NextResponse.json({ error: "CNPJ/CPF já cadastrado" }, { status: 409 });
+    return erroInterno(error, "api/clientes POST");
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  const { user, erro: authError } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  if (authError || !user) return authError;
+
+  try {
+    const raw = await req.json();
+    const { data: body, erro } = validar(ClienteUpdateSchema, raw);
+    if (erro) return erro;
+    const current = await prisma.client.findFirst({ where: { id: body.id, deletedAt: null } });
+    if (!current) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+
+    const fields = ["name", "cnpjCpf", "type", "category", "email", "phone", "contact", "logradouro", "municipio", "uf", "cep", "situacao", "notes"] as const;
+    const data: Record<string, unknown> = {};
+    for (const field of fields) {
+      if (body[field] !== undefined) data[field] = body[field] || null;
+    }
+    if (body.name !== undefined) data.name = body.name;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const result = await tx.client.update({ where: { id: body.id }, data });
+      await tx.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "UPDATE",
+          module: "clientes",
+          entityType: "Client",
+          entityId: body.id,
+          oldValues: auditJson(current),
+          newValues: auditJson(result),
+        },
+      });
+      return result;
+    });
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    if (error?.code === "P2002") return NextResponse.json({ error: "CNPJ/CPF já cadastrado em outro cliente" }, { status: 409 });
+    if (error?.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+    return erroInterno(error, "api/clientes PUT");
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR");
+  if (erro || !user) return erro;
+
+  try {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    const current = await prisma.client.findFirst({ where: { id, deletedAt: null } });
+    if (!current) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+
+    const [contracts, proposals, dossiers, receivables] = await Promise.all([
+      prisma.contract.count({ where: { clientId: id } }),
+      prisma.proposal.count({ where: { clientId: id, deletedAt: null } }),
+      prisma.serviceDossier.count({ where: { clientId: id } }),
+      prisma.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*)::bigint AS count FROM erp_receivable WHERE client_id=${id}`,
+    ]);
+    const links = contracts + proposals + dossiers + Number(receivables[0]?.count || 0);
+    if (links > 0) {
+      return NextResponse.json({ error: `Cliente possui ${links} vínculo(s) operacional(is) ou financeiro(s). Desative o cadastro em vez de excluí-lo.` }, { status: 409 });
     }
 
-    const cliente = await prisma.client.create({
-      data: {
-        name: body.name,
-        cnpjCpf: body.cnpjCpf || null,
-        type: body.type || "juridica",
-        category: body.category || "Público",
-        email: body.email,
-        phone: body.phone,
-        contact: body.contact,
-        logradouro: body.logradouro,
-        municipio: body.municipio,
-        uf: body.uf,
-        cep: body.cep,
-        situacao: body.situacao,
-        notes: body.notes,
-      },
-    });
-    await registrarAuditoria({ userId: await userId(), action: "CRIAR", module: "clientes", entityType: "Client", entityId: cliente.id, newValues: { name: cliente.name } });
-    return NextResponse.json(cliente, { status: 201 });
-  } catch (e: any) {
-    if (e?.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado" }, { status: 409 });
-    return erroInterno(e, "api/clientes POST");
-  }
-}
-
-// Editar cliente
-export async function PUT(req: NextRequest) {
-  try {
-    const bruto = await req.json();
-    const { data: b, erro } = validar(ClienteUpdateSchema, bruto);
-    if (erro) return erro;
-    if (b.name !== undefined && !String(b.name).trim()) return NextResponse.json({ error: "Nome não pode ficar vazio" }, { status: 400 });
-    const campos = ["name", "cnpjCpf", "type", "category", "email", "phone", "contact", "logradouro", "municipio", "uf", "cep", "situacao", "notes"] as const;
-    const data: any = {};
-    for (const k of campos) if ((b as any)[k] !== undefined) data[k] = (b as any)[k] || null;
-    const cliente = await prisma.client.update({ where: { id: b.id }, data });
-    await registrarAuditoria({ userId: await userId(), action: "EDITAR", module: "clientes", entityType: "Client", entityId: b.id, newValues: data });
-    return NextResponse.json(cliente);
-  } catch (e: any) {
-    if (e?.code === "P2002") return NextResponse.json({ error: "CNPJ já cadastrado em outro cliente" }, { status: 409 });
-    if (e?.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
-    return erroInterno(e, "api/clientes PUT");
-  }
-}
-
-// Excluir (soft delete) — preserva histórico de contratos/propostas vinculados
-export async function DELETE(req: NextRequest) {
-  try {
-    const id = new URL(req.url).searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-    const vinculos = await prisma.contract.count({ where: { clientId: id } });
-    if (vinculos > 0) return NextResponse.json({ error: `Cliente tem ${vinculos} contrato(s) vinculado(s) — não pode ser excluído.` }, { status: 409 });
-    await prisma.client.update({ where: { id }, data: { deletedAt: new Date(), active: false } });
-    await registrarAuditoria({ userId: await userId(), action: "EXCLUIR", module: "clientes", entityType: "Client", entityId: id });
+    await prisma.$transaction([
+      prisma.client.update({ where: { id }, data: { deletedAt: new Date(), active: false } }),
+      prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "ARCHIVE",
+          module: "clientes",
+          entityType: "Client",
+          entityId: id,
+          oldValues: auditJson(current),
+          newValues: auditJson({ active: false, deletedAt: new Date().toISOString() }),
+        },
+      }),
+    ]);
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    if (e?.code === "P2025") return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
-    return erroInterno(e, "api/clientes DELETE");
+  } catch (error) {
+    return erroInterno(error, "api/clientes DELETE");
   }
 }
-
-const DEMO_CLIENTES = [
-  { id: "c1", name: "Prefeitura de Belo Horizonte", cnpjCpf: "17.317.344/0001-19", category: "Público", municipio: "Belo Horizonte", uf: "MG", situacao: "ATIVA" },
-  { id: "c2", name: "CEMIG", cnpjCpf: "17.038.582/0001-53", category: "Público", municipio: "Belo Horizonte", uf: "MG", situacao: "ATIVA" },
-  { id: "c3", name: "Copasa", cnpjCpf: "17.054.027/0001-78", category: "Público", municipio: "Belo Horizonte", uf: "MG", situacao: "ATIVA" },
-];
