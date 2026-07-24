@@ -1,8 +1,8 @@
 Solicitação de deploy automático em produção.
 Data: 2026-07-24
 Modo: auto
-Origem: integridade de contratos, estoque, fiscal e licitações do Verdelimp v3.8.
-Commit funcional: 81beac1fb364d423fe6a0726395088a8b5041fb0
+Origem: integridade de relatórios, SST, mobilizações, propostas e e-mail do Verdelimp v3.9.
+Commit funcional: 7bb6f0e2c2fdc936008dbefa191ceca0003ef7e2
 Validações: Prisma generate/validate, TypeScript, testes Vitest, lint, scripts operacionais, build de produção, npm audit, Docker Compose, cadeia completa de migrations em PostgreSQL 16 e seed aprovados.
-Escopo acumulado: fluxo comercial e operacional, dossiê, rotinas, importação financeira, diário, medição, faturamento, recebimento, rentabilidade, clientes, fornecedores, despesas, NFS-e, EPI, combustível, logística, retroescavadeira, equipamentos, RH, GED, dedetização, adiantamentos, notificações, regularidade cadastral, PNCP, folha detalhada, almoxarifado, histórico operacional, contratos, dashboard fiscal e pipeline de licitações sem dados fictícios nos módulos tratados.
+Escopo acumulado: fluxo comercial e operacional, dossiê, rotinas, importação financeira, diário, medição, faturamento, recebimento, rentabilidade, clientes, fornecedores, despesas, NFS-e, EPI, combustível, logística, retroescavadeira, equipamentos, RH, GED, dedetização, adiantamentos, notificações, regularidade cadastral, PNCP, folha detalhada, almoxarifado, histórico operacional, contratos, dashboard fiscal, pipeline de licitações, DRE, relatório mensal, aging, treinamentos, mobilizações, propostas e integrações de e-mail sem dados fictícios nos módulos tratados.
 Execução: deploy protegido na VPS Contabo, condicionado aos secrets, backup, health check e evidências técnicas da issue 37.
