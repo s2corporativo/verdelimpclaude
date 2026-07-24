@@ -6,7 +6,8 @@ import { erroInterno, exigirPapel } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
-const estagios = ["lead", "qualificado", "proposta", "negociacao", "ganho", "perdido"] as const;
+const estagiosAtivos = ["lead", "qualificado", "proposta", "negociacao", "ganho", "perdido"] as const;
+const PREFIXO_DOSSIE = "OPPORTUNITY:";
 
 const textoOpcional = (limite: number) => z.string().trim().max(limite).optional().nullable();
 
@@ -18,7 +19,7 @@ const demandaSchema = z.object({
   origin: textoOpcional(80),
   serviceType: textoOpcional(180),
   estimatedValue: z.union([z.string(), z.number()]).optional().nullable(),
-  stage: z.enum(estagios).optional(),
+  stage: z.enum(estagiosAtivos).optional(),
   nextAction: textoOpcional(300),
   nextActionDate: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"), z.literal("")]).optional().nullable(),
   notes: textoOpcional(4000),
@@ -26,6 +27,12 @@ const demandaSchema = z.object({
 
 const atualizacaoSchema = demandaSchema.partial().extend({
   id: z.string().trim().min(1, "id obrigatório"),
+});
+
+const arquivoSchema = z.object({
+  id: z.string().trim().min(1, "id obrigatório"),
+  action: z.enum(["archive", "restore"]),
+  restoreStage: z.enum(estagiosAtivos).optional(),
 });
 
 function valorMonetario(valor: string | number | null | undefined) {
@@ -61,17 +68,36 @@ function paraAuditoria(oportunidade: any): Record<string, string | number | null
   };
 }
 
-export async function GET() {
+async function enriquecerComDossies(oportunidades: any[]) {
+  if (!oportunidades.length) return oportunidades;
+  const fontes = oportunidades.map((oportunidade) => `${PREFIXO_DOSSIE}${oportunidade.id}`);
+  const dossies = await prisma.serviceDossier.findMany({
+    where: { sourceName: { in: fontes } },
+    select: { id: true, code: true, sourceName: true, status: true, validationStatus: true, proposalId: true, contractId: true },
+  });
+  const porDemanda = new Map(
+    dossies.map((dossie) => [String(dossie.sourceName || "").replace(PREFIXO_DOSSIE, ""), dossie]),
+  );
+  return oportunidades.map((oportunidade) => ({ ...oportunidade, dossier: porDemanda.get(oportunidade.id) || null }));
+}
+
+export async function GET(req: NextRequest) {
   const { erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
   if (erro) return erro;
 
   try {
-    const oportunidades = await prisma.opportunity.findMany({ orderBy: { updatedAt: "desc" } });
+    const arquivadas = req.nextUrl.searchParams.get("arquivadas") === "1";
+    const oportunidadesBase = await prisma.opportunity.findMany({
+      where: arquivadas ? { stage: "arquivado" } : { stage: { not: "arquivado" } },
+      orderBy: { updatedAt: "desc" },
+      take: 300,
+    });
+    const oportunidades = await enriquecerComDossies(oportunidadesBase);
     const total = oportunidades
-      .filter((oportunidade) => !["ganho", "perdido"].includes(oportunidade.stage))
+      .filter((oportunidade) => !["ganho", "perdido", "arquivado"].includes(oportunidade.stage))
       .reduce((soma, oportunidade) => soma + Number(oportunidade.estimatedValue || 0), 0);
 
-    return NextResponse.json({ oportunidades, valorEmAberto: total });
+    return NextResponse.json({ oportunidades, valorEmAberto: total, arquivadas });
   } catch (e) {
     return erroInterno(e, "api/oportunidades GET");
   }
@@ -84,10 +110,7 @@ export async function POST(req: NextRequest) {
   try {
     const validacao = demandaSchema.safeParse(await req.json());
     if (!validacao.success) {
-      return NextResponse.json(
-        { error: validacao.error.issues[0]?.message || "Dados inválidos" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: validacao.error.issues[0]?.message || "Dados inválidos" }, { status: 400 });
     }
 
     const b = validacao.data;
@@ -134,15 +157,13 @@ export async function PUT(req: NextRequest) {
   try {
     const validacao = atualizacaoSchema.safeParse(await req.json());
     if (!validacao.success) {
-      return NextResponse.json(
-        { error: validacao.error.issues[0]?.message || "Dados inválidos" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: validacao.error.issues[0]?.message || "Dados inválidos" }, { status: 400 });
     }
 
     const b = validacao.data;
     const anterior = await prisma.opportunity.findUnique({ where: { id: b.id } });
     if (!anterior) return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
+    if (anterior.stage === "arquivado") return NextResponse.json({ error: "Restaure a demanda antes de editá-la" }, { status: 409 });
 
     const data: Record<string, any> = {};
     for (const chave of ["prospectName", "contactName", "phone", "email", "origin", "serviceType", "stage", "nextAction", "notes"] as const) {
@@ -153,7 +174,6 @@ export async function PUT(req: NextRequest) {
     if (b.nextActionDate !== undefined) data.nextActionDate = dataOpcional(b.nextActionDate);
 
     const atualizada = await prisma.opportunity.update({ where: { id: b.id }, data });
-
     await prisma.auditLog.create({
       data: {
         userId: user.id,
@@ -175,32 +195,70 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// Compatibilidade com clientes antigos. A interface v3 encerra a demanda por status
-// e não expõe exclusão definitiva. A remoção permanece restrita ao administrador.
+export async function PATCH(req: NextRequest) {
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
+  if (erro || !user) return erro;
+
+  try {
+    const validacao = arquivoSchema.safeParse(await req.json());
+    if (!validacao.success) return NextResponse.json({ error: validacao.error.issues[0]?.message || "Dados inválidos" }, { status: 400 });
+    const { id, action, restoreStage } = validacao.data;
+    const anterior = await prisma.opportunity.findUnique({ where: { id } });
+    if (!anterior) return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
+
+    if (action === "archive") {
+      if (anterior.stage === "arquivado") return NextResponse.json({ ok: true, unchanged: true });
+      const atualizada = await prisma.opportunity.update({
+        where: { id },
+        data: { stage: "arquivado", nextAction: null, nextActionDate: null },
+      });
+      await prisma.auditLog.create({
+        data: { userId: user.id, action: "ARCHIVE", module: "demandas", entityType: "Opportunity", entityId: id, oldValues: paraAuditoria(anterior), newValues: paraAuditoria(atualizada) },
+      });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (anterior.stage !== "arquivado") return NextResponse.json({ ok: true, unchanged: true });
+    const atualizada = await prisma.opportunity.update({
+      where: { id },
+      data: { stage: restoreStage || "lead", nextAction: "Revisar demanda restaurada" },
+    });
+    await prisma.auditLog.create({
+      data: { userId: user.id, action: "RESTORE", module: "demandas", entityType: "Opportunity", entityId: id, oldValues: paraAuditoria(anterior), newValues: paraAuditoria(atualizada) },
+    });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return erroInterno(e, "api/oportunidades PATCH");
+  }
+}
+
+// Compatibilidade: requisições DELETE antigas agora arquivam logicamente o registro.
 export async function DELETE(req: NextRequest) {
-  const { user, erro } = await exigirPapel("ADMIN");
+  const { user, erro } = await exigirPapel("ADMIN", "GESTOR", "COMERCIAL");
   if (erro || !user) return erro;
 
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-
     const anterior = await prisma.opportunity.findUnique({ where: { id } });
     if (!anterior) return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
+    if (anterior.stage === "arquivado") return NextResponse.json({ ok: true, unchanged: true });
 
-    await prisma.$transaction([
-      prisma.auditLog.create({
-        data: {
-          userId: user.id,
-          action: "DELETE",
-          module: "demandas",
-          entityType: "Opportunity",
-          entityId: id,
-          oldValues: paraAuditoria(anterior),
-        },
-      }),
-      prisma.opportunity.delete({ where: { id } }),
-    ]);
+    const atualizada = await prisma.opportunity.update({
+      where: { id },
+      data: { stage: "arquivado", nextAction: null, nextActionDate: null },
+    });
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: "ARCHIVE",
+        module: "demandas",
+        entityType: "Opportunity",
+        entityId: id,
+        oldValues: paraAuditoria(anterior),
+        newValues: paraAuditoria(atualizada),
+      },
+    });
 
     return NextResponse.json({ ok: true });
   } catch (e) {
